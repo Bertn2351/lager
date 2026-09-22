@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 
 <style>
 :root{
@@ -47,13 +48,25 @@ body{
 }
 h1,h2{margin:0; font-weight:600; text-wrap:balance}
 
+/* ---- Anmeldung ---- */
+.anmelden{
+  position:fixed; inset:0; z-index:50; background:var(--bg);
+  display:grid; place-items:center; padding:20px;
+}
+.anmeldekarte{
+  width:100%; max-width:380px; background:var(--flaeche); border:1px solid var(--linie);
+  border-radius:14px; box-shadow:var(--schatten); padding:26px; display:grid; gap:14px;
+}
+.anmeldekarte h1{font-size:21px}
+.anmeldekarte .unter{font-size:13.5px; color:var(--gedaempft); margin:-8px 0 4px}
+
 .kopf{
   position:sticky; top:0; z-index:5;
   display:flex; align-items:center; gap:12px; flex-wrap:wrap;
   padding:11px 16px; background:var(--flaeche); border-bottom:1px solid var(--linie);
 }
 .kopf h1{font-size:17px; letter-spacing:-.01em}
-.reiter{display:flex; gap:6px; margin-left:auto}
+.reiter{display:flex; gap:6px; margin-left:auto; flex-wrap:wrap}
 .reiter button{
   font:inherit; font-size:14px; cursor:pointer; padding:6px 13px; border-radius:999px;
   border:1px solid var(--linie); background:transparent; color:var(--gedaempft);
@@ -61,8 +74,11 @@ h1,h2{margin:0; font-weight:600; text-wrap:balance}
 .reiter button[aria-selected="true"]{
   background:var(--tinte); border-color:var(--tinte); color:var(--flaeche); font-weight:500;
 }
-.status{width:100%; font-size:12px; color:var(--gedaempft); order:9}
+.status{width:100%; font-size:12px; color:var(--gedaempft); order:9;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap}
 .status.aktiv{color:var(--gut)} .status.lokal{color:var(--akzent)}
+.status button{font:inherit; font-size:12px; padding:2px 9px; border-radius:999px;
+  border:1px solid var(--linie); background:transparent; color:var(--gedaempft); cursor:pointer}
 
 .buehne{max-width:1180px; margin:0 auto; padding:16px 16px 56px; display:grid; gap:18px;
   grid-template-columns:minmax(0,1fr) auto; align-items:start}
@@ -89,6 +105,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,li:focus-visible,t
   outline:2px solid var(--akzent); outline-offset:1px;
 }
 input.gross,select.gross{font-size:22px; font-weight:600}
+input::placeholder{color:var(--gedaempft); opacity:.55; font-weight:400}
 .zwei{display:grid; grid-template-columns:1fr 1fr; gap:12px}
 
 .mengen{display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:10px}
@@ -100,8 +117,6 @@ input.gross,select.gross{font-size:22px; font-weight:600}
 .summe{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
 .summe .zahl{font-size:15px; color:var(--gedaempft)}
 .summe .zahl b{font-size:23px; color:var(--tinte); font-variant-numeric:tabular-nums}
-.summe code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:15px;
-  background:var(--flaeche-2); border:1px solid var(--linie); border-radius:7px; padding:3px 9px}
 
 .treffer{list-style:none; margin:0; padding:0; max-height:280px; overflow-y:auto;
   border:1px solid var(--linie); border-radius:9px; background:var(--flaeche-2)}
@@ -138,6 +153,12 @@ button.still:hover{border-color:var(--gedaempft)}
 .stammliste input{width:120px; font-size:15px; padding:7px 9px; flex:none}
 .stammliste button{flex:none}
 
+details.klapp{border:1px solid var(--linie); border-radius:10px; background:var(--flaeche-2)}
+details.klapp summary{cursor:pointer; padding:11px 13px; font-size:14px; color:var(--gedaempft)}
+details.klapp .innen{padding:0 13px 13px; display:grid; gap:11px}
+textarea#import{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px;
+  height:150px; resize:vertical; white-space:pre; background:var(--flaeche)}
+
 #scanfeld{transition:border-color .12s, background-color .12s}
 #scanfeld.getroffen{border-color:var(--gut); background:color-mix(in srgb, var(--gut) 16%, transparent)}
 #scanfeld.daneben{border-color:var(--kritisch); background:color-mix(in srgb, var(--kritisch) 14%, transparent)}
@@ -158,12 +179,6 @@ button.still:hover{border-color:var(--gedaempft)}
   font-variant-numeric:tabular-nums}
 .summen .was{font-size:13.5px; color:var(--gedaempft); min-width:0; overflow-wrap:anywhere}
 .scanzeile .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:600}
-
-details.klapp{border:1px solid var(--linie); border-radius:10px; background:var(--flaeche-2)}
-details.klapp summary{cursor:pointer; padding:11px 13px; font-size:14px; color:var(--gedaempft)}
-details.klapp .innen{padding:0 13px 13px; display:grid; gap:11px}
-textarea#import{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px;
-  height:150px; resize:vertical; white-space:pre; background:var(--flaeche)}
 
 /* ---- Etikett 120 x 150 mm ---- */
 .vorschauspalte{display:flex; flex-direction:column; gap:12px; width:126mm; max-width:100%}
@@ -203,7 +218,7 @@ textarea#import{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-si
 @page{ size:120mm 150mm; margin:0 }
 @media print{
   body{background:#fff}
-  .kopf,.arbeitsspalte,.huelle > .hinweis,details.zpl{display:none !important}
+  .kopf,.arbeitsspalte,.huelle > .hinweis,details.zpl,.anmelden{display:none !important}
   .buehne{display:block; padding:0; max-width:none}
   .vorschauspalte{width:auto; gap:0}
   .huelle{border:0; box-shadow:none; padding:0; background:#fff; border-radius:0; overflow:visible}
@@ -222,6 +237,25 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
 [hidden]{display:none !important}
 </style>
 
+<!-- ===== Anmeldung ===== -->
+<div class="anmelden" id="anmelden" hidden>
+  <form class="anmeldekarte" id="anmeldeformular">
+    <h1>Palettenbeschriftung</h1>
+    <p class="unter">G.A.B GmbH · Lager</p>
+    <div>
+      <label for="login-mail">E-Mail</label>
+      <input type="email" id="login-mail" autocomplete="username" required>
+    </div>
+    <div>
+      <label for="login-pw">Passwort</label>
+      <input type="password" id="login-pw" autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="tat" id="knopf-anmelden">Anmelden</button>
+    <p class="meldung" id="login-meldung"></p>
+  </form>
+</div>
+
+<div id="app" hidden>
 <header class="kopf">
   <h1>Palettenbeschriftung</h1>
   <div class="reiter" role="tablist">
@@ -230,7 +264,10 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     <button type="button" id="reiter-inventur" role="tab" aria-selected="false">Inventur</button>
     <button type="button" id="reiter-leute" role="tab" aria-selected="false">Mitarbeiter</button>
   </div>
-  <div class="status" id="status">Verbindung wird geprüft …</div>
+  <div class="status" id="status">
+    <span id="status-text">Verbindung wird geprüft …</span>
+    <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
+  </div>
 </header>
 
 <div class="buehne">
@@ -258,17 +295,20 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
         </div>
 
         <div class="schritt">
-          <div class="titel"><span class="nr">3</span><span>Paletten &amp; Mengen</span></div>
-          <div>
-            <label for="paletten">Wie viele Paletten</label>
-            <input id="paletten" class="gross" inputmode="numeric" value="3">
+          <div class="titel"><span class="nr">3</span><span>Menge &amp; Paletten</span></div>
+          <div class="zwei">
+            <div>
+              <label for="menge">Menge</label>
+              <input id="menge" class="gross" inputmode="numeric" placeholder="10">
+            </div>
+            <div>
+              <label for="paletten">Pal</label>
+              <input id="paletten" class="gross" inputmode="numeric" value="1">
+            </div>
           </div>
           <div class="mengen" id="mengen"></div>
-          <div class="summe">
-            <span class="zahl">Gesamt <b id="gesamt">—</b></span>
-            <button type="button" class="still" id="knopf-alle-gleich">Alle wie Pal 1</button>
-          </div>
-          <p class="hinweis">Jede Palette trägt ihre eigene Menge im Barcode. „Gesamt“ ist nur deine Kontrollsumme — genau diese Zahl kommt zusammen, wenn du später alle Etiketten scannst.</p>
+          <div class="summe"><span class="zahl">Gesamt <b id="gesamt">—</b></span></div>
+          <p class="hinweis">Menge 10 und Pal 5 heißt: alle fünf Paletten bekommen 10. Ist eine Palette anders voll, tippst du das unten direkt in ihr Feld.</p>
         </div>
 
         <div class="schritt">
@@ -303,7 +343,7 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
           <span class="meldung" id="artikel-meldung"></span>
         </div>
 
-        <details class="klapp" id="import-klapp">
+        <details class="klapp">
           <summary>Artikel aus deinem Export einfügen</summary>
           <div class="innen">
             <p class="hinweis">
@@ -401,16 +441,21 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     </details>
   </div>
 </div>
+</div>
 
 <script>
 (function(){
   "use strict";
 
-  var BLOCKGROESSE = 400;       // Artikel je Datenbank-Dokument
-  var db = null, meineId = null;
-  var artikel = [];             // {id, nr, bezeichnung}
-  var leute = [];               // {id, nr, name}
-  var mengen = ["40","50","50"];// eine Menge je Palette
+  var SUPABASE_URL = "https://iurgjzxmxekoohakevua.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_HCbsAuXxxuhe60BCuggQxA_qZkMQQgT";
+
+  var sb = null;              // Supabase-Client, null = Gerätemodus
+  var angemeldet = null;      // E-Mail des angemeldeten Kontos
+  var artikel = [];           // {id, nr, bezeichnung}
+  var leute = [];             // {id, nr, name}
+  var scans = [];             // {id, menge, nr, wer}
+  var mengen = [""];
   var gewaehlt = null;
   var $ = function(id){ return document.getElementById(id); };
 
@@ -427,6 +472,23 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
   function schreib(k,v){ try{ localStorage.setItem(k, v); }catch(e){} }
   function neueId(p){ return p + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
+  function statusSetzen(text, art){
+    $("status-text").textContent = text;
+    $("status").className = "status" + (art ? " " + art : "");
+  }
+
+  // ---------- Gerätespeicher (wenn keine Datenbank erreichbar ist) ----------
+  function lokalLaden(){
+    try{
+      var a = lies("pal-artikel"); if(a) artikel = JSON.parse(a) || [];
+      var l = lies("pal-leute-stamm"); if(l) leute = JSON.parse(l) || [];
+      var s = lies("pal-scans"); if(s) scans = JSON.parse(s) || [];
+    }catch(e){}
+  }
+  function lokalArtikel(){ if(!sb) schreib("pal-artikel", JSON.stringify(artikel)); }
+  function lokalLeute(){ if(!sb) schreib("pal-leute-stamm", JSON.stringify(leute)); }
+  function lokalScans(){ if(!sb) schreib("pal-scans", JSON.stringify(scans.slice(-2000))); }
+
   // ---------- Reiter ----------
   function reiterWechseln(name){
     $("ansicht-etikett").hidden  = name !== "etikett";
@@ -436,17 +498,17 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     ["etikett","artikel","inventur","leute"].forEach(function(r){
       $("reiter-" + r).setAttribute("aria-selected", name === r ? "true" : "false");
     });
-    // Die Etikettvorschau gehört nur zum Etikett-Reiter.
     $("vorschauspalte").hidden = name !== "etikett";
   }
   $("reiter-etikett").addEventListener("click", function(){ reiterWechseln("etikett"); });
   $("reiter-artikel").addEventListener("click", function(){ reiterWechseln("artikel"); stammZeichnen(); });
   $("reiter-leute").addEventListener("click", function(){ reiterWechseln("leute"); leuteZeichnen(); });
   $("reiter-inventur").addEventListener("click", function(){
-    reiterWechseln("inventur"); scansZeichnen(); $("scanfeld").focus();
+    reiterWechseln("inventur");
+    scansHolen().then(function(){ $("scanfeld").focus(); });
   });
 
-  // ---------- MHD: Punkte automatisch ----------
+  // ---------- MHD ----------
   function mhdFormat(roh){
     var z = String(roh).replace(/[^0-9]/g,"").slice(0,8);
     var out = z.slice(0,2);
@@ -530,17 +592,11 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
   });
   $("suche").addEventListener("input", trefferZeichnen);
 
-  // ---------- Etikettdaten ----------
-  function aktuellerMitarbeiter(){
-    var id = $("leute-wahl").value;
-    return leute.filter(function(p){ return p.id === id; })[0] || null;
-  }
-
-  // ---------- Mengen je Palette ----------
+  // ---------- Mengen ----------
   function mengenfelderBauen(){
     var n = Math.min(ganzzahl($("paletten").value, 1), 40);
-    var letzte = mengen.length ? mengen[mengen.length - 1] : "";
-    while(mengen.length < n) mengen.push(letzte);
+    var standard = $("menge").value.replace(/[^0-9]/g, "");
+    while(mengen.length < n) mengen.push(standard);
     mengen.length = n;
 
     var box = $("mengen");
@@ -571,22 +627,25 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     });
     return leer ? null : s;
   }
-
   function summeZeichnen(){
     var g = gesamtmenge();
     $("gesamt").textContent = g == null ? "—" : String(g);
   }
 
-  $("paletten").addEventListener("input", function(){
+  $("paletten").addEventListener("input", function(){ mengenfelderBauen(); etikettenZeichnen(); });
+  $("menge").addEventListener("input", function(){
+    var feld = $("menge");
+    var wert = feld.value.replace(/[^0-9]/g, "");
+    if(feld.value !== wert) feld.value = wert;
+    for(var i = 0; i < mengen.length; i++) mengen[i] = wert;
     mengenfelderBauen(); etikettenZeichnen();
   });
 
-  $("knopf-alle-gleich").addEventListener("click", function(){
-    if(mengen.length === 0) return;
-    var erste = mengen[0];
-    for(var i = 1; i < mengen.length; i++) mengen[i] = erste;
-    mengenfelderBauen(); etikettenZeichnen();
-  });
+  // ---------- Etikett ----------
+  function aktuellerMitarbeiter(){
+    var id = $("leute-wahl").value;
+    return leute.filter(function(p){ return String(p.id) === String(id); })[0] || null;
+  }
 
   function vorgangLesen(){
     var p = aktuellerMitarbeiter();
@@ -603,8 +662,6 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     };
   }
 
-  // Jedes Etikett trägt die Menge SEINER Palette — beim Scannen mehrerer
-  // Paletten addiert das Warenwirtschaftsprogramm selbst auf die Gesamtmenge.
   function barcodeWert(v, index){
     var m = String(v.mengen[index] || "").trim();
     if(!m && !v.artikelnr) return "";
@@ -665,14 +722,8 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     summeZeichnen();
   }
 
-  $("leute-wahl").addEventListener("change", function(){
-    schreib("pal-leute", $("leute-wahl").value);
-    etikettenZeichnen();
-  });
-
-  // ---------- ZPL (120 x 150 mm bei 203 dpi = 960 x 1200) ----------
+  // ---------- ZPL ----------
   function zt(s){ return String(s == null ? "" : s).replace(/[\^~]/g,"").replace(/\r?\n/g," "); }
-
   function zplSeite(v, index){
     var z = [];
     z.push("^XA","^CI28","^PW960","^LL1200","^LH0,0");
@@ -735,69 +786,36 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
       window.setTimeout(function(){ window.print(); }, 300);
     };
 
-    if(!db){ drucken(v.anzahl + " Etikett(en) — nicht gespeichert, keine Verbindung.", "gut"); return; }
+    if(!sb){ drucken(v.anzahl + " Etikett(en) — nicht gespeichert, keine Verbindung.", "gut"); return; }
 
-    db.doc("vorgaenge/" + neueId("v")).set({
-      artikelId: gewaehlt.id, artikelnr: v.artikelnr, bezeichnung: v.bezeichnung,
-      mhd: v.mhd, paletten: v.anzahl, mengen: v.mengen, gesamt: v.gesamt,
-      dienstnr: v.dienstnr, datum: v.datum, erstelltAm: Date.now(), bedienerId: meineId || null
-    }).then(function(){
-      drucken(v.anzahl + " Etikett(en) · gespeichert", "gut");
-    }).catch(function(){
-      drucken("Gedruckt, aber nicht gespeichert — Verbindung prüfen.", "fehler");
+    sb.from("vorgaenge").insert({
+      artikelnr: v.artikelnr, bezeichnung: v.bezeichnung, mhd: v.mhd,
+      paletten: v.anzahl, mengen: v.mengen, gesamt: v.gesamt,
+      dienstnr: v.dienstnr, datum: v.datum
+    }).then(function(res){
+      if(res.error) drucken("Gedruckt, aber nicht gespeichert.", "fehler");
+      else drucken(v.anzahl + " Etikett(en) · gespeichert", "gut");
     });
   });
 
-  // ---------- Artikel speichern (Blöcke) ----------
+  // ---------- Artikel ----------
   function artikelSortieren(){
     artikel.sort(function(x,y){ return x.bezeichnung.localeCompare(y.bezeichnung, "de"); });
   }
 
-  // Ohne Claude-Datenbank (eigene Website, Vorschau) liegt alles auf dem Gerät.
-  function lokalLaden(){
-    try{
-      var a = lies("pal-artikel"); if(a) artikel = JSON.parse(a) || [];
-      var l = lies("pal-leute-stamm"); if(l) leute = JSON.parse(l) || [];
-    }catch(e){}
-  }
-  function lokalArtikelSichern(){ try{ schreib("pal-artikel", JSON.stringify(artikel)); }catch(e){} }
-  function lokalLeuteSichern(){ try{ schreib("pal-leute-stamm", JSON.stringify(leute)); }catch(e){} }
-
-  var speichernLaeuft = false, nochmal = false;
-  function artikelSpeichern(){
-    lokalArtikelSichern();
-    if(!db) return Promise.resolve();
-    if(speichernLaeuft){ nochmal = true; return Promise.resolve(); }
-    speichernLaeuft = true;
-
-    var bloecke = [];
-    for(var i = 0; i < artikel.length; i += BLOCKGROESSE){
-      bloecke.push(artikel.slice(i, i + BLOCKGROESSE).map(function(a){
-        return { id:a.id, nr:a.nr, bezeichnung:a.bezeichnung };
-      }));
-    }
-    if(bloecke.length === 0) bloecke.push([]);
-
-    var kette = Promise.resolve();
-    bloecke.forEach(function(block, i){
-      kette = kette.then(function(){
-        return db.doc("artikelbloecke/b" + i).set({ artikel: block, stand: Date.now() });
+  function artikelHolen(){
+    if(!sb) return Promise.resolve();
+    return sb.from("artikel").select("id,nr,bezeichnung").limit(5000).then(function(res){
+      if(res.error) return;
+      artikel = (res.data || []).map(function(a){
+        return { id:a.id, nr:a.nr || "", bezeichnung:a.bezeichnung || "(ohne Bezeichnung)" };
       });
-    });
-    // Überzählige Blöcke entfernen
-    for(var j = bloecke.length; j < bloecke.length + 12; j++){
-      (function(k){
-        kette = kette.then(function(){ return db.doc("artikelbloecke/b" + k).delete().catch(function(){}); });
-      })(j);
-    }
-    return kette.then(function(){
-      speichernLaeuft = false;
-      if(nochmal){ nochmal = false; return artikelSpeichern(); }
-    }).catch(function(){
-      speichernLaeuft = false;
-      var m = $("artikel-meldung");
-      m.textContent = "Konnte nicht gespeichert werden — Verbindung prüfen.";
-      m.className = "meldung fehler";
+      artikelSortieren();
+      if(gewaehlt){
+        var neu = artikel.filter(function(a){ return a.id === gewaehlt.id; })[0];
+        if(neu){ gewaehlt = neu; gewaehltAnzeigen(); }
+      }
+      stammZeichnen(); trefferZeichnen(); etikettenZeichnen();
     });
   }
 
@@ -819,7 +837,8 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
         s.textContent = a.nr ? ("Artikelnr. " + a.nr) : "Artikelnummer fehlt";
         s.className = a.nr ? "" : "fehlt";
         if(gewaehlt && gewaehlt.id === a.id){ gewaehltAnzeigen(); etikettenZeichnen(); }
-        artikelSpeichern();
+        if(sb) sb.from("artikel").update({ nr: a.nr }).eq("id", a.id).then(function(){});
+        lokalArtikel();
       });
 
       var weg = document.createElement("button");
@@ -828,31 +847,45 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
         if(!window.confirm("„" + a.bezeichnung + "“ wirklich löschen?")) return;
         artikel = artikel.filter(function(x){ return x.id !== a.id; });
         if(gewaehlt && gewaehlt.id === a.id){ gewaehlt = null; $("gewaehlt-karte").hidden = true; }
-        artikelSpeichern(); stammZeichnen(); trefferZeichnen(); etikettenZeichnen();
+        if(sb) sb.from("artikel").delete().eq("id", a.id).then(function(){});
+        lokalArtikel();
+        stammZeichnen(); trefferZeichnen(); etikettenZeichnen();
       });
 
       li.appendChild(txt); li.appendChild(feld); li.appendChild(weg);
       ul.appendChild(li);
     });
-    $("stamm-leer").hidden = artikel.length > 0;
-    if(artikel.length > 400){
+
+    if(artikel.length === 0){
+      $("stamm-leer").hidden = false;
+      $("stamm-leer").textContent = "Noch keine Artikel angelegt.";
+    }else if(artikel.length > 400){
       $("stamm-leer").hidden = false;
       $("stamm-leer").textContent = "Es werden die ersten 400 von " + artikel.length + " Artikeln angezeigt. Suchen kannst du alle.";
-    }else if(artikel.length > 0){
-      $("stamm-leer").hidden = true;
     }else{
-      $("stamm-leer").textContent = "Noch keine Artikel angelegt.";
+      $("stamm-leer").hidden = true;
     }
   }
 
   $("knopf-artikel-neu").addEventListener("click", function(){
-    var bez = $("neu-bez").value.trim(), m = $("artikel-meldung");
+    var bez = $("neu-bez").value.trim(), nr = $("neu-nr").value.trim().toUpperCase(), m = $("artikel-meldung");
     if(!bez){ m.textContent = "Bitte eine Bezeichnung eintragen."; m.className = "meldung fehler"; return; }
-    artikel.push({ id:neueId("a"), nr:$("neu-nr").value.trim().toUpperCase(), bezeichnung:bez });
-    artikelSortieren();
-    $("neu-nr").value = ""; $("neu-bez").value = "";
-    m.textContent = "Angelegt."; m.className = "meldung gut";
-    artikelSpeichern(); stammZeichnen(); trefferZeichnen();
+    m.textContent = "Wird angelegt …"; m.className = "meldung";
+
+    if(!sb){
+      artikel.push({ id:neueId("a"), nr:nr, bezeichnung:bez });
+      artikelSortieren(); lokalArtikel();
+      $("neu-nr").value = ""; $("neu-bez").value = "";
+      m.textContent = "Angelegt."; m.className = "meldung gut";
+      stammZeichnen(); trefferZeichnen();
+      return;
+    }
+    sb.from("artikel").insert({ nr:nr, bezeichnung:bez }).select().then(function(res){
+      if(res.error){ m.textContent = "Konnte nicht angelegt werden."; m.className = "meldung fehler"; return; }
+      $("neu-nr").value = ""; $("neu-bez").value = "";
+      m.textContent = "Angelegt."; m.className = "meldung gut";
+      artikelHolen();
+    });
   });
 
   // ---------- Import ----------
@@ -867,28 +900,56 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     var zeilen = roh.split(/\r?\n/).map(function(z){ return z.trim(); }).filter(Boolean);
     if(zeilen.length === 0){ m.textContent = "Nichts eingefügt."; m.className = "meldung fehler"; return; }
 
-    var neu = 0, aktualisiert = 0, uebersprungen = 0;
+    var neue = [], aenderungen = [], uebersprungen = 0;
     zeilen.forEach(function(zeile, i){
       var teile = zeileTrennen(zeile).map(function(t){ return t.replace(/^"|"$/g,"").trim(); });
       var nr, bez;
       if(teile.length >= 2){ nr = teile[0].toUpperCase(); bez = teile.slice(1).join(" ").trim(); }
       else { nr = ""; bez = teile[0]; }
       if(!bez){ uebersprungen++; return; }
-      // Überschriftenzeile erkennen
-      if(i === 0 && /^(artikel(nummer|nr)?|nr\.?|nummer|code)$/i.test(nr) ){ uebersprungen++; return; }
+      if(i === 0 && /^(artikel(nummer|nr)?|nr\.?|nummer|code)$/i.test(nr)){ uebersprungen++; return; }
 
       var da = nr ? artikel.filter(function(a){ return a.nr && a.nr === nr; })[0] : null;
-      if(da){ da.bezeichnung = bez; aktualisiert++; }
-      else { artikel.push({ id:neueId("a"), nr:nr, bezeichnung:bez }); neu++; }
+      if(da){
+        if(da.bezeichnung !== bez){ da.bezeichnung = bez; aenderungen.push(da); }
+      }else{
+        neue.push({ nr:nr, bezeichnung:bez });
+      }
     });
 
-    artikelSortieren();
-    artikelSpeichern(); stammZeichnen(); trefferZeichnen();
-    if(gewaehlt) gewaehltAnzeigen();
-    $("import").value = "";
-    m.textContent = neu + " neu, " + aktualisiert + " aktualisiert"
-      + (uebersprungen ? ", " + uebersprungen + " übersprungen" : "") + ".";
-    m.className = "meldung gut";
+    m.textContent = "Wird gespeichert …"; m.className = "meldung";
+
+    function fertig(){
+      artikelSortieren(); lokalArtikel();
+      stammZeichnen(); trefferZeichnen();
+      if(gewaehlt) gewaehltAnzeigen();
+      $("import").value = "";
+      m.textContent = neue.length + " neu, " + aenderungen.length + " aktualisiert"
+        + (uebersprungen ? ", " + uebersprungen + " übersprungen" : "") + ".";
+      m.className = "meldung gut";
+    }
+
+    if(!sb){
+      neue.forEach(function(n){ artikel.push({ id:neueId("a"), nr:n.nr, bezeichnung:n.bezeichnung }); });
+      fertig();
+      return;
+    }
+
+    var kette = Promise.resolve();
+    for(var i = 0; i < neue.length; i += 500){
+      (function(teil){
+        kette = kette.then(function(){ return sb.from("artikel").insert(teil); });
+      })(neue.slice(i, i + 500));
+    }
+    aenderungen.forEach(function(a){
+      kette = kette.then(function(){
+        return sb.from("artikel").update({ bezeichnung: a.bezeichnung }).eq("id", a.id);
+      });
+    });
+    kette.then(function(){ return artikelHolen(); }).then(fertig).catch(function(){
+      m.textContent = "Konnte nicht gespeichert werden — Verbindung prüfen.";
+      m.className = "meldung fehler";
+    });
   });
 
   // ---------- Mitarbeiter ----------
@@ -910,14 +971,20 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
       o.textContent = p.name + "  ·  " + (p.nr || "ohne Nummer");
       sel.appendChild(o);
     });
-    var gibt = leute.filter(function(p){ return p.id === vorher; })[0];
+    var gibt = leute.filter(function(p){ return String(p.id) === String(vorher); })[0];
     sel.value = gibt ? vorher : leute[0].id;
   }
 
-  function leuteSpeichern(p){
-    lokalLeuteSichern();
-    if(!db) return;
-    db.doc("mitarbeiter/" + p.id).set({ nr:p.nr, name:p.name, stand:Date.now() }).catch(function(){});
+  function leuteHolen(){
+    if(!sb) return Promise.resolve();
+    return sb.from("mitarbeiter").select("id,nr,name").limit(500).then(function(res){
+      if(res.error) return;
+      leute = (res.data || []).map(function(p){
+        return { id:p.id, nr:p.nr || "", name:p.name || "(ohne Namen)" };
+      });
+      leute.sort(function(x,y){ return x.name.localeCompare(y.name, "de"); });
+      leuteZeichnen(); leuteWahlFuellen(); etikettenZeichnen();
+    });
   }
 
   function leuteZeichnen(){
@@ -938,7 +1005,8 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
         p.nr = feld.value.trim();
         s.textContent = p.nr ? ("Dienstnummer " + p.nr) : "Dienstnummer fehlt";
         s.className = p.nr ? "" : "fehlt";
-        leuteSpeichern(p); leuteWahlFuellen(); etikettenZeichnen();
+        if(sb) sb.from("mitarbeiter").update({ nr: p.nr }).eq("id", p.id).then(function(){});
+        lokalLeute(); leuteWahlFuellen(); etikettenZeichnen();
       });
 
       var weg = document.createElement("button");
@@ -946,9 +1014,8 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
       weg.addEventListener("click", function(){
         if(!window.confirm(p.name + " wirklich löschen?")) return;
         leute = leute.filter(function(x){ return x.id !== p.id; });
-        lokalLeuteSichern();
-        if(db) db.doc("mitarbeiter/" + p.id).delete().catch(function(){});
-        leuteZeichnen(); leuteWahlFuellen(); etikettenZeichnen();
+        if(sb) sb.from("mitarbeiter").delete().eq("id", p.id).then(function(){});
+        lokalLeute(); leuteZeichnen(); leuteWahlFuellen(); etikettenZeichnen();
       });
 
       li.appendChild(txt); li.appendChild(feld); li.appendChild(weg);
@@ -960,40 +1027,40 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
   $("knopf-leute-neu").addEventListener("click", function(){
     var name = $("neu-name").value.trim(), nr = $("neu-dienst").value.trim(), m = $("leute-meldung");
     if(!name){ m.textContent = "Bitte einen Namen eintragen."; m.className = "meldung fehler"; return; }
-    var p = { id:neueId("m"), nr:nr, name:name };
-    leute.push(p);
-    leute.sort(function(x,y){ return x.name.localeCompare(y.name, "de"); });
-    leuteSpeichern(p);
-    $("neu-name").value = ""; $("neu-dienst").value = "";
-    m.textContent = "Angelegt."; m.className = "meldung gut";
-    leuteZeichnen(); leuteWahlFuellen(); etikettenZeichnen();
+
+    if(!sb){
+      leute.push({ id:neueId("m"), nr:nr, name:name });
+      leute.sort(function(x,y){ return x.name.localeCompare(y.name, "de"); });
+      lokalLeute();
+      $("neu-name").value = ""; $("neu-dienst").value = "";
+      m.textContent = "Angelegt."; m.className = "meldung gut";
+      leuteZeichnen(); leuteWahlFuellen(); etikettenZeichnen();
+      return;
+    }
+    sb.from("mitarbeiter").insert({ nr:nr, name:name }).then(function(res){
+      if(res.error){ m.textContent = "Konnte nicht angelegt werden."; m.className = "meldung fehler"; return; }
+      $("neu-name").value = ""; $("neu-dienst").value = "";
+      m.textContent = "Angelegt."; m.className = "meldung gut";
+      leuteHolen();
+    });
   });
 
-  // ---------- Inventur: scannen und addieren ----------
-  var scans = [];   // {menge, nr, zeit}
+  $("leute-wahl").addEventListener("change", function(){
+    schreib("pal-leute", $("leute-wahl").value);
+    etikettenZeichnen();
+  });
 
-  function scansLaden(){
-    try{
-      var roh = lies("pal-scans");
-      if(roh) scans = JSON.parse(roh) || [];
-    }catch(e){ scans = []; }
-  }
-  function scansSichern(){
-    try{ schreib("pal-scans", JSON.stringify(scans.slice(-2000))); }catch(e){}
-  }
-
+  // ---------- Inventur ----------
   function bezeichnungZu(nr){
     if(!nr) return "";
     var a = artikel.filter(function(x){ return x.nr && x.nr.toUpperCase() === nr; })[0];
     return a ? a.bezeichnung : "";
   }
-
   function scanMeldung(t, art){
     var m = $("scan-meldung");
     m.textContent = t; m.className = "meldung" + (art ? " " + art : "");
   }
 
-  // Kurzer Ton, damit man ohne Hinsehen hört, ob die Seite den Scan übernommen hat.
   var tonWerk = null;
   function piep(treffer){
     if(!$("ton").checked) return;
@@ -1022,27 +1089,30 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     var feld = $("scanfeld");
     window.clearTimeout(blitzUhr);
     feld.classList.remove("getroffen","daneben");
-    // Neu zeichnen erzwingen, damit zwei Scans hintereinander beide blitzen.
     void feld.offsetWidth;
     feld.classList.add(treffer ? "getroffen" : "daneben");
-    blitzUhr = window.setTimeout(function(){
-      feld.classList.remove("getroffen","daneben");
-    }, 400);
+    blitzUhr = window.setTimeout(function(){ feld.classList.remove("getroffen","daneben"); }, 400);
   }
 
-  // Der Handscanner tippt ins fokussierte Feld — der Fokus muss dort bleiben.
   function scanfeldScharf(){
     if($("ansicht-inventur").hidden) return;
     var feld = $("scanfeld");
     if(document.activeElement !== feld) feld.focus();
   }
-
   function bereitZeigen(bereit){
     var el = $("bereit");
     el.className = "bereit" + (bereit ? "" : " schlaeft");
-    el.lastChild.nodeValue = bereit
-      ? "Bereit für die nächste Palette"
-      : "Ins Feld tippen, dann geht es weiter";
+    el.lastChild.nodeValue = bereit ? "Bereit für die nächste Palette" : "Ins Feld tippen, dann geht es weiter";
+  }
+
+  function scansHolen(){
+    if(!sb) { scansZeichnen(); return Promise.resolve(); }
+    return sb.from("scans").select("id,menge,nr,wer").order("erstellt_am", { ascending:true })
+      .limit(3000).then(function(res){
+        if(res.error) return;
+        scans = res.data || [];
+        scansZeichnen();
+      });
   }
 
   function scanUebernehmen(roh){
@@ -1056,33 +1126,45 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
       scanBlitz(false); piep(false);
       return false;
     }
-    scans.push({ menge: menge, nr: nr, zeit: Date.now() });
-    scansSichern();
+
+    var eintrag = { id:neueId("s"), menge:menge, nr:nr, wer:angemeldet || "" };
+    scans.push(eintrag);
     scansZeichnen();
     var bez = bezeichnungZu(nr);
     scanMeldung(menge + " × " + nr + (bez ? " · " + bez : " · nicht im Artikelstamm"), "gut");
     scanBlitz(true); piep(true);
+
+    if(sb){
+      sb.from("scans").insert({ menge:menge, nr:nr, wer:angemeldet || "" }).select().then(function(res){
+        if(res.error || !res.data || !res.data[0]){
+          scanMeldung("Nicht gespeichert — bitte nochmal scannen.", "fehler");
+          scans = scans.filter(function(s){ return s.id !== eintrag.id; });
+          scansZeichnen();
+          return;
+        }
+        eintrag.id = res.data[0].id;
+      });
+    }else{
+      lokalScans();
+    }
     return true;
   }
 
-  // Nach jedem Scan: Feld leeren, Fokus halten, bereit für die nächste Palette.
   function scanFertig(){
     var feld = $("scanfeld");
-    feld.value = "";
-    feld.focus();
+    feld.value = ""; feld.focus();
     bereitZeigen(true);
   }
 
   function summenRechnen(){
     var nachNr = {}, reihe = [];
     scans.forEach(function(s){
-      if(!nachNr[s.nr]){ nachNr[s.nr] = { nr: s.nr, menge: 0, paletten: 0 }; reihe.push(nachNr[s.nr]); }
+      if(!nachNr[s.nr]){ nachNr[s.nr] = { nr:s.nr, menge:0, paletten:0 }; reihe.push(nachNr[s.nr]); }
       nachNr[s.nr].menge += s.menge;
       nachNr[s.nr].paletten += 1;
     });
     return reihe;
   }
-
   function summenText(){
     return summenRechnen().map(function(g){ return g.menge + "*" + g.nr; }).join("\n");
   }
@@ -1097,8 +1179,7 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
       var li = document.createElement("li");
       var code = document.createElement("span");
       code.className = "code"; code.textContent = g.menge + "*" + g.nr;
-      var was = document.createElement("span");
-      was.className = "was";
+      var was = document.createElement("span"); was.className = "was";
       var bez = bezeichnungZu(g.nr);
       was.textContent = (bez || "nicht im Artikelstamm") + " · " + g.paletten + " Palette" + (g.paletten === 1 ? "" : "n");
       li.appendChild(code); li.appendChild(was);
@@ -1107,24 +1188,25 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
 
     var liste = $("scanliste");
     liste.textContent = "";
-    scans.slice().reverse().slice(0, 300).forEach(function(s, i){
-      var echterIndex = scans.length - 1 - i;
+    scans.slice().reverse().slice(0, 300).forEach(function(s){
       var li = document.createElement("li");
       li.className = "scanzeile";
       var txt = document.createElement("div"); txt.className = "txt";
       var b = document.createElement("b"); b.className = "code"; b.textContent = s.menge + "*" + s.nr;
       var kl = document.createElement("small");
       var bez = bezeichnungZu(s.nr);
-      kl.textContent = bez || "nicht im Artikelstamm";
+      kl.textContent = (bez || "nicht im Artikelstamm") + (s.wer ? " · " + s.wer : "");
       if(!bez) kl.className = "fehlt";
       txt.appendChild(b); txt.appendChild(kl);
 
       var weg = document.createElement("button");
       weg.className = "still"; weg.textContent = "Entfernen";
       weg.addEventListener("click", function(){
-        scans.splice(echterIndex, 1);
-        scansSichern(); scansZeichnen();
+        scans = scans.filter(function(x){ return x.id !== s.id; });
+        scansZeichnen();
         scanMeldung("Entfernt: " + s.menge + "*" + s.nr, "gut");
+        if(sb) sb.from("scans").delete().eq("id", s.id).then(function(){});
+        else lokalScans();
         scanfeldScharf();
       });
       li.appendChild(txt); li.appendChild(weg);
@@ -1142,28 +1224,18 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
   $("scanfeld").addEventListener("input", function(){
     var feld = $("scanfeld");
     window.clearTimeout(scanUhr);
-
-    // Zwei Sterne heißen: zwei Codes sind ineinandergelaufen. Wo der erste
-    // endet, ist nicht eindeutig — also lieber nachfragen als falsch zählen.
     var w = feld.value.trim();
     if(w.indexOf("*", w.indexOf("*") + 1) > 0){
       scanMeldung("Zwei Codes sind zusammengelaufen. Feld leeren und die beiden Paletten einzeln scannen.", "fehler");
-      scanBlitz(false);
-      bereitZeigen(false);
+      scanBlitz(false); bereitZeigen(false);
       return;
     }
-
-    // Ein Handscanner tippt den ganzen Code in einem Zug. Kommt kein Enter,
-    // wird nach kurzer Pause von selbst übernommen.
     bereitZeigen(false);
     scanUhr = window.setTimeout(function(){
       var jetzt = feld.value.trim();
       if(jetzt.length >= 3 && jetzt.indexOf("*") > 0){
-        if(scanUebernehmen(jetzt)) scanFertig();
-        else bereitZeigen(true);
-      }else{
-        bereitZeigen(true);
-      }
+        if(scanUebernehmen(jetzt)) scanFertig(); else bereitZeigen(true);
+      }else{ bereitZeigen(true); }
     }, 300);
   });
 
@@ -1174,7 +1246,6 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     if(scanUebernehmen($("scanfeld").value)) scanFertig();
   });
 
-  // Fokus bleibt im Scanfeld, solange der Inventur-Reiter offen ist.
   $("scanfeld").addEventListener("blur", function(){
     window.setTimeout(function(){
       var a = document.activeElement;
@@ -1194,9 +1265,21 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
   });
 
   $("knopf-scan-leeren").addEventListener("click", function(){
-    if(!window.confirm("Alle " + scans.length + " gescannten Paletten löschen?")) return;
-    scans = []; scansSichern(); scansZeichnen();
+    var frage = sb
+      ? "Alle " + scans.length + " gescannten Paletten löschen?\n\nAchtung: Das gilt für alle Geräte — auch für die Kollegen, die gerade mitzählen."
+      : "Alle " + scans.length + " gescannten Paletten löschen?";
+    if(!window.confirm(frage)) return;
+    var alte = scans.slice();
+    scans = [];
+    scansZeichnen();
     scanMeldung("Liste geleert.", "gut");
+    if(sb){
+      var kette = Promise.resolve();
+      alte.forEach(function(s){
+        kette = kette.then(function(){ return sb.from("scans").delete().eq("id", s.id); });
+      });
+      kette.then(function(){ return scansHolen(); });
+    }else{ lokalScans(); }
     scanFertig();
   });
 
@@ -1212,73 +1295,108 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     }
   });
 
-  // ---------- Start ----------
-  lokalLaden();
-  scansLaden();
-  scansZeichnen();
-  mengenfelderBauen();
-  leuteWahlFuellen();
-  trefferZeichnen();
-  stammZeichnen();
-  leuteZeichnen();
-  etikettenZeichnen();
+  // Solange die Inventur offen ist, alle 20 Sekunden nachsehen, was die anderen gezählt haben.
+  window.setInterval(function(){
+    if(sb && !$("ansicht-inventur").hidden && document.visibilityState === "visible") scansHolen();
+  }, 20000);
 
-  if(window.claude && typeof window.claude.use === "function"){
-    window.claude.use("user").then(function(u){
-      if(!u) return;
-      return u.me().then(function(ich){ meineId = ich.id; });
-    }).catch(function(){});
+  // ---------- Anmeldung ----------
+  function appZeigen(){
+    $("anmelden").hidden = true;
+    $("app").hidden = false;
+    $("knopf-abmelden").hidden = false;
+    statusSetzen("Angemeldet als " + angemeldet, "aktiv");
+    mengenfelderBauen();
+    Promise.all([artikelHolen(), leuteHolen(), scansHolen()]).then(function(){
+      etikettenZeichnen();
+    });
+  }
 
-    window.claude.use("db").then(function(d){
-      if(!d){
-        $("status").className = "status lokal";
-        $("status").textContent = "Daten liegen auf diesem Gerät";
+  function anmeldungZeigen(text, art){
+    $("app").hidden = true;
+    $("anmelden").hidden = false;
+    var m = $("login-meldung");
+    m.textContent = text || "";
+    m.className = "meldung" + (art ? " " + art : "");
+  }
+
+  function geraetemodus(grund){
+    sb = null;
+    angemeldet = null;
+    $("anmelden").hidden = true;
+    $("app").hidden = false;
+    $("knopf-abmelden").hidden = true;
+    statusSetzen(grund, "lokal");
+    lokalLaden();
+    mengenfelderBauen();
+    stammZeichnen(); leuteZeichnen(); leuteWahlFuellen();
+    trefferZeichnen(); scansZeichnen(); etikettenZeichnen();
+  }
+
+  $("anmeldeformular").addEventListener("submit", function(e){
+    e.preventDefault();
+    if(!sb) return;
+    var mail = $("login-mail").value.trim();
+    var pw = $("login-pw").value;
+    $("knopf-anmelden").disabled = true;
+    var m = $("login-meldung");
+    m.textContent = "Wird geprüft …"; m.className = "meldung";
+
+    sb.auth.signInWithPassword({ email: mail, password: pw }).then(function(res){
+      $("knopf-anmelden").disabled = false;
+      if(res.error){
+        var text = String(res.error.message || "");
+        m.textContent = /fetch|network|load failed|timeout/i.test(text)
+          ? "Keine Verbindung — bitte WLAN prüfen und nochmal versuchen."
+          : "E-Mail oder Passwort stimmt nicht.";
+        m.className = "meldung fehler";
         return;
       }
-      db = d;
-      $("status").className = "status aktiv";
-      $("status").textContent = "Mit der Lagerdatenbank verbunden";
-
-      db.collection("artikelbloecke").limit(30).onSnapshot(function(snap){
-        var alle = [];
-        var sortiert = snap.docs.slice().sort(function(a,b){
-          return (parseInt(a.id.slice(1),10)||0) - (parseInt(b.id.slice(1),10)||0);
-        });
-        sortiert.forEach(function(doc){
-          var x = doc.data() || {};
-          if(Array.isArray(x.artikel)){
-            x.artikel.forEach(function(a){
-              if(a && a.bezeichnung) alle.push({ id:a.id || neueId("a"), nr:a.nr || "", bezeichnung:a.bezeichnung });
-            });
-          }
-        });
-        artikel = alle;
-        artikelSortieren();
-        if(gewaehlt){
-          var neu = artikel.filter(function(a){ return a.id === gewaehlt.id; })[0];
-          if(neu){ gewaehlt = neu; gewaehltAnzeigen(); }
-        }
-        stammZeichnen(); trefferZeichnen(); etikettenZeichnen(); scansZeichnen();
-      }, function(){
-        $("status").className = "status lokal";
-        $("status").textContent = "Artikelliste wird gerade nicht aktualisiert";
-      });
-
-      db.collection("mitarbeiter").limit(200).onSnapshot(function(snap){
-        leute = snap.docs.map(function(doc){
-          var x = doc.data() || {};
-          return { id:doc.id, nr:x.nr || "", name:x.name || "(ohne Namen)" };
-        });
-        leute.sort(function(x,y){ return x.name.localeCompare(y.name, "de"); });
-        leuteZeichnen(); leuteWahlFuellen(); etikettenZeichnen();
-      }, function(){});
+      $("login-pw").value = "";
+      angemeldet = res.data.user ? res.data.user.email : mail;
+      appZeigen();
     }).catch(function(){
-      $("status").className = "status lokal";
-      $("status").textContent = "Daten liegen auf diesem Gerät";
+      $("knopf-anmelden").disabled = false;
+      m.textContent = "Keine Verbindung — bitte WLAN prüfen und nochmal versuchen.";
+      m.className = "meldung fehler";
     });
+  });
+
+  $("knopf-abmelden").addEventListener("click", function(){
+    if(!sb) return;
+    sb.auth.signOut().then(function(){
+      angemeldet = null;
+      artikel = []; leute = []; scans = [];
+      anmeldungZeigen("Abgemeldet.", "gut");
+    });
+  });
+
+  // ---------- Start ----------
+  mengenfelderBauen();
+  trefferZeichnen();
+
+  if(window.supabase && typeof window.supabase.createClient === "function"){
+    try{
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }catch(e){ sb = null; }
+  }
+
+  if(!sb){
+    geraetemodus("Keine Verbindung zur Datenbank — die Daten bleiben auf diesem Gerät");
   }else{
-    $("status").className = "status lokal";
-    $("status").textContent = "Daten liegen auf diesem Gerät";
+    anmeldungZeigen("");
+    sb.auth.getSession().then(function(res){
+      var s = res.data ? res.data.session : null;
+      if(s && s.user){
+        angemeldet = s.user.email;
+        appZeigen();
+      }else{
+        anmeldungZeigen("");
+        $("login-mail").focus();
+      }
+    }).catch(function(){
+      geraetemodus("Datenbank nicht erreichbar — die Daten bleiben auf diesem Gerät");
+    });
   }
 })();
 </script>
