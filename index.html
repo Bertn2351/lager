@@ -59,14 +59,82 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 /* ---------- Anmeldung ---------- */
 .anmelden{
   position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:24px;
-  background:
-    radial-gradient(760px 420px at 50% 6%, rgba(246,135,18,.13), transparent 62%),
-    var(--grund);
+  background:var(--grund); overflow:auto;
 }
+.anmelden::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(680px 460px at 50% 4%, rgba(246,135,18,.16), transparent 64%);
+  opacity:0; transition:opacity .7s ease;
+}
+.anmelden.licht-an::before{opacity:1}
+/* Hallenlampe: hängt über dem Anmeldeschein wie über einem Packtisch.
+   Das Licht geht von selbst an — die Schnur ist Zugabe, kein Hindernis. */
+.szene{display:flex; flex-direction:column; align-items:center; width:100%; max-width:392px}
+.lampe{position:relative; width:100%; height:132px; display:flex; justify-content:center}
+.kabel{position:absolute; top:0; width:2px; height:66px;
+  background:linear-gradient(180deg, transparent, var(--kante-hell) 55%)}
+.schirm{
+  position:absolute; top:62px; width:116px; height:44px;
+  background:linear-gradient(175deg, #323b43 0%, #232a30 46%, #1a2025 100%);
+  border-radius:54% 54% 14% 14% / 86% 86% 24% 24%;
+  box-shadow:inset 0 -5px 9px rgba(0,0,0,.6), 0 3px 7px rgba(0,0,0,.5);
+}
+.schirm::after{
+  content:""; position:absolute; left:8%; right:8%; bottom:-2px; height:7px;
+  border-radius:50%; background:#11161a;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.9);
+  transition:background-color .5s ease, box-shadow .5s ease;
+}
+.birne{
+  position:absolute; top:100px; width:17px; height:17px; border-radius:50%;
+  background:#2b3238; transition:background-color .55s ease, box-shadow .55s ease;
+}
+.kegel{
+  position:absolute; top:104px; width:420px; height:340px; pointer-events:none;
+  clip-path:polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+  background:linear-gradient(180deg,
+    rgba(255,186,96,.34) 0%, rgba(246,135,18,.16) 38%, transparent 78%);
+  filter:blur(11px);
+  /* Licht addiert sich auf die Karte, statt sie zu überdecken */
+  mix-blend-mode:screen;
+  opacity:0; transition:opacity .6s ease;
+}
+
+.schnur{
+  position:absolute; top:96px; left:calc(50% + 46px);
+  width:26px; padding:0; border:0; background:transparent; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; touch-action:none;
+}
+.schnur .faden{width:1px; height:30px; background:var(--gedaempft); opacity:.55;
+  transition:height .22s ease}
+.schnur .knauf{width:11px; height:11px; border-radius:50%;
+  background:linear-gradient(160deg,#c3ccd3,#7c8792);
+  box-shadow:0 1px 3px rgba(0,0,0,.7)}
+.schnur:hover .knauf{background:linear-gradient(160deg,#e6edf2,#9aa5ae)}
+.schnur:hover .faden{opacity:.9}
+.schnur:focus-visible{outline:2px solid var(--akzent); outline-offset:4px; border-radius:8px}
+
+/* Licht an */
+.anmelden.licht-an .birne{
+  background:#ffd9a3;
+  box-shadow:0 0 14px 5px rgba(255,180,90,.85), 0 0 46px 18px rgba(246,135,18,.42);
+}
+.anmelden.licht-an .schirm::after{
+  background:#ffcf96; box-shadow:0 0 16px 5px rgba(255,180,90,.55);
+}
+.anmelden.licht-an .kegel{opacity:1}
+
 .anmeldekarte{
   width:100%; max-width:392px; background:var(--flaeche);
   border:1px solid var(--kante); border-radius:16px; padding:30px 28px 26px;
   display:grid; gap:15px; box-shadow:var(--tief);
+  filter:brightness(.42) saturate(.6);
+  transition:filter .65s ease, box-shadow .65s ease;
+}
+.anmelden.licht-an .anmeldekarte{
+  filter:none;
+  box-shadow:var(--tief), 0 -1px 0 rgba(255,190,110,.22) inset,
+             0 12px 60px -30px rgba(246,135,18,.55);
 }
 .anmeldekarte .marke{display:grid; gap:14px; justify-items:center; margin-bottom:6px}
 .anmeldekarte .marke .logo{width:190px; height:40px; background-position:center}
@@ -333,6 +401,16 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
 <!-- ===== Anmeldung ===== -->
 <div class="anmelden" id="anmelden" hidden>
+ <div class="szene">
+  <div class="lampe">
+    <span class="kabel"></span>
+    <span class="schirm"></span>
+    <span class="birne"></span>
+    <span class="kegel"></span>
+    <button type="button" class="schnur" id="schnur" aria-pressed="false" aria-label="Hallenlicht an- und ausschalten">
+      <span class="faden"></span><span class="knauf"></span>
+    </button>
+  </div>
   <form class="anmeldekarte" id="anmeldeformular">
     <div class="marke"><span class="logo" role="img" aria-label="Mein Döner Cash &amp; Carry"></span></div>
     <h1>Palettenbeschriftung</h1>
@@ -348,6 +426,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     <button type="submit" class="tat" id="knopf-anmelden">Anmelden</button>
     <p class="meldung" id="login-meldung"></p>
   </form>
+ </div>
 </div>
 
 <div id="app" hidden>
@@ -1431,12 +1510,67 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     });
   }
 
+  // ---------- Hallenlampe ----------
+  function lichtSetzen(an){
+    $("anmelden").classList.toggle("licht-an", !!an);
+    $("schnur").setAttribute("aria-pressed", an ? "true" : "false");
+  }
+
+  var lampenUhr = null;
+  function lichtAnknipsen(){
+    var ruhig = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.clearTimeout(lampenUhr);
+    if(ruhig){ lichtSetzen(true); return; }
+    lichtSetzen(false);
+    lampenUhr = window.setTimeout(function(){ lichtSetzen(true); }, 520);
+  }
+
+  (function schnurEinrichten(){
+    var schnur = $("schnur");
+    var faden = schnur.querySelector(".faden");
+    var start = null;
+
+    schnur.addEventListener("pointerdown", function(e){
+      start = e.clientY;
+      try{ schnur.setPointerCapture(e.pointerId); }catch(err){}
+      faden.style.transition = "none";
+    });
+    schnur.addEventListener("pointermove", function(e){
+      if(start === null) return;
+      var zug = Math.max(0, Math.min(30, e.clientY - start));
+      faden.style.height = (26 + zug) + "px";
+    });
+    function loslassen(){
+      if(start === null) return;
+      start = null;
+      faden.style.transition = "";
+      faden.style.height = "";
+    }
+    schnur.addEventListener("pointerup", loslassen);
+    schnur.addEventListener("pointercancel", loslassen);
+
+    // Klick und Tastatur schalten gleichermaßen.
+    schnur.addEventListener("click", function(){
+      window.clearTimeout(lampenUhr);
+      lichtSetzen(!$("anmelden").classList.contains("licht-an"));
+    });
+  })();
+
+  // Wer tippen will, bekommt Licht — auch wenn er es vorher ausgemacht hat.
+  ["login-mail","login-pw"].forEach(function(id){
+    $(id).addEventListener("focus", function(){
+      window.clearTimeout(lampenUhr);
+      lichtSetzen(true);
+    });
+  });
+
   function anmeldungZeigen(text, art){
     $("app").hidden = true;
     $("anmelden").hidden = false;
     var m = $("login-meldung");
     m.textContent = text || "";
     m.className = "meldung" + (art ? " " + art : "");
+    lichtAnknipsen();
   }
 
   function geraetemodus(grund){
