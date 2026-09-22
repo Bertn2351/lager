@@ -500,8 +500,33 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
         <div>
           <button type="button" class="tat" id="knopf-drucken">Drucken</button>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px">
+            <button type="button" class="still" id="knopf-dialog">Stattdessen Druckdialog</button>
+            <button type="button" class="still" id="knopf-drucker">Drucker …</button>
+          </div>
           <p class="meldung" id="meldung"></p>
         </div>
+
+        <details class="klapp" id="druckerbereich">
+          <summary>Drucker einstellen</summary>
+          <div class="innen">
+            <div class="zwei">
+              <div>
+                <label for="drucker-ip">IP-Adresse des Zebra</label>
+                <input id="drucker-ip" inputmode="decimal" placeholder="192.168.0.58" autocomplete="off">
+              </div>
+              <div>
+                <label for="drucker-port">Port</label>
+                <input id="drucker-port" inputmode="numeric" placeholder="9100" autocomplete="off">
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+              <button type="button" class="still" id="knopf-testdruck">Testetikett drucken</button>
+              <span class="meldung" id="drucker-meldung"></span>
+            </div>
+            <p class="hinweis">Die Seite schickt das Etikett direkt an den Drucker — kein Druckdialog, und der Zebra zeichnet den Barcode selbst, was ihn schärfer macht. Kommt nichts heraus, nimm „Stattdessen Druckdialog“.</p>
+          </div>
+        </details>
       </div>
     </section>
 
@@ -952,34 +977,119 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   // ---------- Drucken ----------
   function meldung(t, art){ var el = $("meldung"); el.textContent = t; el.className = "meldung" + (art?" "+art:""); }
 
-  $("knopf-drucken").addEventListener("click", function(){
-    if(!gewaehlt){ meldung("Bitte zuerst einen Artikel auswählen.", "fehler"); return; }
-    if(!$("mhd").value.trim()){ meldung("Bitte das MHD eintragen.", "fehler"); $("mhd").focus(); return; }
+  var DRUCKER_STANDARD = { ip: "192.168.0.58", port: "9100" };
+
+  function druckerLesen(){
+    return {
+      ip: ($("drucker-ip").value.trim() || DRUCKER_STANDARD.ip),
+      port: ($("drucker-port").value.trim() || DRUCKER_STANDARD.port)
+    };
+  }
+  function druckerMerken(){
+    var d = druckerLesen();
+    schreib("pal-drucker", d.ip + ":" + d.port);
+  }
+  (function druckerLaden(){
+    var g = lies("pal-drucker");
+    var teile = g ? g.split(":") : [];
+    $("drucker-ip").value = teile[0] || DRUCKER_STANDARD.ip;
+    $("drucker-port").value = teile[1] || DRUCKER_STANDARD.port;
+  })();
+  $("drucker-ip").addEventListener("change", druckerMerken);
+  $("drucker-port").addEventListener("change", druckerMerken);
+
+  /* Das Etikett geht als Formular direkt an den Drucker. Ein fetch() würde der
+     Browser blocken (verschlüsselte Seite darf kein unverschlüsseltes Gerät
+     ansprechen) — ein Formular in ein eigenes Fenster darf es. Der Zebra
+     überliest alles vor dem ersten ^XA, deshalb stört der Feldname nicht. */
+  function anDenDrucker(zpl){
+    var d = druckerLesen();
+    var fenster;
+    try{ fenster = window.open("", "zebradruck", "width=340,height=200"); }catch(e){ fenster = null; }
+
+    var form = document.createElement("form");
+    form.method = "POST";
+    form.action = "http://" + d.ip + ":" + d.port + "/";
+    form.target = "zebradruck";
+    form.enctype = "text/plain";
+    form.style.display = "none";
+
+    var feld = document.createElement("textarea");
+    feld.name = "x";
+    feld.value = "\n" + zpl + "\n";
+    form.appendChild(feld);
+
+    document.body.appendChild(form);
+    form.submit();
+
+    window.setTimeout(function(){
+      try{ if(fenster) fenster.close(); }catch(e){}
+      if(form.parentNode) form.parentNode.removeChild(form);
+    }, 1800);
+  }
+
+  $("knopf-drucker").addEventListener("click", function(){
+    var b = $("druckerbereich");
+    b.open = !b.open;
+    if(b.open) b.scrollIntoView({ block:"nearest" });
+  });
+
+  $("knopf-testdruck").addEventListener("click", function(){
+    var m = $("drucker-meldung");
+    var d = druckerLesen();
+    druckerMerken();
+    anDenDrucker([
+      "^XA^CI28^PW800^LL0500^LH0,0",
+      "^FO4,4^GB792,492,4^FS",
+      "^FO24,70^A0N,64,64^FB752,1,0,C,0^FDTESTETIKETT^FS",
+      "^FO24,170^A0N,38,38^FB752,2,6,C,0^FDPalettenbeschriftung^FS",
+      "^FO140,260^BY3,2.5^BCN,100,Y,N,N^FD48*EDC^FS",
+      "^PQ1^XZ"
+    ].join("\n"));
+    m.textContent = "An " + d.ip + " geschickt.";
+    m.className = "meldung gut";
+  });
+
+  function vorgangSichern(v, fertig){
+    if(!sb){ fertig(); return; }
+    sb.from("vorgaenge").insert({
+      artikelnr: v.artikelnr, bezeichnung: v.bezeichnung, mhd: v.mhd,
+      paletten: v.anzahl, mengen: v.mengen, gesamt: v.gesamt,
+      dienstnr: v.dienstnr, datum: v.datum
+    }).then(function(){ fertig(); }).catch(function(){ fertig(); });
+  }
+
+  function druckPruefen(){
+    if(!gewaehlt){ meldung("Bitte zuerst einen Artikel auswählen.", "fehler"); return null; }
+    if(!$("mhd").value.trim()){ meldung("Bitte das MHD eintragen.", "fehler"); $("mhd").focus(); return null; }
     var fehlt = -1;
     mengen.forEach(function(m, i){ if(fehlt === -1 && !String(m).trim()) fehlt = i; });
     if(fehlt !== -1){
       meldung("Bitte die Menge für Pal " + (fehlt + 1) + " eintragen.", "fehler");
       var feld = $("mengen").querySelectorAll("input")[fehlt];
       if(feld) feld.focus();
-      return;
+      return null;
     }
-    if(!aktuellerMitarbeiter()){ meldung("Bitte einen Mitarbeiter wählen.", "fehler"); return; }
+    if(!aktuellerMitarbeiter()){ meldung("Bitte einen Mitarbeiter wählen.", "fehler"); return null; }
+    return vorgangLesen();
+  }
 
-    var v = vorgangLesen();
-    var drucken = function(text, art){
-      meldung(text, art);
+  $("knopf-drucken").addEventListener("click", function(){
+    var v = druckPruefen();
+    if(!v) return;
+    var d = druckerLesen();
+    vorgangSichern(v, function(){
+      anDenDrucker(zplBauen(v));
+      meldung(v.anzahl + " Etikett(en) an " + d.ip + " geschickt. Kommt nichts, nimm den Druckdialog.", "gut");
+    });
+  });
+
+  $("knopf-dialog").addEventListener("click", function(){
+    var v = druckPruefen();
+    if(!v) return;
+    vorgangSichern(v, function(){
+      meldung(v.anzahl + " Etikett(en) \u2014 Druckdialog wird ge\u00f6ffnet.", "gut");
       window.setTimeout(function(){ window.print(); }, 300);
-    };
-
-    if(!sb){ drucken(v.anzahl + " Etikett(en) — nicht gespeichert, keine Verbindung.", "gut"); return; }
-
-    sb.from("vorgaenge").insert({
-      artikelnr: v.artikelnr, bezeichnung: v.bezeichnung, mhd: v.mhd,
-      paletten: v.anzahl, mengen: v.mengen, gesamt: v.gesamt,
-      dienstnr: v.dienstnr, datum: v.datum
-    }).then(function(res){
-      if(res.error) drucken("Gedruckt, aber nicht gespeichert.", "fehler");
-      else drucken(v.anzahl + " Etikett(en) · gespeichert", "gut");
     });
   });
 
