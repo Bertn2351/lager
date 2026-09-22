@@ -352,6 +352,9 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
               Artikelnummern, die es schon gibt, werden aktualisiert statt doppelt angelegt.
             </p>
             <textarea id="import" spellcheck="false" placeholder="EDC&#9;Pet Coca Cola 0,50l.  24stk./Kolli&#10;EDZ&#9;Pet Coca Cola Zero 0,50l.  24 Stk./Kolli"></textarea>
+            <label class="tonschalter" style="font-size:14px">
+              <input type="checkbox" id="import-ersetzen"> Alle vorhandenen Artikel vorher löschen
+            </label>
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
               <button type="button" class="still" id="knopf-import">Einfügen</button>
               <span class="meldung" id="import-meldung"></span>
@@ -900,6 +903,13 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     var zeilen = roh.split(/\r?\n/).map(function(z){ return z.trim(); }).filter(Boolean);
     if(zeilen.length === 0){ m.textContent = "Nichts eingefügt."; m.className = "meldung fehler"; return; }
 
+    var ersetzen = $("import-ersetzen").checked;
+    if(ersetzen && artikel.length > 0){
+      if(!window.confirm("Die " + artikel.length + " vorhandenen Artikel werden gelöscht und durch "
+        + zeilen.length + " Zeilen ersetzt.\n\nDas gilt für alle Geräte. Fortfahren?")) return;
+      artikel = [];
+    }
+
     var neue = [], aenderungen = [], uebersprungen = 0;
     zeilen.forEach(function(zeile, i){
       var teile = zeileTrennen(zeile).map(function(t){ return t.replace(/^"|"$/g,"").trim(); });
@@ -924,7 +934,8 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
       stammZeichnen(); trefferZeichnen();
       if(gewaehlt) gewaehltAnzeigen();
       $("import").value = "";
-      m.textContent = neue.length + " neu, " + aenderungen.length + " aktualisiert"
+      $("import-ersetzen").checked = false;
+      m.textContent = (ersetzen ? "Ersetzt: " : "") + neue.length + " neu, " + aenderungen.length + " aktualisiert"
         + (uebersprungen ? ", " + uebersprungen + " übersprungen" : "") + ".";
       m.className = "meldung gut";
     }
@@ -936,6 +947,11 @@ textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-s
     }
 
     var kette = Promise.resolve();
+    if(ersetzen){
+      kette = kette.then(function(){
+        return sb.from("artikel").delete().not("id", "is", null);
+      });
+    }
     for(var i = 0; i < neue.length; i += 500){
       (function(teil){
         kette = kette.then(function(){ return sb.from("artikel").insert(teil); });
