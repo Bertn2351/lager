@@ -1004,13 +1004,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
      überliest alles vor dem ersten ^XA, deshalb stört der Feldname nicht. */
   function anDenDrucker(zpl){
     var d = druckerLesen();
-    var fenster;
+    var fenster = null;
     try{ fenster = window.open("", "zebradruck", "width=340,height=200"); }catch(e){ fenster = null; }
 
     var form = document.createElement("form");
     form.method = "POST";
     form.action = "http://" + d.ip + ":" + d.port + "/";
-    form.target = "zebradruck";
+    form.target = fenster ? "zebradruck" : "_blank";
     form.enctype = "text/plain";
     form.style.display = "none";
 
@@ -1026,6 +1026,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       try{ if(fenster) fenster.close(); }catch(e){}
       if(form.parentNode) form.parentNode.removeChild(form);
     }, 1800);
+    return !!fenster;
   }
 
   $("knopf-drucker").addEventListener("click", function(){
@@ -1078,19 +1079,19 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var v = druckPruefen();
     if(!v) return;
     var d = druckerLesen();
-    vorgangSichern(v, function(){
-      anDenDrucker(zplBauen(v));
-      meldung(v.anzahl + " Etikett(en) an " + d.ip + " geschickt. Kommt nichts, nimm den Druckdialog.", "gut");
-    });
+    // Zuerst drucken, solange der Browser den Fingertipp noch als solchen wertet —
+    // wartet man auf die Datenbank, blockiert er das Druckfenster als Popup.
+    anDenDrucker(zplBauen(v));
+    meldung(v.anzahl + " Etikett(en) an " + d.ip + " geschickt.", "gut");
+    vorgangSichern(v, function(){});
   });
 
   $("knopf-dialog").addEventListener("click", function(){
     var v = druckPruefen();
     if(!v) return;
-    vorgangSichern(v, function(){
-      meldung(v.anzahl + " Etikett(en) \u2014 Druckdialog wird ge\u00f6ffnet.", "gut");
-      window.setTimeout(function(){ window.print(); }, 300);
-    });
+    meldung(v.anzahl + " Etikett(en) \u2014 Druckdialog wird ge\u00f6ffnet.", "gut");
+    vorgangSichern(v, function(){});
+    window.print();
   });
 
   // ---------- Artikel ----------
