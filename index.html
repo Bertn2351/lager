@@ -340,7 +340,7 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   font-variant-numeric:tabular-nums}
 
 /* ---------- Etikett: Papier auf dunklem Tisch ---------- */
-.vorschauspalte{display:flex; flex-direction:column; gap:14px; width:126mm; max-width:100%}
+.vorschauspalte{display:flex; flex-direction:column; gap:14px; width:106mm; max-width:100%}
 @media (max-width:1040px){ .vorschauspalte{width:100%; align-items:center} }
 .huelle{background:var(--flaeche); border:1px solid var(--kante); border-radius:14px;
   box-shadow:var(--tief); padding:4mm; align-self:flex-start; overflow-x:auto}
@@ -348,34 +348,34 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
 .stapel{display:flex; flex-direction:column; gap:4mm}
 
 .etikett{
-  width:120mm; height:150mm; background:#fff; color:#000;
+  width:100mm; height:150mm; background:#fff; color:#000;
   font-family:Carlito,Calibri,"Segoe UI",system-ui,sans-serif;
-  display:flex; flex-direction:column; border:0.6mm solid #000; overflow:hidden;
+  display:flex; flex-direction:column; border:0.55mm solid #000; overflow:hidden;
   box-shadow:0 10px 30px -14px rgba(0,0,0,.85);
 }
 @media (max-width:560px){ .etikett{zoom:.72} }
 @media (max-width:400px){ .etikett{zoom:.6} }
 
-.et-zelle{border-bottom:0.6mm solid #000; display:flex; align-items:center; justify-content:center;
+.et-zelle{border-bottom:0.55mm solid #000; display:flex; align-items:center; justify-content:center;
   text-align:center; padding:1.5mm 2.5mm; min-width:0}
-.et-bez{height:34mm; background:#fff; font-weight:700; font-size:9.6mm; line-height:1.12; overflow-wrap:anywhere}
-.et-mhd{height:33mm; background:var(--etikett-gruen); font-size:17mm; line-height:1; letter-spacing:.01em}
+.et-bez{height:34mm; background:#fff; font-weight:700; font-size:8.6mm; line-height:1.12; overflow-wrap:anywhere}
+.et-mhd{height:33mm; background:var(--etikett-gruen); font-size:15mm; line-height:1; letter-spacing:.01em}
 .et-menge{height:22mm; background:var(--etikett-gruen); padding:0; display:flex}
-.et-menge .wort{width:42%; border-right:0.6mm solid #000; display:grid; place-items:center;
-  font-weight:700; font-size:7.2mm}
-.et-menge .zahl{flex:1; display:grid; place-items:center; font-weight:700; font-size:14mm; line-height:1}
-.et-pal{height:16mm; background:var(--etikett-gruen); font-weight:700; font-size:11mm}
-.et-nr{height:20mm; background:var(--etikett-gruen); font-weight:700; font-size:14mm; gap:4mm; line-height:1}
-.et-nr .strich{width:2.1mm; height:15mm; background:#000; transform:rotate(19deg)}
-.et-code{height:18mm; background:var(--etikett-gruen); padding:1.2mm 5mm; flex-direction:column; gap:.6mm}
+.et-menge .wort{width:42%; border-right:0.55mm solid #000; display:grid; place-items:center;
+  font-weight:700; font-size:6.4mm}
+.et-menge .zahl{flex:1; display:grid; place-items:center; font-weight:700; font-size:13mm; line-height:1}
+.et-pal{height:16mm; background:var(--etikett-gruen); font-weight:700; font-size:10mm}
+.et-nr{height:20mm; background:var(--etikett-gruen); font-weight:700; font-size:13mm; gap:3mm; line-height:1}
+.et-nr .strich{width:1.9mm; height:14mm; background:#000; transform:rotate(19deg)}
+.et-code{height:18mm; background:var(--etikett-gruen); padding:1.2mm 3mm; flex-direction:column; gap:.6mm}
 .et-code svg{width:100%; height:11.5mm; display:block}
-.et-code .klar{font-size:3.4mm; letter-spacing:.06em}
+.et-code .klar{font-size:3.2mm; letter-spacing:.06em}
 .et-fuss{height:7mm; border-bottom:0; background:var(--etikett-gruen); display:flex;
-  align-items:center; font-weight:700; font-size:3.6mm; padding:0}
+  align-items:center; font-weight:700; font-size:3.4mm; padding:0}
 .et-fuss div{flex:1; text-align:center}
-.et-fuss .l{border-right:0.6mm solid #000}
+.et-fuss .l{border-right:0.55mm solid #000}
 
-@page{ size:120mm 150mm; margin:0 }
+@page{ size:100mm 150mm; margin:0 }
 @media print{
   html,body{background:#fff}
   .kopf,.arbeitsspalte,.huelle > .hinweis,details.zpl,.anmelden{display:none !important}
@@ -609,7 +609,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   <div class="vorschauspalte" id="vorschauspalte">
     <div class="huelle">
       <div class="stapel" id="stapel"></div>
-      <p class="hinweis" style="margin:10px 0 0">Format 120 × 150 mm. Im Druckdialog „Ränder: keine“ und Skalierung 100 % wählen.</p>
+      <p class="hinweis" style="margin:10px 0 0">Format 100 × 150 mm. Im Druckdialog „Ränder: keine“ und Skalierung 100 % wählen.</p>
     </div>
 
     <details class="zpl">
@@ -620,7 +620,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           <button type="button" class="still" id="knopf-zpl">ZPL kopieren</button>
           <span class="meldung" id="zpl-meldung"></span>
         </div>
-        <p class="hinweis" style="margin:8px 0 0">203 dpi, 960 × 1200 Punkte. Enthält alle Paletten des Vorgangs.</p>
+        <p class="hinweis" style="margin:8px 0 0">203 dpi, 800 × 1200 Punkte — passt auf den Zebra GK420t. Enthält alle Paletten des Vorgangs.</p>
       </div>
     </details>
   </div>
@@ -909,27 +909,28 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   // ---------- ZPL ----------
   function zt(s){ return String(s == null ? "" : s).replace(/[\^~]/g,"").replace(/\r?\n/g," "); }
   function zplSeite(v, index){
+    // Zebra GK420t: 203 dpi, maximal 832 Punkte breit. 100 mm = 800 Punkte.
     var z = [];
-    z.push("^XA","^CI28","^PW960","^LL1200","^LH0,0");
-    z.push("^FO4,4^GB952,1192,4^FS");
-    z.push("^FO24,36^A0N,76,76^FB912,2,8,C,0^FD" + zt(v.bezeichnung) + "^FS");
-    z.push("^FO4,272^GB952,4,4^FS");
-    z.push("^FO24,318^A0N,134,134^FB912,1,0,C,0^FD" + zt(v.mhd || "-") + "^FS");
-    z.push("^FO4,536^GB952,4,4^FS");
-    z.push("^FO24,590^A0N,58,58^FB380,1,0,C,0^FDMenge^FS");
-    z.push("^FO420,566^A0N,112,112^FB516,1,0,C,0^FD" + zt(v.mengen[index] || "-") + "^FS");
-    z.push("^FO404,540^GB4,176,4^FS");
-    z.push("^FO4,712^GB952,4,4^FS");
-    z.push("^FO24,740^A0N,88,88^FB912,1,0,C,0^FDPal^FS");
-    z.push("^FO4,840^GB952,4,4^FS");
-    z.push("^FO24,866^A0N,112,112^FB912,1,0,C,0^FD" + (index+1) + " / " + zt(v.anzahl) + "^FS");
-    z.push("^FO4,1000^GB952,4,4^FS");
+    z.push("^XA","^CI28","^PW800","^LL1200","^LH0,0");
+    z.push("^FO4,4^GB792,1192,4^FS");
+    z.push("^FO24,36^A0N,68,68^FB752,2,8,C,0^FD" + zt(v.bezeichnung) + "^FS");
+    z.push("^FO4,272^GB792,4,4^FS");
+    z.push("^FO24,320^A0N,118,118^FB752,1,0,C,0^FD" + zt(v.mhd || "-") + "^FS");
+    z.push("^FO4,536^GB792,4,4^FS");
+    z.push("^FO24,592^A0N,50,50^FB300,1,0,C,0^FDMenge^FS");
+    z.push("^FO340,570^A0N,104,104^FB440,1,0,C,0^FD" + zt(v.mengen[index] || "-") + "^FS");
+    z.push("^FO336,540^GB4,176,4^FS");
+    z.push("^FO4,712^GB792,4,4^FS");
+    z.push("^FO24,742^A0N,80,80^FB752,1,0,C,0^FDPal^FS");
+    z.push("^FO4,840^GB792,4,4^FS");
+    z.push("^FO24,868^A0N,104,104^FB752,1,0,C,0^FD" + (index+1) + " / " + zt(v.anzahl) + "^FS");
+    z.push("^FO4,1000^GB792,4,4^FS");
     var wert = barcodeWert(v, index);
-    if(wert) z.push("^FO190,1020^BY3,2.5^BCN,92,Y,N,N^FD" + zt(wert) + "^FS");
-    z.push("^FO4,1140^GB952,4,4^FS");
-    z.push("^FO24,1152^A0N,32,32^FB440,1,0,C,0^FD" + zt(v.dienstnr || "-") + "^FS");
-    z.push("^FO496,1152^A0N,32,32^FB440,1,0,C,0^FD" + zt(v.datum) + "^FS");
-    z.push("^FO476,1144^GB4,52,4^FS");
+    if(wert) z.push("^FO120,1020^BY3,2.5^BCN,92,Y,N,N^FD" + zt(wert) + "^FS");
+    z.push("^FO4,1140^GB792,4,4^FS");
+    z.push("^FO24,1152^A0N,30,30^FB360,1,0,C,0^FD" + zt(v.dienstnr || "-") + "^FS");
+    z.push("^FO416,1152^A0N,30,30^FB360,1,0,C,0^FD" + zt(v.datum) + "^FS");
+    z.push("^FO396,1144^GB4,52,4^FS");
     z.push("^PQ1","^XZ");
     return z.join("\n");
   }
