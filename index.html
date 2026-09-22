@@ -1,0 +1,1287 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f68712">
+<style>
+  :root{ color-scheme: light dark; }
+  html,body{ margin:0; }
+  img{ max-width:100%; }
+  [hidden]{ display:none !important; }
+</style>
+<title>Palettenbeschriftung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+
+<style>
+:root{
+  --bg:#eaeef1; --flaeche:#ffffff; --flaeche-2:#f3f6f8;
+  --tinte:#17212a; --gedaempft:#5d6c79; --linie:#d1dae2;
+  --akzent:#f68712; --gut:#1d7a5f; --kritisch:#b3261e;
+  --etikett-gruen:#e8eee9;
+  --schatten:0 1px 2px rgba(23,33,42,.06), 0 10px 26px -18px rgba(23,33,42,.35);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10161b; --flaeche:#19222b; --flaeche-2:#141d25;
+    --tinte:#e3ebf2; --gedaempft:#91a3b2; --linie:#293641;
+    --akzent:#ff9a2e; --gut:#45b790; --kritisch:#e8695f;
+    --schatten:0 1px 2px rgba(0,0,0,.4), 0 12px 30px -20px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10161b; --flaeche:#19222b; --flaeche-2:#141d25;
+  --tinte:#e3ebf2; --gedaempft:#91a3b2; --linie:#293641;
+  --akzent:#ff9a2e; --gut:#45b790; --kritisch:#e8695f;
+  --schatten:0 1px 2px rgba(0,0,0,.4), 0 12px 30px -20px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--tinte);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.45; -webkit-text-size-adjust:100%;
+}
+h1,h2{margin:0; font-weight:600; text-wrap:balance}
+
+.kopf{
+  position:sticky; top:0; z-index:5;
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:11px 16px; background:var(--flaeche); border-bottom:1px solid var(--linie);
+}
+.kopf h1{font-size:17px; letter-spacing:-.01em}
+.reiter{display:flex; gap:6px; margin-left:auto}
+.reiter button{
+  font:inherit; font-size:14px; cursor:pointer; padding:6px 13px; border-radius:999px;
+  border:1px solid var(--linie); background:transparent; color:var(--gedaempft);
+}
+.reiter button[aria-selected="true"]{
+  background:var(--tinte); border-color:var(--tinte); color:var(--flaeche); font-weight:500;
+}
+.status{width:100%; font-size:12px; color:var(--gedaempft); order:9}
+.status.aktiv{color:var(--gut)} .status.lokal{color:var(--akzent)}
+
+.buehne{max-width:1180px; margin:0 auto; padding:16px 16px 56px; display:grid; gap:18px;
+  grid-template-columns:minmax(0,1fr) auto; align-items:start}
+@media (max-width:1040px){ .buehne{grid-template-columns:minmax(0,1fr)} }
+
+.karte{background:var(--flaeche); border:1px solid var(--linie); border-radius:12px;
+  box-shadow:var(--schatten); margin-bottom:18px}
+.karte > h2{font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--gedaempft);
+  padding:13px 16px; border-bottom:1px solid var(--linie)}
+.karte > .inhalt{padding:16px; display:grid; gap:16px}
+
+.schritt{display:grid; gap:8px}
+.schritt > .titel{display:flex; align-items:center; gap:9px}
+.schritt .nr{flex:none; width:22px; height:22px; border-radius:50%; display:grid; place-items:center;
+  background:var(--tinte); color:var(--flaeche); font-size:12px; font-weight:600}
+.schritt .titel span{font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--gedaempft)}
+
+label{font-size:13px; color:var(--gedaempft)}
+input,select,textarea{
+  font:inherit; font-size:17px; color:var(--tinte); background:var(--flaeche-2);
+  border:1px solid var(--linie); border-radius:9px; padding:11px 12px; width:100%;
+}
+input:focus-visible,select:focus-visible,button:focus-visible,li:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--akzent); outline-offset:1px;
+}
+input.gross,select.gross{font-size:22px; font-weight:600}
+.zwei{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+
+.mengen{display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:10px}
+.mengen .m{display:flex; align-items:center; gap:8px; background:var(--flaeche-2);
+  border:1px solid var(--linie); border-radius:9px; padding:5px 10px}
+.mengen .m span{font-size:12.5px; color:var(--gedaempft); white-space:nowrap}
+.mengen .m input{border:0; background:transparent; padding:5px 0; font-size:20px; font-weight:600}
+.mengen .m:focus-within{border-color:var(--akzent)}
+.summe{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.summe .zahl{font-size:15px; color:var(--gedaempft)}
+.summe .zahl b{font-size:23px; color:var(--tinte); font-variant-numeric:tabular-nums}
+.summe code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:15px;
+  background:var(--flaeche-2); border:1px solid var(--linie); border-radius:7px; padding:3px 9px}
+
+.treffer{list-style:none; margin:0; padding:0; max-height:280px; overflow-y:auto;
+  border:1px solid var(--linie); border-radius:9px; background:var(--flaeche-2)}
+.treffer li{padding:12px 13px; border-bottom:1px solid var(--linie); cursor:pointer; font-size:15.5px}
+.treffer li:last-child{border-bottom:none}
+.treffer li:hover,.treffer li.aktiv{background:color-mix(in srgb, var(--akzent) 14%, transparent)}
+.treffer li .nr{font-size:12.5px; color:var(--gedaempft)}
+.treffer .nix{padding:16px 13px; color:var(--gedaempft); font-size:14px; cursor:default}
+.gewaehlt-karte{display:flex; align-items:center; gap:12px; padding:12px 13px; border-radius:9px;
+  border:1px solid var(--gut); background:color-mix(in srgb, var(--gut) 10%, transparent)}
+.gewaehlt-karte div{min-width:0}
+.gewaehlt-karte b{display:block; font-size:16px; overflow-wrap:anywhere}
+.gewaehlt-karte small{color:var(--gedaempft)}
+.gewaehlt-karte button{margin-left:auto; flex:none}
+
+button.tat{font:inherit; font-weight:600; font-size:17px; cursor:pointer; padding:14px 20px;
+  border:1px solid var(--akzent); background:var(--akzent); color:#2a1500; border-radius:10px; width:100%}
+button.tat:hover:not(:disabled){filter:brightness(1.06)}
+button.tat:disabled{opacity:.45; cursor:not-allowed}
+button.still{font:inherit; font-size:14px; cursor:pointer; padding:9px 14px;
+  border:1px solid var(--linie); background:var(--flaeche-2); color:var(--tinte); border-radius:9px}
+button.still:hover{border-color:var(--gedaempft)}
+.meldung{font-size:14px; min-height:1.3em; margin:0}
+.meldung.gut{color:var(--gut)} .meldung.fehler{color:var(--kritisch)}
+.hinweis{font-size:13px; color:var(--gedaempft); margin:0}
+
+.stammliste{list-style:none; margin:0; padding:0; max-height:440px; overflow-y:auto}
+.stammliste li{display:flex; gap:10px; align-items:center; padding:10px 13px; border-bottom:1px solid var(--linie)}
+.stammliste li:last-child{border-bottom:none}
+.stammliste .txt{min-width:0; flex:1}
+.stammliste .txt b{display:block; font-weight:500; overflow-wrap:anywhere}
+.stammliste .txt small{color:var(--gedaempft)}
+.stammliste .fehlt{color:var(--kritisch)}
+.stammliste input{width:120px; font-size:15px; padding:7px 9px; flex:none}
+.stammliste button{flex:none}
+
+#scanfeld{transition:border-color .12s, background-color .12s}
+#scanfeld.getroffen{border-color:var(--gut); background:color-mix(in srgb, var(--gut) 16%, transparent)}
+#scanfeld.daneben{border-color:var(--kritisch); background:color-mix(in srgb, var(--kritisch) 14%, transparent)}
+.bereit{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--gut)}
+.bereit .punkt{width:9px; height:9px; border-radius:50%; background:var(--gut); flex:none}
+.bereit.schlaeft{color:var(--gedaempft)} .bereit.schlaeft .punkt{background:var(--gedaempft)}
+.tonschalter{display:flex; align-items:center; gap:6px; font-size:13.5px; color:var(--gedaempft); cursor:pointer}
+.tonschalter input{width:auto; margin:0}
+
+.summenblock{border-top:1px solid var(--linie); background:color-mix(in srgb, var(--gut) 7%, transparent)}
+.summenkopf{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 16px}
+.summenkopf span{font-size:12px; letter-spacing:.09em; text-transform:uppercase; color:var(--gedaempft)}
+.summenkopf button{margin-left:auto}
+.summen{list-style:none; margin:0; padding:0 16px 14px; display:grid; gap:8px}
+.summen li{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+.summen .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:21px; font-weight:600;
+  background:var(--flaeche); border:1px solid var(--linie); border-radius:8px; padding:5px 12px;
+  font-variant-numeric:tabular-nums}
+.summen .was{font-size:13.5px; color:var(--gedaempft); min-width:0; overflow-wrap:anywhere}
+.scanzeile .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:600}
+
+details.klapp{border:1px solid var(--linie); border-radius:10px; background:var(--flaeche-2)}
+details.klapp summary{cursor:pointer; padding:11px 13px; font-size:14px; color:var(--gedaempft)}
+details.klapp .innen{padding:0 13px 13px; display:grid; gap:11px}
+textarea#import{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px;
+  height:150px; resize:vertical; white-space:pre; background:var(--flaeche)}
+
+/* ---- Etikett 120 x 150 mm ---- */
+.vorschauspalte{display:flex; flex-direction:column; gap:12px; width:126mm; max-width:100%}
+@media (max-width:1040px){ .vorschauspalte{width:100%; align-items:center} }
+.huelle{background:var(--flaeche); border:1px solid var(--linie); border-radius:12px;
+  box-shadow:var(--schatten); padding:3mm; align-self:flex-start; overflow-x:auto}
+@media (max-width:1040px){ .huelle{align-self:center} }
+.stapel{display:flex; flex-direction:column; gap:3mm}
+
+.etikett{
+  width:120mm; height:150mm; background:#fff; color:#000;
+  font-family:Carlito,Calibri,"Segoe UI",system-ui,sans-serif;
+  display:flex; flex-direction:column; border:0.6mm solid #000; overflow:hidden;
+}
+@media (max-width:560px){ .etikett{zoom:.72} }
+@media (max-width:400px){ .etikett{zoom:.6} }
+
+.et-zelle{border-bottom:0.6mm solid #000; display:flex; align-items:center; justify-content:center;
+  text-align:center; padding:1.5mm 2.5mm; min-width:0}
+.et-bez{height:34mm; background:#fff; font-weight:700; font-size:9.6mm; line-height:1.12; overflow-wrap:anywhere}
+.et-mhd{height:33mm; background:var(--etikett-gruen); font-size:17mm; line-height:1; letter-spacing:.01em}
+.et-menge{height:22mm; background:var(--etikett-gruen); padding:0; display:flex}
+.et-menge .wort{width:42%; border-right:0.6mm solid #000; display:grid; place-items:center;
+  font-weight:700; font-size:7.2mm}
+.et-menge .zahl{flex:1; display:grid; place-items:center; font-weight:700; font-size:14mm; line-height:1}
+.et-pal{height:16mm; background:var(--etikett-gruen); font-weight:700; font-size:11mm}
+.et-nr{height:20mm; background:var(--etikett-gruen); font-weight:700; font-size:14mm; gap:4mm; line-height:1}
+.et-nr .strich{width:2.1mm; height:15mm; background:#000; transform:rotate(19deg)}
+.et-code{height:18mm; background:var(--etikett-gruen); padding:1.2mm 5mm; flex-direction:column; gap:.6mm}
+.et-code svg{width:100%; height:11.5mm; display:block}
+.et-code .klar{font-size:3.4mm; letter-spacing:.06em}
+.et-fuss{height:7mm; border-bottom:0; background:var(--etikett-gruen); display:flex;
+  align-items:center; font-weight:700; font-size:3.6mm; padding:0}
+.et-fuss div{flex:1; text-align:center}
+.et-fuss .l{border-right:0.6mm solid #000}
+
+@page{ size:120mm 150mm; margin:0 }
+@media print{
+  body{background:#fff}
+  .kopf,.arbeitsspalte,.huelle > .hinweis,details.zpl{display:none !important}
+  .buehne{display:block; padding:0; max-width:none}
+  .vorschauspalte{width:auto; gap:0}
+  .huelle{border:0; box-shadow:none; padding:0; background:#fff; border-radius:0; overflow:visible}
+  .stapel{display:block; gap:0}
+  .etikett{border:0; zoom:1; page-break-after:always; break-after:page}
+  .etikett:last-child{page-break-after:auto; break-after:auto}
+}
+@media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
+
+details.zpl{background:var(--flaeche); border:1px solid var(--linie); border-radius:12px}
+details.zpl summary{cursor:pointer; padding:12px 16px; font-size:12px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--gedaempft)}
+details.zpl .inhalt{padding:0 16px 16px}
+textarea#zplfeld{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px;
+  line-height:1.45; height:190px; resize:vertical; white-space:pre}
+[hidden]{display:none !important}
+</style>
+
+<header class="kopf">
+  <h1>Palettenbeschriftung</h1>
+  <div class="reiter" role="tablist">
+    <button type="button" id="reiter-etikett" role="tab" aria-selected="true">Etikett</button>
+    <button type="button" id="reiter-artikel" role="tab" aria-selected="false">Artikel</button>
+    <button type="button" id="reiter-inventur" role="tab" aria-selected="false">Inventur</button>
+    <button type="button" id="reiter-leute" role="tab" aria-selected="false">Mitarbeiter</button>
+  </div>
+  <div class="status" id="status">Verbindung wird geprüft …</div>
+</header>
+
+<div class="buehne">
+  <div class="arbeitsspalte">
+
+    <!-- ===== Etikett ===== -->
+    <section class="karte" id="ansicht-etikett">
+      <h2>Neues Etikett</h2>
+      <div class="inhalt">
+
+        <div class="schritt">
+          <div class="titel"><span class="nr">1</span><span>Artikel suchen</span></div>
+          <input id="suche" class="gross" placeholder="z. B. cola" autocomplete="off" enterkeyhint="search">
+          <ul class="treffer" id="treffer" role="listbox" hidden></ul>
+          <div class="gewaehlt-karte" id="gewaehlt-karte" hidden>
+            <div><b id="gewaehlt-bez"></b><small id="gewaehlt-nr"></small></div>
+            <button type="button" class="still" id="knopf-anders">Ändern</button>
+          </div>
+        </div>
+
+        <div class="schritt">
+          <div class="titel"><span class="nr">2</span><span>MHD</span></div>
+          <input id="mhd" class="gross" inputmode="numeric" placeholder="01.01.2026" autocomplete="off" maxlength="10">
+          <p class="hinweis">Nur Zahlen tippen: 01012026 wird zu 01.01.2026.</p>
+        </div>
+
+        <div class="schritt">
+          <div class="titel"><span class="nr">3</span><span>Paletten &amp; Mengen</span></div>
+          <div>
+            <label for="paletten">Wie viele Paletten</label>
+            <input id="paletten" class="gross" inputmode="numeric" value="3">
+          </div>
+          <div class="mengen" id="mengen"></div>
+          <div class="summe">
+            <span class="zahl">Gesamt <b id="gesamt">—</b></span>
+            <button type="button" class="still" id="knopf-alle-gleich">Alle wie Pal 1</button>
+          </div>
+          <p class="hinweis">Jede Palette trägt ihre eigene Menge im Barcode. „Gesamt“ ist nur deine Kontrollsumme — genau diese Zahl kommt zusammen, wenn du später alle Etiketten scannst.</p>
+        </div>
+
+        <div class="schritt">
+          <div class="titel"><span class="nr">4</span><span>Mitarbeiter</span></div>
+          <select id="leute-wahl" class="gross"></select>
+          <p class="hinweis" id="leute-hinweis" hidden>Noch kein Mitarbeiter angelegt — oben auf „Mitarbeiter“ wechseln.</p>
+        </div>
+
+        <div>
+          <button type="button" class="tat" id="knopf-drucken">Drucken</button>
+          <p class="meldung" id="meldung"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Artikel ===== -->
+    <section class="karte" id="ansicht-artikel" hidden>
+      <h2>Artikel</h2>
+      <div class="inhalt">
+        <div class="zwei">
+          <div>
+            <label for="neu-nr">Artikelnummer</label>
+            <input id="neu-nr" placeholder="z. B. EDC" autocomplete="off">
+          </div>
+          <div>
+            <label for="neu-bez">Bezeichnung</label>
+            <input id="neu-bez" placeholder="Pet Coca Cola 0,50l.  24stk./Kolli" autocomplete="off">
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+          <button type="button" class="still" id="knopf-artikel-neu">Artikel anlegen</button>
+          <span class="meldung" id="artikel-meldung"></span>
+        </div>
+
+        <details class="klapp" id="import-klapp">
+          <summary>Artikel aus deinem Export einfügen</summary>
+          <div class="innen">
+            <p class="hinweis">
+              In Excel zwei Spalten markieren — <b>Artikelnummer</b> und <b>Bezeichnung</b>, in dieser Reihenfolge —
+              kopieren und hier einfügen. Eine Überschriftenzeile darf drüberstehen.
+              Artikelnummern, die es schon gibt, werden aktualisiert statt doppelt angelegt.
+            </p>
+            <textarea id="import" spellcheck="false" placeholder="EDC&#9;Pet Coca Cola 0,50l.  24stk./Kolli&#10;EDZ&#9;Pet Coca Cola Zero 0,50l.  24 Stk./Kolli"></textarea>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+              <button type="button" class="still" id="knopf-import">Einfügen</button>
+              <span class="meldung" id="import-meldung"></span>
+            </div>
+          </div>
+        </details>
+      </div>
+      <ul class="stammliste" id="stammliste"></ul>
+      <p class="hinweis" style="padding:12px 16px" id="stamm-leer">Noch keine Artikel angelegt.</p>
+    </section>
+
+    <!-- ===== Inventur ===== -->
+    <section class="karte" id="ansicht-inventur" hidden>
+      <h2>Inventur — Paletten scannen</h2>
+      <div class="inhalt">
+        <div class="schritt">
+          <div class="titel"><span class="nr">1</span><span>Etiketten scannen</span></div>
+          <input id="scanfeld" class="gross" placeholder="Hier scannen …" autocomplete="off"
+                 autocapitalize="characters" spellcheck="false">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center">
+            <span class="bereit" id="bereit"><span class="punkt"></span>Bereit für die nächste Palette</span>
+            <label class="tonschalter"><input type="checkbox" id="ton" checked> Ton</label>
+            <button type="button" class="still" id="knopf-scan-hinzu" style="margin-left:auto">Von Hand hinzufügen</button>
+          </div>
+          <p class="meldung" id="scan-meldung"></p>
+          <p class="hinweis">Einfach eine Palette nach der anderen scannen — das Feld leert sich von selbst und ist sofort wieder bereit. Ohne Scanner kannst du auch <code>50*EDC</code> eintippen.</p>
+        </div>
+      </div>
+
+      <div class="summenblock" id="summenblock" hidden>
+        <div class="summenkopf">
+          <span>Das fügst du in dein Warenwirtschaftsprogramm ein</span>
+          <button type="button" class="still" id="knopf-summe-kopieren">Kopieren</button>
+        </div>
+        <ul class="summen" id="summen"></ul>
+      </div>
+
+      <ul class="stammliste" id="scanliste"></ul>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:12px 16px">
+        <span class="hinweis" id="scan-zaehler">Noch nichts gescannt.</span>
+        <button type="button" class="still" id="knopf-scan-leeren" style="margin-left:auto" hidden>Liste leeren</button>
+      </div>
+    </section>
+
+    <!-- ===== Mitarbeiter ===== -->
+    <section class="karte" id="ansicht-leute" hidden>
+      <h2>Mitarbeiter</h2>
+      <div class="inhalt">
+        <div class="zwei">
+          <div>
+            <label for="neu-dienst">Dienstnummer</label>
+            <input id="neu-dienst" inputmode="numeric" placeholder="194" autocomplete="off">
+          </div>
+          <div>
+            <label for="neu-name">Name</label>
+            <input id="neu-name" placeholder="Bertan" autocomplete="off">
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+          <button type="button" class="still" id="knopf-leute-neu">Mitarbeiter anlegen</button>
+          <span class="meldung" id="leute-meldung"></span>
+        </div>
+        <p class="hinweis">Die Dienstnummer steht unten links auf dem Etikett.</p>
+      </div>
+      <ul class="stammliste" id="leuteliste"></ul>
+      <p class="hinweis" style="padding:12px 16px" id="leute-leer">Noch kein Mitarbeiter angelegt.</p>
+    </section>
+  </div>
+
+  <!-- ===== Vorschau ===== -->
+  <div class="vorschauspalte" id="vorschauspalte">
+    <div class="huelle">
+      <div class="stapel" id="stapel"></div>
+      <p class="hinweis" style="margin:10px 0 0">Format 120 × 150 mm. Im Druckdialog „Ränder: keine“ und Skalierung 100 % wählen.</p>
+    </div>
+
+    <details class="zpl">
+      <summary>ZPL für den Zebra-Drucker</summary>
+      <div class="inhalt">
+        <textarea id="zplfeld" readonly spellcheck="false"></textarea>
+        <div style="display:flex; gap:10px; align-items:center; margin-top:10px">
+          <button type="button" class="still" id="knopf-zpl">ZPL kopieren</button>
+          <span class="meldung" id="zpl-meldung"></span>
+        </div>
+        <p class="hinweis" style="margin:8px 0 0">203 dpi, 960 × 1200 Punkte. Enthält alle Paletten des Vorgangs.</p>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var BLOCKGROESSE = 400;       // Artikel je Datenbank-Dokument
+  var db = null, meineId = null;
+  var artikel = [];             // {id, nr, bezeichnung}
+  var leute = [];               // {id, nr, name}
+  var mengen = ["40","50","50"];// eine Menge je Palette
+  var gewaehlt = null;
+  var $ = function(id){ return document.getElementById(id); };
+
+  function heute(){
+    var d = new Date();
+    function z(n){ return (n<10?"0":"") + n; }
+    return z(d.getDate()) + "." + z(d.getMonth()+1) + "." + d.getFullYear();
+  }
+  function ganzzahl(v, ersatz){
+    var n = parseInt(String(v).replace(/[^0-9]/g,""), 10);
+    return (isFinite(n) && n > 0) ? n : ersatz;
+  }
+  function lies(k){ try{ return localStorage.getItem(k) || ""; }catch(e){ return ""; } }
+  function schreib(k,v){ try{ localStorage.setItem(k, v); }catch(e){} }
+  function neueId(p){ return p + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+  // ---------- Reiter ----------
+  function reiterWechseln(name){
+    $("ansicht-etikett").hidden  = name !== "etikett";
+    $("ansicht-artikel").hidden  = name !== "artikel";
+    $("ansicht-inventur").hidden = name !== "inventur";
+    $("ansicht-leute").hidden    = name !== "leute";
+    ["etikett","artikel","inventur","leute"].forEach(function(r){
+      $("reiter-" + r).setAttribute("aria-selected", name === r ? "true" : "false");
+    });
+    // Die Etikettvorschau gehört nur zum Etikett-Reiter.
+    $("vorschauspalte").hidden = name !== "etikett";
+  }
+  $("reiter-etikett").addEventListener("click", function(){ reiterWechseln("etikett"); });
+  $("reiter-artikel").addEventListener("click", function(){ reiterWechseln("artikel"); stammZeichnen(); });
+  $("reiter-leute").addEventListener("click", function(){ reiterWechseln("leute"); leuteZeichnen(); });
+  $("reiter-inventur").addEventListener("click", function(){
+    reiterWechseln("inventur"); scansZeichnen(); $("scanfeld").focus();
+  });
+
+  // ---------- MHD: Punkte automatisch ----------
+  function mhdFormat(roh){
+    var z = String(roh).replace(/[^0-9]/g,"").slice(0,8);
+    var out = z.slice(0,2);
+    if(z.length > 2) out += "." + z.slice(2,4);
+    if(z.length > 4) out += "." + z.slice(4,8);
+    return out;
+  }
+  $("mhd").addEventListener("input", function(){
+    var feld = $("mhd");
+    var amEnde = feld.selectionStart === feld.value.length;
+    var neu = mhdFormat(feld.value);
+    if(neu !== feld.value){
+      feld.value = neu;
+      if(amEnde){ try{ feld.setSelectionRange(neu.length, neu.length); }catch(e){} }
+    }
+    etikettenZeichnen();
+  });
+
+  // ---------- Artikelsuche ----------
+  function trefferZeichnen(){
+    var roh = $("suche").value.trim();
+    var q = roh.toLowerCase();
+    var liste = $("treffer");
+    liste.textContent = "";
+    if(gewaehlt){ liste.hidden = true; return; }
+    liste.hidden = false;
+
+    var gefunden = artikel.filter(function(a){
+      if(!q) return true;
+      return (a.bezeichnung + " " + (a.nr||"")).toLowerCase().indexOf(q) !== -1;
+    }).slice(0, 60);
+
+    if(gefunden.length === 0){
+      var nix = document.createElement("li");
+      nix.className = "nix";
+      nix.textContent = artikel.length === 0
+        ? "Noch keine Artikel — oben auf „Artikel“ wechseln und deinen Export einfügen."
+        : "Kein Artikel passt zu „" + roh + "“.";
+      liste.appendChild(nix);
+      return;
+    }
+
+    gefunden.forEach(function(a){
+      var li = document.createElement("li");
+      li.tabIndex = 0; li.setAttribute("role","option");
+      var b = document.createElement("div"); b.textContent = a.bezeichnung; li.appendChild(b);
+      var n = document.createElement("div"); n.className = "nr";
+      n.textContent = a.nr ? ("Artikelnr. " + a.nr) : "ohne Artikelnummer";
+      li.appendChild(n);
+      function nehmen(){ artikelWaehlen(a); }
+      li.addEventListener("click", nehmen);
+      li.addEventListener("keydown", function(e){ if(e.key === "Enter"){ e.preventDefault(); nehmen(); } });
+      liste.appendChild(li);
+    });
+  }
+
+  function gewaehltAnzeigen(){
+    if(!gewaehlt) return;
+    $("gewaehlt-bez").textContent = gewaehlt.bezeichnung;
+    $("gewaehlt-nr").textContent = gewaehlt.nr
+      ? ("Artikelnr. " + gewaehlt.nr)
+      : "Keine Artikelnummer — bitte unter „Artikel“ nachtragen, sonst fehlt sie im Barcode.";
+  }
+
+  function artikelWaehlen(a){
+    gewaehlt = a;
+    $("treffer").hidden = true;
+    $("gewaehlt-karte").hidden = false;
+    gewaehltAnzeigen();
+    $("suche").value = "";
+    etikettenZeichnen();
+    $("mhd").focus();
+  }
+
+  $("knopf-anders").addEventListener("click", function(){
+    gewaehlt = null;
+    $("gewaehlt-karte").hidden = true;
+    $("suche").value = "";
+    trefferZeichnen(); etikettenZeichnen();
+    $("suche").focus();
+  });
+  $("suche").addEventListener("input", trefferZeichnen);
+
+  // ---------- Etikettdaten ----------
+  function aktuellerMitarbeiter(){
+    var id = $("leute-wahl").value;
+    return leute.filter(function(p){ return p.id === id; })[0] || null;
+  }
+
+  // ---------- Mengen je Palette ----------
+  function mengenfelderBauen(){
+    var n = Math.min(ganzzahl($("paletten").value, 1), 40);
+    var letzte = mengen.length ? mengen[mengen.length - 1] : "";
+    while(mengen.length < n) mengen.push(letzte);
+    mengen.length = n;
+
+    var box = $("mengen");
+    box.textContent = "";
+    mengen.forEach(function(wert, i){
+      var d = document.createElement("div"); d.className = "m";
+      var s = document.createElement("span"); s.textContent = "Pal " + (i + 1);
+      var inp = document.createElement("input");
+      inp.value = wert == null ? "" : String(wert);
+      inp.inputMode = "numeric";
+      inp.setAttribute("aria-label", "Menge Palette " + (i + 1));
+      inp.addEventListener("input", function(){
+        mengen[i] = inp.value.replace(/[^0-9]/g, "");
+        if(inp.value !== mengen[i]) inp.value = mengen[i];
+        summeZeichnen(); etikettenZeichnen();
+      });
+      d.appendChild(s); d.appendChild(inp);
+      box.appendChild(d);
+    });
+    summeZeichnen();
+  }
+
+  function gesamtmenge(){
+    var s = 0, leer = true;
+    mengen.forEach(function(m){
+      var n = parseInt(String(m).replace(/[^0-9]/g, ""), 10);
+      if(isFinite(n)){ s += n; leer = false; }
+    });
+    return leer ? null : s;
+  }
+
+  function summeZeichnen(){
+    var g = gesamtmenge();
+    $("gesamt").textContent = g == null ? "—" : String(g);
+  }
+
+  $("paletten").addEventListener("input", function(){
+    mengenfelderBauen(); etikettenZeichnen();
+  });
+
+  $("knopf-alle-gleich").addEventListener("click", function(){
+    if(mengen.length === 0) return;
+    var erste = mengen[0];
+    for(var i = 1; i < mengen.length; i++) mengen[i] = erste;
+    mengenfelderBauen(); etikettenZeichnen();
+  });
+
+  function vorgangLesen(){
+    var p = aktuellerMitarbeiter();
+    return {
+      bezeichnung: gewaehlt ? gewaehlt.bezeichnung : "— Artikel wählen —",
+      artikelnr: gewaehlt ? (gewaehlt.nr || "") : "",
+      mhd: $("mhd").value.trim(),
+      anzahl: mengen.length,
+      mengen: mengen.slice(),
+      gesamt: gesamtmenge(),
+      dienstnr: p ? p.nr : "",
+      name: p ? p.name : "",
+      datum: heute()
+    };
+  }
+
+  // Jedes Etikett trägt die Menge SEINER Palette — beim Scannen mehrerer
+  // Paletten addiert das Warenwirtschaftsprogramm selbst auf die Gesamtmenge.
+  function barcodeWert(v, index){
+    var m = String(v.mengen[index] || "").trim();
+    if(!m && !v.artikelnr) return "";
+    return (m || "0") + "*" + (v.artikelnr || "");
+  }
+
+  function etikettBauen(v, index){
+    var e = document.createElement("div");
+    e.className = "etikett";
+    function zelle(k){ var d = document.createElement("div"); d.className = "et-zelle " + k; e.appendChild(d); return d; }
+
+    zelle("et-bez").textContent = v.bezeichnung;
+    zelle("et-mhd").textContent = v.mhd || "—";
+
+    var m = zelle("et-menge");
+    var wort = document.createElement("div"); wort.className = "wort"; wort.textContent = "Menge";
+    var zahl = document.createElement("div"); zahl.className = "zahl";
+    zahl.textContent = v.mengen[index] || "—";
+    m.appendChild(wort); m.appendChild(zahl);
+
+    zelle("et-pal").textContent = "Pal";
+
+    var nr = zelle("et-nr");
+    var l = document.createElement("span"); l.textContent = String(index + 1);
+    var s = document.createElement("span"); s.className = "strich";
+    var r = document.createElement("span"); r.textContent = String(v.anzahl);
+    nr.appendChild(l); nr.appendChild(s); nr.appendChild(r);
+
+    var code = zelle("et-code");
+    var svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+    code.appendChild(svg);
+    var klar = document.createElement("div"); klar.className = "klar";
+    var wert = barcodeWert(v, index);
+    klar.textContent = wert || "Menge und Artikelnummer fehlen";
+    code.appendChild(klar);
+    if(wert && typeof JsBarcode !== "undefined"){
+      try{
+        JsBarcode(svg, wert, { format:"CODE128", displayValue:false, height:80, width:2,
+          margin:0, background:"#ffffff", lineColor:"#000000" });
+        svg.removeAttribute("width"); svg.removeAttribute("height");
+        svg.setAttribute("preserveAspectRatio","none");
+      }catch(err){ svg.innerHTML = ""; }
+    }
+
+    var fuss = zelle("et-fuss");
+    var fl = document.createElement("div"); fl.className = "l"; fl.textContent = v.dienstnr || "—";
+    var fr = document.createElement("div"); fr.textContent = v.datum;
+    fuss.appendChild(fl); fuss.appendChild(fr);
+    return e;
+  }
+
+  function etikettenZeichnen(){
+    var v = vorgangLesen();
+    var stapel = $("stapel");
+    stapel.textContent = "";
+    for(var i = 0; i < v.anzahl; i++) stapel.appendChild(etikettBauen(v, i));
+    $("zplfeld").value = zplBauen(v);
+    summeZeichnen();
+  }
+
+  $("leute-wahl").addEventListener("change", function(){
+    schreib("pal-leute", $("leute-wahl").value);
+    etikettenZeichnen();
+  });
+
+  // ---------- ZPL (120 x 150 mm bei 203 dpi = 960 x 1200) ----------
+  function zt(s){ return String(s == null ? "" : s).replace(/[\^~]/g,"").replace(/\r?\n/g," "); }
+
+  function zplSeite(v, index){
+    var z = [];
+    z.push("^XA","^CI28","^PW960","^LL1200","^LH0,0");
+    z.push("^FO4,4^GB952,1192,4^FS");
+    z.push("^FO24,36^A0N,76,76^FB912,2,8,C,0^FD" + zt(v.bezeichnung) + "^FS");
+    z.push("^FO4,272^GB952,4,4^FS");
+    z.push("^FO24,318^A0N,134,134^FB912,1,0,C,0^FD" + zt(v.mhd || "-") + "^FS");
+    z.push("^FO4,536^GB952,4,4^FS");
+    z.push("^FO24,590^A0N,58,58^FB380,1,0,C,0^FDMenge^FS");
+    z.push("^FO420,566^A0N,112,112^FB516,1,0,C,0^FD" + zt(v.mengen[index] || "-") + "^FS");
+    z.push("^FO404,540^GB4,176,4^FS");
+    z.push("^FO4,712^GB952,4,4^FS");
+    z.push("^FO24,740^A0N,88,88^FB912,1,0,C,0^FDPal^FS");
+    z.push("^FO4,840^GB952,4,4^FS");
+    z.push("^FO24,866^A0N,112,112^FB912,1,0,C,0^FD" + (index+1) + " / " + zt(v.anzahl) + "^FS");
+    z.push("^FO4,1000^GB952,4,4^FS");
+    var wert = barcodeWert(v, index);
+    if(wert) z.push("^FO190,1020^BY3,2.5^BCN,92,Y,N,N^FD" + zt(wert) + "^FS");
+    z.push("^FO4,1140^GB952,4,4^FS");
+    z.push("^FO24,1152^A0N,32,32^FB440,1,0,C,0^FD" + zt(v.dienstnr || "-") + "^FS");
+    z.push("^FO496,1152^A0N,32,32^FB440,1,0,C,0^FD" + zt(v.datum) + "^FS");
+    z.push("^FO476,1144^GB4,52,4^FS");
+    z.push("^PQ1","^XZ");
+    return z.join("\n");
+  }
+  function zplBauen(v){
+    var alles = [];
+    for(var i = 0; i < v.anzahl; i++) alles.push(zplSeite(v, i));
+    return alles.join("\n");
+  }
+  $("knopf-zpl").addEventListener("click", function(){
+    var feld = $("zplfeld"), m = $("zpl-meldung");
+    function sagen(t, art){ m.textContent = t; m.className = "meldung" + (art?" "+art:"");
+      window.setTimeout(function(){ m.textContent = ""; }, 2500); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(feld.value).then(function(){ sagen("Kopiert.","gut"); })
+        .catch(function(){ feld.select(); sagen("Bitte mit Strg+C kopieren."); });
+    }else{ feld.select(); sagen("Bitte mit Strg+C kopieren."); }
+  });
+
+  // ---------- Drucken ----------
+  function meldung(t, art){ var el = $("meldung"); el.textContent = t; el.className = "meldung" + (art?" "+art:""); }
+
+  $("knopf-drucken").addEventListener("click", function(){
+    if(!gewaehlt){ meldung("Bitte zuerst einen Artikel auswählen.", "fehler"); return; }
+    if(!$("mhd").value.trim()){ meldung("Bitte das MHD eintragen.", "fehler"); $("mhd").focus(); return; }
+    var fehlt = -1;
+    mengen.forEach(function(m, i){ if(fehlt === -1 && !String(m).trim()) fehlt = i; });
+    if(fehlt !== -1){
+      meldung("Bitte die Menge für Pal " + (fehlt + 1) + " eintragen.", "fehler");
+      var feld = $("mengen").querySelectorAll("input")[fehlt];
+      if(feld) feld.focus();
+      return;
+    }
+    if(!aktuellerMitarbeiter()){ meldung("Bitte einen Mitarbeiter wählen.", "fehler"); return; }
+
+    var v = vorgangLesen();
+    var drucken = function(text, art){
+      meldung(text, art);
+      window.setTimeout(function(){ window.print(); }, 300);
+    };
+
+    if(!db){ drucken(v.anzahl + " Etikett(en) — nicht gespeichert, keine Verbindung.", "gut"); return; }
+
+    db.doc("vorgaenge/" + neueId("v")).set({
+      artikelId: gewaehlt.id, artikelnr: v.artikelnr, bezeichnung: v.bezeichnung,
+      mhd: v.mhd, paletten: v.anzahl, mengen: v.mengen, gesamt: v.gesamt,
+      dienstnr: v.dienstnr, datum: v.datum, erstelltAm: Date.now(), bedienerId: meineId || null
+    }).then(function(){
+      drucken(v.anzahl + " Etikett(en) · gespeichert", "gut");
+    }).catch(function(){
+      drucken("Gedruckt, aber nicht gespeichert — Verbindung prüfen.", "fehler");
+    });
+  });
+
+  // ---------- Artikel speichern (Blöcke) ----------
+  function artikelSortieren(){
+    artikel.sort(function(x,y){ return x.bezeichnung.localeCompare(y.bezeichnung, "de"); });
+  }
+
+  // Ohne Claude-Datenbank (eigene Website, Vorschau) liegt alles auf dem Gerät.
+  function lokalLaden(){
+    try{
+      var a = lies("pal-artikel"); if(a) artikel = JSON.parse(a) || [];
+      var l = lies("pal-leute-stamm"); if(l) leute = JSON.parse(l) || [];
+    }catch(e){}
+  }
+  function lokalArtikelSichern(){ try{ schreib("pal-artikel", JSON.stringify(artikel)); }catch(e){} }
+  function lokalLeuteSichern(){ try{ schreib("pal-leute-stamm", JSON.stringify(leute)); }catch(e){} }
+
+  var speichernLaeuft = false, nochmal = false;
+  function artikelSpeichern(){
+    lokalArtikelSichern();
+    if(!db) return Promise.resolve();
+    if(speichernLaeuft){ nochmal = true; return Promise.resolve(); }
+    speichernLaeuft = true;
+
+    var bloecke = [];
+    for(var i = 0; i < artikel.length; i += BLOCKGROESSE){
+      bloecke.push(artikel.slice(i, i + BLOCKGROESSE).map(function(a){
+        return { id:a.id, nr:a.nr, bezeichnung:a.bezeichnung };
+      }));
+    }
+    if(bloecke.length === 0) bloecke.push([]);
+
+    var kette = Promise.resolve();
+    bloecke.forEach(function(block, i){
+      kette = kette.then(function(){
+        return db.doc("artikelbloecke/b" + i).set({ artikel: block, stand: Date.now() });
+      });
+    });
+    // Überzählige Blöcke entfernen
+    for(var j = bloecke.length; j < bloecke.length + 12; j++){
+      (function(k){
+        kette = kette.then(function(){ return db.doc("artikelbloecke/b" + k).delete().catch(function(){}); });
+      })(j);
+    }
+    return kette.then(function(){
+      speichernLaeuft = false;
+      if(nochmal){ nochmal = false; return artikelSpeichern(); }
+    }).catch(function(){
+      speichernLaeuft = false;
+      var m = $("artikel-meldung");
+      m.textContent = "Konnte nicht gespeichert werden — Verbindung prüfen.";
+      m.className = "meldung fehler";
+    });
+  }
+
+  function stammZeichnen(){
+    var ul = $("stammliste");
+    ul.textContent = "";
+    artikel.slice(0, 400).forEach(function(a){
+      var li = document.createElement("li");
+      var txt = document.createElement("div"); txt.className = "txt";
+      var b = document.createElement("b"); b.textContent = a.bezeichnung;
+      var s = document.createElement("small");
+      if(a.nr){ s.textContent = "Artikelnr. " + a.nr; } else { s.textContent = "Artikelnummer fehlt"; s.className = "fehlt"; }
+      txt.appendChild(b); txt.appendChild(s);
+
+      var feld = document.createElement("input");
+      feld.value = a.nr || ""; feld.placeholder = "Nr."; feld.setAttribute("aria-label","Artikelnummer");
+      feld.addEventListener("change", function(){
+        a.nr = feld.value.trim().toUpperCase();
+        s.textContent = a.nr ? ("Artikelnr. " + a.nr) : "Artikelnummer fehlt";
+        s.className = a.nr ? "" : "fehlt";
+        if(gewaehlt && gewaehlt.id === a.id){ gewaehltAnzeigen(); etikettenZeichnen(); }
+        artikelSpeichern();
+      });
+
+      var weg = document.createElement("button");
+      weg.className = "still"; weg.textContent = "Löschen";
+      weg.addEventListener("click", function(){
+        if(!window.confirm("„" + a.bezeichnung + "“ wirklich löschen?")) return;
+        artikel = artikel.filter(function(x){ return x.id !== a.id; });
+        if(gewaehlt && gewaehlt.id === a.id){ gewaehlt = null; $("gewaehlt-karte").hidden = true; }
+        artikelSpeichern(); stammZeichnen(); trefferZeichnen(); etikettenZeichnen();
+      });
+
+      li.appendChild(txt); li.appendChild(feld); li.appendChild(weg);
+      ul.appendChild(li);
+    });
+    $("stamm-leer").hidden = artikel.length > 0;
+    if(artikel.length > 400){
+      $("stamm-leer").hidden = false;
+      $("stamm-leer").textContent = "Es werden die ersten 400 von " + artikel.length + " Artikeln angezeigt. Suchen kannst du alle.";
+    }else if(artikel.length > 0){
+      $("stamm-leer").hidden = true;
+    }else{
+      $("stamm-leer").textContent = "Noch keine Artikel angelegt.";
+    }
+  }
+
+  $("knopf-artikel-neu").addEventListener("click", function(){
+    var bez = $("neu-bez").value.trim(), m = $("artikel-meldung");
+    if(!bez){ m.textContent = "Bitte eine Bezeichnung eintragen."; m.className = "meldung fehler"; return; }
+    artikel.push({ id:neueId("a"), nr:$("neu-nr").value.trim().toUpperCase(), bezeichnung:bez });
+    artikelSortieren();
+    $("neu-nr").value = ""; $("neu-bez").value = "";
+    m.textContent = "Angelegt."; m.className = "meldung gut";
+    artikelSpeichern(); stammZeichnen(); trefferZeichnen();
+  });
+
+  // ---------- Import ----------
+  function zeileTrennen(zeile){
+    if(zeile.indexOf("\t") !== -1) return zeile.split("\t");
+    if(zeile.indexOf(";") !== -1) return zeile.split(";");
+    return [zeile];
+  }
+
+  $("knopf-import").addEventListener("click", function(){
+    var roh = $("import").value, m = $("import-meldung");
+    var zeilen = roh.split(/\r?\n/).map(function(z){ return z.trim(); }).filter(Boolean);
+    if(zeilen.length === 0){ m.textContent = "Nichts eingefügt."; m.className = "meldung fehler"; return; }
+
+    var neu = 0, aktualisiert = 0, uebersprungen = 0;
+    zeilen.forEach(function(zeile, i){
+      var teile = zeileTrennen(zeile).map(function(t){ return t.replace(/^"|"$/g,"").trim(); });
+      var nr, bez;
+      if(teile.length >= 2){ nr = teile[0].toUpperCase(); bez = teile.slice(1).join(" ").trim(); }
+      else { nr = ""; bez = teile[0]; }
+      if(!bez){ uebersprungen++; return; }
+      // Überschriftenzeile erkennen
+      if(i === 0 && /^(artikel(nummer|nr)?|nr\.?|nummer|code)$/i.test(nr) ){ uebersprungen++; return; }
+
+      var da = nr ? artikel.filter(function(a){ return a.nr && a.nr === nr; })[0] : null;
+      if(da){ da.bezeichnung = bez; aktualisiert++; }
+      else { artikel.push({ id:neueId("a"), nr:nr, bezeichnung:bez }); neu++; }
+    });
+
+    artikelSortieren();
+    artikelSpeichern(); stammZeichnen(); trefferZeichnen();
+    if(gewaehlt) gewaehltAnzeigen();
+    $("import").value = "";
+    m.textContent = neu + " neu, " + aktualisiert + " aktualisiert"
+      + (uebersprungen ? ", " + uebersprungen + " übersprungen" : "") + ".";
+    m.className = "meldung gut";
+  });
+
+  // ---------- Mitarbeiter ----------
+  function leuteWahlFuellen(){
+    var sel = $("leute-wahl");
+    var vorher = sel.value || lies("pal-leute");
+    sel.textContent = "";
+    if(leute.length === 0){
+      var o = document.createElement("option");
+      o.textContent = "— kein Mitarbeiter angelegt —"; o.value = "";
+      sel.appendChild(o);
+      $("leute-hinweis").hidden = false;
+      return;
+    }
+    $("leute-hinweis").hidden = true;
+    leute.forEach(function(p){
+      var o = document.createElement("option");
+      o.value = p.id;
+      o.textContent = p.name + "  ·  " + (p.nr || "ohne Nummer");
+      sel.appendChild(o);
+    });
+    var gibt = leute.filter(function(p){ return p.id === vorher; })[0];
+    sel.value = gibt ? vorher : leute[0].id;
+  }
+
+  function leuteSpeichern(p){
+    lokalLeuteSichern();
+    if(!db) return;
+    db.doc("mitarbeiter/" + p.id).set({ nr:p.nr, name:p.name, stand:Date.now() }).catch(function(){});
+  }
+
+  function leuteZeichnen(){
+    var ul = $("leuteliste");
+    ul.textContent = "";
+    leute.forEach(function(p){
+      var li = document.createElement("li");
+      var txt = document.createElement("div"); txt.className = "txt";
+      var b = document.createElement("b"); b.textContent = p.name;
+      var s = document.createElement("small");
+      if(p.nr){ s.textContent = "Dienstnummer " + p.nr; } else { s.textContent = "Dienstnummer fehlt"; s.className = "fehlt"; }
+      txt.appendChild(b); txt.appendChild(s);
+
+      var feld = document.createElement("input");
+      feld.value = p.nr || ""; feld.placeholder = "Nr."; feld.inputMode = "numeric";
+      feld.setAttribute("aria-label","Dienstnummer");
+      feld.addEventListener("change", function(){
+        p.nr = feld.value.trim();
+        s.textContent = p.nr ? ("Dienstnummer " + p.nr) : "Dienstnummer fehlt";
+        s.className = p.nr ? "" : "fehlt";
+        leuteSpeichern(p); leuteWahlFuellen(); etikettenZeichnen();
+      });
+
+      var weg = document.createElement("button");
+      weg.className = "still"; weg.textContent = "Löschen";
+      weg.addEventListener("click", function(){
+        if(!window.confirm(p.name + " wirklich löschen?")) return;
+        leute = leute.filter(function(x){ return x.id !== p.id; });
+        lokalLeuteSichern();
+        if(db) db.doc("mitarbeiter/" + p.id).delete().catch(function(){});
+        leuteZeichnen(); leuteWahlFuellen(); etikettenZeichnen();
+      });
+
+      li.appendChild(txt); li.appendChild(feld); li.appendChild(weg);
+      ul.appendChild(li);
+    });
+    $("leute-leer").hidden = leute.length > 0;
+  }
+
+  $("knopf-leute-neu").addEventListener("click", function(){
+    var name = $("neu-name").value.trim(), nr = $("neu-dienst").value.trim(), m = $("leute-meldung");
+    if(!name){ m.textContent = "Bitte einen Namen eintragen."; m.className = "meldung fehler"; return; }
+    var p = { id:neueId("m"), nr:nr, name:name };
+    leute.push(p);
+    leute.sort(function(x,y){ return x.name.localeCompare(y.name, "de"); });
+    leuteSpeichern(p);
+    $("neu-name").value = ""; $("neu-dienst").value = "";
+    m.textContent = "Angelegt."; m.className = "meldung gut";
+    leuteZeichnen(); leuteWahlFuellen(); etikettenZeichnen();
+  });
+
+  // ---------- Inventur: scannen und addieren ----------
+  var scans = [];   // {menge, nr, zeit}
+
+  function scansLaden(){
+    try{
+      var roh = lies("pal-scans");
+      if(roh) scans = JSON.parse(roh) || [];
+    }catch(e){ scans = []; }
+  }
+  function scansSichern(){
+    try{ schreib("pal-scans", JSON.stringify(scans.slice(-2000))); }catch(e){}
+  }
+
+  function bezeichnungZu(nr){
+    if(!nr) return "";
+    var a = artikel.filter(function(x){ return x.nr && x.nr.toUpperCase() === nr; })[0];
+    return a ? a.bezeichnung : "";
+  }
+
+  function scanMeldung(t, art){
+    var m = $("scan-meldung");
+    m.textContent = t; m.className = "meldung" + (art ? " " + art : "");
+  }
+
+  // Kurzer Ton, damit man ohne Hinsehen hört, ob die Seite den Scan übernommen hat.
+  var tonWerk = null;
+  function piep(treffer){
+    if(!$("ton").checked) return;
+    try{
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      if(!tonWerk) tonWerk = new AC();
+      if(tonWerk.state === "suspended") tonWerk.resume();
+      var jetzt = tonWerk.currentTime;
+      function ton(hz, ab, dauer){
+        var o = tonWerk.createOscillator(), g = tonWerk.createGain();
+        o.type = "square"; o.frequency.value = hz;
+        g.gain.setValueAtTime(0.0001, jetzt + ab);
+        g.gain.exponentialRampToValueAtTime(0.12, jetzt + ab + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, jetzt + ab + dauer);
+        o.connect(g); g.connect(tonWerk.destination);
+        o.start(jetzt + ab); o.stop(jetzt + ab + dauer + 0.02);
+      }
+      if(treffer){ ton(1180, 0, 0.07); }
+      else { ton(280, 0, 0.11); ton(280, 0.15, 0.11); }
+    }catch(e){}
+  }
+
+  var blitzUhr = null;
+  function scanBlitz(treffer){
+    var feld = $("scanfeld");
+    window.clearTimeout(blitzUhr);
+    feld.classList.remove("getroffen","daneben");
+    // Neu zeichnen erzwingen, damit zwei Scans hintereinander beide blitzen.
+    void feld.offsetWidth;
+    feld.classList.add(treffer ? "getroffen" : "daneben");
+    blitzUhr = window.setTimeout(function(){
+      feld.classList.remove("getroffen","daneben");
+    }, 400);
+  }
+
+  // Der Handscanner tippt ins fokussierte Feld — der Fokus muss dort bleiben.
+  function scanfeldScharf(){
+    if($("ansicht-inventur").hidden) return;
+    var feld = $("scanfeld");
+    if(document.activeElement !== feld) feld.focus();
+  }
+
+  function bereitZeigen(bereit){
+    var el = $("bereit");
+    el.className = "bereit" + (bereit ? "" : " schlaeft");
+    el.lastChild.nodeValue = bereit
+      ? "Bereit für die nächste Palette"
+      : "Ins Feld tippen, dann geht es weiter";
+  }
+
+  function scanUebernehmen(roh){
+    var wert = String(roh || "").trim().toUpperCase();
+    if(!wert) return false;
+    var teile = wert.split("*");
+    var menge = teile.length === 2 ? parseInt(teile[0].replace(/[^0-9]/g, ""), 10) : NaN;
+    var nr = teile.length === 2 ? teile[1].trim() : "";
+    if(teile.length !== 2 || !isFinite(menge) || menge <= 0 || !nr){
+      scanMeldung("„" + wert + "“ passt nicht — erwartet wird Menge*Artikelnummer, z. B. 50*EDC.", "fehler");
+      scanBlitz(false); piep(false);
+      return false;
+    }
+    scans.push({ menge: menge, nr: nr, zeit: Date.now() });
+    scansSichern();
+    scansZeichnen();
+    var bez = bezeichnungZu(nr);
+    scanMeldung(menge + " × " + nr + (bez ? " · " + bez : " · nicht im Artikelstamm"), "gut");
+    scanBlitz(true); piep(true);
+    return true;
+  }
+
+  // Nach jedem Scan: Feld leeren, Fokus halten, bereit für die nächste Palette.
+  function scanFertig(){
+    var feld = $("scanfeld");
+    feld.value = "";
+    feld.focus();
+    bereitZeigen(true);
+  }
+
+  function summenRechnen(){
+    var nachNr = {}, reihe = [];
+    scans.forEach(function(s){
+      if(!nachNr[s.nr]){ nachNr[s.nr] = { nr: s.nr, menge: 0, paletten: 0 }; reihe.push(nachNr[s.nr]); }
+      nachNr[s.nr].menge += s.menge;
+      nachNr[s.nr].paletten += 1;
+    });
+    return reihe;
+  }
+
+  function summenText(){
+    return summenRechnen().map(function(g){ return g.menge + "*" + g.nr; }).join("\n");
+  }
+
+  function scansZeichnen(){
+    var summen = summenRechnen();
+    $("summenblock").hidden = summen.length === 0;
+
+    var ul = $("summen");
+    ul.textContent = "";
+    summen.forEach(function(g){
+      var li = document.createElement("li");
+      var code = document.createElement("span");
+      code.className = "code"; code.textContent = g.menge + "*" + g.nr;
+      var was = document.createElement("span");
+      was.className = "was";
+      var bez = bezeichnungZu(g.nr);
+      was.textContent = (bez || "nicht im Artikelstamm") + " · " + g.paletten + " Palette" + (g.paletten === 1 ? "" : "n");
+      li.appendChild(code); li.appendChild(was);
+      ul.appendChild(li);
+    });
+
+    var liste = $("scanliste");
+    liste.textContent = "";
+    scans.slice().reverse().slice(0, 300).forEach(function(s, i){
+      var echterIndex = scans.length - 1 - i;
+      var li = document.createElement("li");
+      li.className = "scanzeile";
+      var txt = document.createElement("div"); txt.className = "txt";
+      var b = document.createElement("b"); b.className = "code"; b.textContent = s.menge + "*" + s.nr;
+      var kl = document.createElement("small");
+      var bez = bezeichnungZu(s.nr);
+      kl.textContent = bez || "nicht im Artikelstamm";
+      if(!bez) kl.className = "fehlt";
+      txt.appendChild(b); txt.appendChild(kl);
+
+      var weg = document.createElement("button");
+      weg.className = "still"; weg.textContent = "Entfernen";
+      weg.addEventListener("click", function(){
+        scans.splice(echterIndex, 1);
+        scansSichern(); scansZeichnen();
+        scanMeldung("Entfernt: " + s.menge + "*" + s.nr, "gut");
+        scanfeldScharf();
+      });
+      li.appendChild(txt); li.appendChild(weg);
+      liste.appendChild(li);
+    });
+
+    var n = scans.length;
+    $("scan-zaehler").textContent = n === 0
+      ? "Noch nichts gescannt."
+      : n + " Palette" + (n === 1 ? "" : "n") + " gescannt.";
+    $("knopf-scan-leeren").hidden = n === 0;
+  }
+
+  var scanUhr = null;
+  $("scanfeld").addEventListener("input", function(){
+    var feld = $("scanfeld");
+    window.clearTimeout(scanUhr);
+
+    // Zwei Sterne heißen: zwei Codes sind ineinandergelaufen. Wo der erste
+    // endet, ist nicht eindeutig — also lieber nachfragen als falsch zählen.
+    var w = feld.value.trim();
+    if(w.indexOf("*", w.indexOf("*") + 1) > 0){
+      scanMeldung("Zwei Codes sind zusammengelaufen. Feld leeren und die beiden Paletten einzeln scannen.", "fehler");
+      scanBlitz(false);
+      bereitZeigen(false);
+      return;
+    }
+
+    // Ein Handscanner tippt den ganzen Code in einem Zug. Kommt kein Enter,
+    // wird nach kurzer Pause von selbst übernommen.
+    bereitZeigen(false);
+    scanUhr = window.setTimeout(function(){
+      var jetzt = feld.value.trim();
+      if(jetzt.length >= 3 && jetzt.indexOf("*") > 0){
+        if(scanUebernehmen(jetzt)) scanFertig();
+        else bereitZeigen(true);
+      }else{
+        bereitZeigen(true);
+      }
+    }, 300);
+  });
+
+  $("scanfeld").addEventListener("keydown", function(e){
+    if(e.key !== "Enter") return;
+    e.preventDefault();
+    window.clearTimeout(scanUhr);
+    if(scanUebernehmen($("scanfeld").value)) scanFertig();
+  });
+
+  // Fokus bleibt im Scanfeld, solange der Inventur-Reiter offen ist.
+  $("scanfeld").addEventListener("blur", function(){
+    window.setTimeout(function(){
+      var a = document.activeElement;
+      if(!a || a === document.body) scanfeldScharf();
+    }, 60);
+  });
+  $("ansicht-inventur").addEventListener("click", function(e){
+    var t = e.target;
+    if(t && (t.tagName === "BUTTON" || t.tagName === "INPUT" || t.tagName === "LABEL")) return;
+    scanfeldScharf();
+  });
+
+  $("knopf-scan-hinzu").addEventListener("click", function(){
+    window.clearTimeout(scanUhr);
+    if(scanUebernehmen($("scanfeld").value)) scanFertig();
+    else $("scanfeld").focus();
+  });
+
+  $("knopf-scan-leeren").addEventListener("click", function(){
+    if(!window.confirm("Alle " + scans.length + " gescannten Paletten löschen?")) return;
+    scans = []; scansSichern(); scansZeichnen();
+    scanMeldung("Liste geleert.", "gut");
+    scanFertig();
+  });
+
+  $("knopf-summe-kopieren").addEventListener("click", function(){
+    var text = summenText();
+    if(!text) return;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text)
+        .then(function(){ scanMeldung("Kopiert: " + text.replace(/\n/g, "  "), "gut"); })
+        .catch(function(){ scanMeldung("Kopieren ging nicht — bitte von Hand abtippen.", "fehler"); });
+    }else{
+      scanMeldung("Kopieren ging nicht — bitte von Hand abtippen.", "fehler");
+    }
+  });
+
+  // ---------- Start ----------
+  lokalLaden();
+  scansLaden();
+  scansZeichnen();
+  mengenfelderBauen();
+  leuteWahlFuellen();
+  trefferZeichnen();
+  stammZeichnen();
+  leuteZeichnen();
+  etikettenZeichnen();
+
+  if(window.claude && typeof window.claude.use === "function"){
+    window.claude.use("user").then(function(u){
+      if(!u) return;
+      return u.me().then(function(ich){ meineId = ich.id; });
+    }).catch(function(){});
+
+    window.claude.use("db").then(function(d){
+      if(!d){
+        $("status").className = "status lokal";
+        $("status").textContent = "Daten liegen auf diesem Gerät";
+        return;
+      }
+      db = d;
+      $("status").className = "status aktiv";
+      $("status").textContent = "Mit der Lagerdatenbank verbunden";
+
+      db.collection("artikelbloecke").limit(30).onSnapshot(function(snap){
+        var alle = [];
+        var sortiert = snap.docs.slice().sort(function(a,b){
+          return (parseInt(a.id.slice(1),10)||0) - (parseInt(b.id.slice(1),10)||0);
+        });
+        sortiert.forEach(function(doc){
+          var x = doc.data() || {};
+          if(Array.isArray(x.artikel)){
+            x.artikel.forEach(function(a){
+              if(a && a.bezeichnung) alle.push({ id:a.id || neueId("a"), nr:a.nr || "", bezeichnung:a.bezeichnung });
+            });
+          }
+        });
+        artikel = alle;
+        artikelSortieren();
+        if(gewaehlt){
+          var neu = artikel.filter(function(a){ return a.id === gewaehlt.id; })[0];
+          if(neu){ gewaehlt = neu; gewaehltAnzeigen(); }
+        }
+        stammZeichnen(); trefferZeichnen(); etikettenZeichnen(); scansZeichnen();
+      }, function(){
+        $("status").className = "status lokal";
+        $("status").textContent = "Artikelliste wird gerade nicht aktualisiert";
+      });
+
+      db.collection("mitarbeiter").limit(200).onSnapshot(function(snap){
+        leute = snap.docs.map(function(doc){
+          var x = doc.data() || {};
+          return { id:doc.id, nr:x.nr || "", name:x.name || "(ohne Namen)" };
+        });
+        leute.sort(function(x,y){ return x.name.localeCompare(y.name, "de"); });
+        leuteZeichnen(); leuteWahlFuellen(); etikettenZeichnen();
+      }, function(){});
+    }).catch(function(){
+      $("status").className = "status lokal";
+      $("status").textContent = "Daten liegen auf diesem Gerät";
+    });
+  }else{
+    $("status").className = "status lokal";
+    $("status").textContent = "Daten liegen auf diesem Gerät";
+  }
+})();
+</script>
+
+</body>
+</html>
