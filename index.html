@@ -169,82 +169,15 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 .reiter button:hover{color:var(--tinte)}
 .reiter button[aria-selected="true"]{background:var(--tinte); color:var(--grund); font-weight:600}
 
+.version{font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--leise);
+  border:1px solid var(--kante); border-radius:999px; padding:1px 7px; margin-left:auto}
+
+/* Vorschau lässt sich wegklappen — auf kleinen Geräten kostet sie den halben Schirm */
+body.vorschau-aus .vorschauspalte{display:none}
+@media print{ body.vorschau-aus .vorschauspalte{display:flex !important} }
+
 /* Handgerät: kleines Display, alles enger — ohne dass Tippziele zu klein werden */
-@media (max-width:700px){
-  body{font-size:14px}
-  .kopf{gap:8px; padding:7px 10px}
-  .kopfmarke{flex:1 1 auto; gap:9px}
-  .kopfmarke .logo{height:19px; width:92px}
-  .kopfmarke .strich{height:16px}
-  .kopfmarke h1{font-size:13px}
-  .kopfmarke small{font-size:8.5px; letter-spacing:.1em}
-  .reiter{margin-left:auto; padding:2px; gap:2px}
-  .reiter button{font-size:11.5px; padding:5px 9px}
-  .status{font-size:10.5px; gap:7px}
-  .status button{font-size:10px; padding:2px 8px}
 
-  .buehne{padding:10px 10px 32px; gap:12px}
-  .karte{border-radius:10px; margin-bottom:12px}
-  .karte > h2{padding:9px 12px; font-size:9.5px; letter-spacing:.13em}
-  .karte > .inhalt{padding:12px; gap:13px}
-
-  .schritt{gap:6px}
-  .schritt .nr{width:17px; height:17px; font-size:10px; border-radius:5px}
-  .schritt .titel span{font-size:10.5px; letter-spacing:.1em}
-  label{font-size:11px}
-  input,select,textarea{font-size:15px; padding:9px 10px; border-radius:8px}
-  input.gross,select.gross{font-size:18px}
-  .zwei{gap:9px}
-
-  .mengen{grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:7px}
-  .mengen .m{padding:3px 9px; gap:6px}
-  .mengen .m span{font-size:9.5px}
-  .mengen .m input{font-size:16px; padding:3px 0}
-  .summe .zahl{font-size:10.5px}
-  .summe .zahl b{font-size:19px}
-
-  button.tat{font-size:15px; padding:12px 16px; border-radius:9px}
-  button.still{font-size:12px; padding:7px 11px}
-  .meldung{font-size:12px}
-  .hinweis{font-size:11px; line-height:1.45}
-
-  .treffer{max-height:210px}
-  .treffer li{padding:9px 11px; font-size:13.5px}
-  .treffer li .nr{font-size:10.5px}
-  .gewaehlt-karte{padding:9px 11px; gap:9px}
-  .gewaehlt-karte b{font-size:13.5px}
-  .gewaehlt-karte small{font-size:11px}
-
-  .stammliste{max-height:320px}
-  .stammliste li{padding:8px 12px; gap:8px}
-  .stammliste .txt b{font-size:13px}
-  .stammliste .txt small{font-size:10.5px}
-  .stammliste input{width:88px; font-size:13px; padding:6px 8px}
-
-  .summenkopf{padding:11px 12px 8px}
-  .summenkopf span{font-size:9.5px}
-  .summen{padding:0 12px 12px; gap:7px}
-  .summen .code{font-size:17px; padding:5px 11px}
-  .summen .was{font-size:11px}
-  .bereit{font-size:11.5px}
-  .tonschalter{font-size:11.5px}
-
-  .huelle{padding:2mm; border-radius:10px}
-  details.zpl summary{padding:10px 12px; font-size:9.5px}
-  details.klapp summary{padding:9px 11px; font-size:12px}
-
-  .anmeldekarte{padding:22px 20px 20px; gap:12px; border-radius:13px}
-  .anmeldekarte .marke .logo{width:150px; height:32px}
-  .anmeldekarte h1{font-size:16px}
-  .anmeldekarte .unter{font-size:10px}
-  .lampe{height:104px}
-  .kabel{height:48px}
-  .schirm{top:44px; width:94px; height:36px}
-  .birne{top:76px; width:14px; height:14px}
-  .kegel{top:80px; width:330px; height:260px}
-  .schnur{top:72px; left:calc(50% + 38px)}
-  .anmelden.licht-an .birne{box-shadow:0 0 11px 4px rgba(255,180,90,.85), 0 0 34px 13px rgba(246,135,18,.42)}
-}
 .status{width:100%; font-size:12px; color:var(--leise); order:9;
   display:flex; align-items:center; gap:10px; flex-wrap:wrap}
 .status::before{
@@ -445,6 +378,103 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
 .et-fuss div{flex:1; text-align:center}
 .et-fuss .l{border-right:0.55mm solid #000}
 
+@media (max-width:700px){
+  body{font-size:12.5px}
+  .kopf{gap:6px; padding:5px 8px}
+  .kopfmarke{flex:1 1 auto; gap:9px}
+  .kopfmarke .logo{height:15px; width:74px}
+  .kopfmarke .strich{height:13px}
+  .kopfmarke h1{font-size:11.5px}
+  .kopfmarke small{display:none}
+  .reiter{margin-left:auto; padding:2px; gap:2px}
+  .reiter button{font-size:10.5px; padding:4px 8px}
+  .status{font-size:9.5px; gap:6px}
+  .status button{font-size:10px; padding:2px 8px}
+
+  .buehne{padding:7px 7px 24px; gap:9px}
+  .karte{border-radius:9px; margin-bottom:9px}
+  .karte > h2{padding:7px 10px; font-size:8.5px; letter-spacing:.12em}
+  .karte > .inhalt{padding:9px; gap:10px}
+
+  .schritt{gap:4px}
+  .schritt .nr{width:15px; height:15px; font-size:9px; border-radius:4px}
+  .schritt .titel span{font-size:9.5px; letter-spacing:.09em}
+  label{font-size:10px}
+  input,select,textarea{font-size:14px; padding:7px 9px; border-radius:7px}
+  input.gross,select.gross{font-size:16px}
+  .zwei{gap:9px}
+
+  .mengen{grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:5px}
+  .mengen .m{padding:2px 7px; gap:5px}
+  .mengen .m span{font-size:9.5px}
+  .mengen .m input{font-size:15px; padding:2px 0}
+  .summe .zahl{font-size:10.5px}
+  .summe .zahl b{font-size:17px}
+
+  button.tat{font-size:14px; padding:10px 14px; border-radius:8px}
+  button.still{font-size:11px; padding:6px 9px}
+  .meldung{font-size:11px}
+  .hinweis{font-size:10px; line-height:1.4}
+
+  .treffer{max-height:170px}
+  .treffer li{padding:7px 9px; font-size:12.5px}
+  .treffer li .nr{font-size:10.5px}
+  .gewaehlt-karte{padding:7px 9px; gap:7px}
+  .gewaehlt-karte b{font-size:12.5px}
+  .gewaehlt-karte small{font-size:11px}
+
+  .stammliste{max-height:320px}
+  .stammliste li{padding:6px 9px; gap:6px}
+  .stammliste .txt b{font-size:13px}
+  .stammliste .txt small{font-size:10.5px}
+  .stammliste input{width:88px; font-size:13px; padding:6px 8px}
+
+  .summenkopf{padding:11px 12px 8px}
+  .summenkopf span{font-size:9.5px}
+  .summen{padding:0 12px 12px; gap:7px}
+  .summen .code{font-size:15px; padding:4px 9px}
+  .summen .was{font-size:11px}
+  .bereit{font-size:11.5px}
+  .tonschalter{font-size:11.5px}
+
+  /* Die Eingabekarten sind das, was im Lager Platz frisst: Erklärtexte und
+     Schrittnummern helfen beim ersten Mal, danach stehen sie nur im Weg. */
+  #ansicht-etikett .schritt > .hinweis,
+  #ansicht-inventur .schritt > .hinweis,
+  #ansicht-etikett > .inhalt > .hinweis{display:none}
+  .schritt .nr{display:none}
+  .schritt > .titel{gap:0; margin-bottom:-1px}
+  .schritt .titel span{font-size:9px; letter-spacing:.14em; color:var(--leise)}
+  .karte > .inhalt{padding:8px; gap:8px}
+  .schritt{gap:3px}
+  .zwei{gap:7px}
+  #ansicht-etikett label{font-size:9.5px; letter-spacing:.06em; text-transform:uppercase}
+  #ansicht-etikett input.gross,#ansicht-etikett select.gross{font-size:15px; padding:6px 8px}
+  #ansicht-etikett .treffer{max-height:132px}
+  #ansicht-inventur .karte > .inhalt,
+  #ansicht-inventur .inhalt{padding:8px; gap:8px}
+  #scanfeld{font-size:15px; padding:7px 9px}
+  .summe{gap:8px}
+  .summe .zahl b{font-size:16px}
+  button.tat{padding:9px 14px; font-size:13.5px}
+
+  .huelle{padding:2mm; border-radius:10px}
+  details.zpl summary{padding:10px 12px; font-size:9.5px}
+  details.klapp summary{padding:9px 11px; font-size:12px}
+
+  .anmeldekarte{padding:22px 20px 20px; gap:12px; border-radius:13px}
+  .anmeldekarte .marke .logo{width:150px; height:32px}
+  .anmeldekarte h1{font-size:16px}
+  .anmeldekarte .unter{font-size:10px}
+  .lampe{height:104px}
+  .kabel{height:48px}
+  .schirm{top:44px; width:94px; height:36px}
+  .birne{top:76px; width:14px; height:14px}
+  .kegel{top:80px; width:330px; height:260px}
+  .schnur{top:72px; left:calc(50% + 38px)}
+  .anmelden.licht-an .birne{box-shadow:0 0 11px 4px rgba(255,180,90,.85), 0 0 34px 13px rgba(246,135,18,.42)}
+}
+
 @page{ size:100mm 150mm; margin:0 }
 @media print{
   html,body{background:#fff}
@@ -517,6 +547,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
+    <span class="version">v7</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -571,8 +602,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         <div>
           <button type="button" class="tat" id="knopf-drucken">Drucken</button>
           <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px">
-            <button type="button" class="still" id="knopf-dialog">Stattdessen Druckdialog</button>
+            <button type="button" class="still" id="knopf-dialog">Druckdialog</button>
             <button type="button" class="still" id="knopf-drucker">Drucker …</button>
+            <button type="button" class="still" id="knopf-vorschau">Vorschau</button>
           </div>
           <p class="meldung" id="meldung"></p>
         </div>
@@ -1100,6 +1132,18 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     window.setTimeout(function(){ try{ if(fenster) fenster.close(); }catch(e){} }, 1500);
     return !!fenster;
   }
+
+  // Auf kleinen Geräten startet die Vorschau eingeklappt — sie kostet dort den halben Schirm.
+  (function vorschauEinrichten(){
+    var gemerkt = lies("pal-vorschau");
+    var an = gemerkt ? gemerkt === "an" : true;
+    document.body.classList.toggle("vorschau-aus", !an);
+    $("knopf-vorschau").addEventListener("click", function(){
+      var jetztAus = document.body.classList.toggle("vorschau-aus");
+      schreib("pal-vorschau", jetztAus ? "aus" : "an");
+      if(!jetztAus) etikettenZeichnen();
+    });
+  })();
 
   $("knopf-drucker").addEventListener("click", function(){
     var b = $("druckerbereich");
