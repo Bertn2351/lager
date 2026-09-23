@@ -241,6 +241,22 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 .pruefliste ol{margin:0 0 11px; padding-left:20px; display:grid; gap:5px}
 .pruefliste li{font-size:12.5px; color:var(--gedaempft); line-height:1.45}
 
+.rechtekarte{border-bottom:1px solid var(--kante); padding:13px 16px}
+.rechtekarte:last-child{border-bottom:none}
+.rechtekarte .kopfzeile{display:flex; align-items:center; gap:10px; margin-bottom:10px}
+.rechtekarte .mail{font-family:"IBM Plex Mono",monospace; font-size:13.5px; font-weight:500;
+  min-width:0; overflow-wrap:anywhere}
+.rechtekarte .ichselbst{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--gut); border:1px solid currentColor; border-radius:999px; padding:1px 8px}
+.rechtekarte .weg{margin-left:auto; flex:none}
+.haken{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:7px}
+.haken label{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--gedaempft);
+  cursor:pointer; padding:6px 9px; border:1px solid var(--kante); border-radius:8px;
+  background:var(--flaeche-2); text-transform:none; letter-spacing:0}
+.haken label:hover{border-color:var(--kante-hell); color:var(--tinte)}
+.haken input{width:auto; margin:0; accent-color:var(--akzent); flex:none}
+.haken label.wichtig{border-color:color-mix(in srgb, var(--akzent) 40%, var(--kante))}
+
 .version{font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--leise);
   border:1px solid var(--kante); border-radius:999px; padding:1px 7px; margin-left:auto}
 
@@ -523,6 +539,9 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   .stammliste .txt small{font-size:10.5px}
   .stammliste input{width:88px; font-size:13px; padding:6px 8px}
 
+  .rechtekarte{padding:10px 12px}
+  .haken{grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:5px}
+  .haken label{font-size:11.5px; padding:5px 8px}
   .summenkopf{padding:11px 12px 8px}
   .summenkopf span{font-size:9.5px}
   .summen{padding:0 12px 12px; gap:7px}
@@ -641,10 +660,11 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     <button type="button" id="reiter-artikel" role="tab" aria-selected="false">Artikel</button>
     <button type="button" id="reiter-inventur" role="tab" aria-selected="false">Inventur</button>
     <button type="button" id="reiter-leute" role="tab" aria-selected="false">Mitarbeiter</button>
+    <button type="button" id="reiter-rechte" role="tab" aria-selected="false" hidden>Rechte</button>
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v10</span>
+    <span class="version">v11</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -860,6 +880,39 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     </section>
   </div>
 
+    <section class="karte" id="keinzugang" hidden>
+      <h2>Kein Bereich freigeschaltet</h2>
+      <div class="inhalt">
+        <p class="hinweis" style="font-size:14px; line-height:1.6">
+          Für deinen Zugang ist gerade kein Bereich freigegeben. Wende dich an denjenigen,
+          der die Rechte vergibt — er kann dich unter „Rechte“ freischalten.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== Rechte ===== -->
+    <section class="karte" id="ansicht-rechte" hidden>
+      <h2>Rechte</h2>
+      <div class="inhalt">
+        <div class="zwei">
+          <div>
+            <label for="neu-recht-mail">E-Mail des Zugangs</label>
+            <input id="neu-recht-mail" type="email" placeholder="name@firma.at" autocomplete="off">
+          </div>
+          <div style="display:flex; align-items:flex-end">
+            <button type="button" class="still" id="knopf-recht-neu" style="width:100%">Person aufnehmen</button>
+          </div>
+        </div>
+        <p class="meldung" id="recht-meldung"></p>
+        <p class="hinweis">
+          Trage hier genau die E-Mail ein, mit der sich die Person anmeldet — dieselbe, die du in
+          Supabase angelegt hast. Wer hier nicht steht, bekommt nur Etikett und Inventur zu sehen.
+        </p>
+      </div>
+      <div id="rechteliste"></div>
+      <p class="hinweis" style="padding:12px 16px" id="rechte-leer">Noch niemand eingetragen.</p>
+    </section>
+
   <!-- ===== Vorschau ===== -->
   <div class="vorschauspalte" id="vorschauspalte">
     <div class="huelle">
@@ -928,13 +981,176 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   function lokalLeute(){ if(!sb) schreib("pal-leute-stamm", JSON.stringify(leute)); }
   function lokalScans(){ if(!sb) schreib("pal-scans", JSON.stringify(scans.slice(-2000))); }
 
+  // ---------- Rechte ----------
+  var BEREICHE = [
+    { schluessel:"etikett",         name:"Etiketten drucken" },
+    { schluessel:"inventur",        name:"Inventur zählen" },
+    { schluessel:"bestand",         name:"Lagerbestand sehen" },
+    { schluessel:"inventur_leeren", name:"Zählliste leeren",   wichtig:true },
+    { schluessel:"artikel",         name:"Artikel ansehen" },
+    { schluessel:"artikel_aendern", name:"Artikel ändern",     wichtig:true },
+    { schluessel:"mitarbeiter",     name:"Mitarbeiter pflegen" },
+    { schluessel:"verwaltung",      name:"Rechte vergeben",    wichtig:true }
+  ];
+  // Wer nicht eingetragen ist, darf das Nötigste: drucken und zählen.
+  var GRUNDRECHTE = { etikett:true, inventur:true, bestand:false, inventur_leeren:false,
+                      artikel:false, artikel_aendern:false, mitarbeiter:false, verwaltung:false };
+  var ALLES = { etikett:true, inventur:true, bestand:true, inventur_leeren:true,
+                artikel:true, artikel_aendern:true, mitarbeiter:true, verwaltung:true };
+
+  var rechte = {};               // was ICH darf
+  var rechteListe = [];          // {email, bereiche}
+  var rechteLeer = true;         // noch niemand eingetragen -> Ersteinrichtung
+
+  function darf(was){ return !!rechte[was]; }
+
+  function rechteHolen(){
+    if(!sb){ rechte = ALLES; rechteLeer = true; return Promise.resolve(); }
+    return sb.from("rechte").select("email,bereiche").limit(200).then(function(res){
+      if(res.error){ rechte = GRUNDRECHTE; return; }
+      rechteListe = (res.data || []).map(function(r){
+        return { email:(r.email || "").toLowerCase(), bereiche:r.bereiche || {} };
+      });
+      rechteListe.sort(function(a,b){ return a.email.localeCompare(b.email); });
+      rechteLeer = rechteListe.length === 0;
+
+      if(rechteLeer){
+        // Noch niemand vergeben: Der erste Angemeldete richtet ein und darf alles.
+        rechte = ALLES;
+        return;
+      }
+      var meiner = rechteListe.filter(function(r){
+        return r.email === String(angemeldet || "").toLowerCase();
+      })[0];
+      rechte = {};
+      Object.keys(ALLES).forEach(function(k){
+        rechte[k] = meiner ? !!meiner.bereiche[k] : !!GRUNDRECHTE[k];
+      });
+    }).catch(function(){ rechte = GRUNDRECHTE; });
+  }
+
+  // Bereiche ein- und ausblenden, je nachdem was erlaubt ist
+  function rechteAnwenden(){
+    $("reiter-etikett").hidden = !darf("etikett");
+    $("reiter-inventur").hidden = !darf("inventur");
+    $("reiter-artikel").hidden = !darf("artikel");
+    $("reiter-leute").hidden = !darf("mitarbeiter");
+    $("reiter-rechte").hidden = !darf("verwaltung");
+    $("knopf-scan-leeren").dataset.gesperrt = darf("inventur_leeren") ? "" : "ja";
+
+    // Artikel nur ansehen: alles zum Ändern verschwindet
+    var aendern = darf("artikel_aendern");
+    ["neu-nr","neu-bez","knopf-artikel-neu"].forEach(function(id){
+      var el = $(id); if(el) el.closest("div").hidden = !aendern;
+    });
+    var klapp = document.querySelector("#ansicht-artikel details.klapp");
+    if(klapp) klapp.hidden = !aendern;
+
+    // Auf einen erlaubten Reiter springen, falls der aktuelle weg ist
+    var offen = ["etikett","artikel","inventur","leute","rechte"].filter(function(r){
+      return !$("ansicht-" + r).hidden;
+    })[0];
+    var erlaubt = { etikett:darf("etikett"), artikel:darf("artikel"), inventur:darf("inventur"),
+                    leute:darf("mitarbeiter"), rechte:darf("verwaltung") };
+    var ziel = ["etikett","inventur","artikel","leute","rechte"].filter(function(r){ return erlaubt[r]; })[0];
+    if(!ziel){
+      // Niemandem etwas erlaubt: alles zu, sonst bliebe ein Bereich offen stehen
+      ["etikett","artikel","inventur","leute","rechte"].forEach(function(r){ $("ansicht-" + r).hidden = true; });
+      $("vorschauspalte").hidden = true;
+      $("keinzugang").hidden = false;
+      return;
+    }
+    $("keinzugang").hidden = true;
+    if(!offen || !erlaubt[offen]) reiterWechseln(ziel);
+    stammZeichnen(); scansZeichnen();
+  }
+
+  function rechteZeichnen(){
+    var box = $("rechteliste");
+    box.textContent = "";
+    rechteListe.forEach(function(r){
+      var karte = document.createElement("div"); karte.className = "rechtekarte";
+
+      var kopf = document.createElement("div"); kopf.className = "kopfzeile";
+      var mail = document.createElement("span"); mail.className = "mail"; mail.textContent = r.email;
+      kopf.appendChild(mail);
+      if(r.email === String(angemeldet || "").toLowerCase()){
+        var ich = document.createElement("span"); ich.className = "ichselbst"; ich.textContent = "das bist du";
+        kopf.appendChild(ich);
+      }
+      var weg = document.createElement("button");
+      weg.className = "still weg"; weg.textContent = "Entfernen";
+      weg.addEventListener("click", function(){
+        if(!window.confirm(r.email + " aus der Rechteliste entfernen?\n\nDie Person kann sich weiterhin anmelden, sieht dann aber nur noch Etikett und Inventur.")) return;
+        rechteListe = rechteListe.filter(function(x){ return x.email !== r.email; });
+        if(sb) sb.from("rechte").delete().eq("email", r.email).then(function(){});
+        rechteZeichnen();
+      });
+      kopf.appendChild(weg);
+      karte.appendChild(kopf);
+
+      var haken = document.createElement("div"); haken.className = "haken";
+      BEREICHE.forEach(function(b){
+        var label = document.createElement("label");
+        if(b.wichtig) label.className = "wichtig";
+        var box2 = document.createElement("input");
+        box2.type = "checkbox";
+        box2.checked = !!r.bereiche[b.schluessel];
+        box2.addEventListener("change", function(){
+          r.bereiche[b.schluessel] = box2.checked;
+          rechteSpeichern(r);
+          if(r.email === String(angemeldet || "").toLowerCase()){
+            rechte[b.schluessel] = box2.checked;
+            rechteAnwenden();
+          }
+        });
+        var text = document.createElement("span"); text.textContent = b.name;
+        label.appendChild(box2); label.appendChild(text);
+        haken.appendChild(label);
+      });
+      karte.appendChild(haken);
+      box.appendChild(karte);
+    });
+    $("rechte-leer").hidden = rechteListe.length > 0;
+  }
+
+  function rechteSpeichern(r){
+    var m = $("recht-meldung");
+    if(!sb){ m.textContent = "Ohne Datenbank nicht speicherbar."; m.className = "meldung fehler"; return; }
+    sb.from("rechte").upsert({ email:r.email, bereiche:r.bereiche }, { onConflict:"email" })
+      .then(function(res){
+        if(res.error){ m.textContent = "Konnte nicht gespeichert werden — darfst du Rechte vergeben?"; m.className = "meldung fehler"; }
+        else { m.textContent = "Gespeichert."; m.className = "meldung gut";
+               window.setTimeout(function(){ if(m.textContent === "Gespeichert.") m.textContent = ""; }, 2000); }
+      });
+  }
+
+  $("knopf-recht-neu").addEventListener("click", function(){
+    var mail = $("neu-recht-mail").value.trim().toLowerCase();
+    var m = $("recht-meldung");
+    if(!mail || mail.indexOf("@") === -1){
+      m.textContent = "Bitte eine gültige E-Mail eintragen."; m.className = "meldung fehler"; return;
+    }
+    if(rechteListe.some(function(r){ return r.email === mail; })){
+      m.textContent = "Diese Person steht schon in der Liste."; m.className = "meldung fehler"; return;
+    }
+    var neuer = { email:mail, bereiche:{ etikett:true, inventur:true } };
+    rechteListe.push(neuer);
+    rechteListe.sort(function(a,b){ return a.email.localeCompare(b.email); });
+    rechteSpeichern(neuer);
+    $("neu-recht-mail").value = "";
+    rechteLeer = false;
+    rechteZeichnen();
+  });
+
   // ---------- Reiter ----------
   function reiterWechseln(name){
     $("ansicht-etikett").hidden  = name !== "etikett";
     $("ansicht-artikel").hidden  = name !== "artikel";
     $("ansicht-inventur").hidden = name !== "inventur";
     $("ansicht-leute").hidden    = name !== "leute";
-    ["etikett","artikel","inventur","leute"].forEach(function(r){
+    $("ansicht-rechte").hidden   = name !== "rechte";
+    ["etikett","artikel","inventur","leute","rechte"].forEach(function(r){
       $("reiter-" + r).setAttribute("aria-selected", name === r ? "true" : "false");
     });
     $("vorschauspalte").hidden = name !== "etikett";
@@ -943,6 +1159,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   $("reiter-etikett").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("etikett"); });
   $("reiter-artikel").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("artikel"); stammZeichnen(); });
   $("reiter-leute").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("leute"); leuteZeichnen(); });
+  $("reiter-rechte").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("rechte"); rechteZeichnen(); });
   $("reiter-inventur").addEventListener("click", function(){
     reiterWechseln("inventur");
     scansHolen().then(function(){
@@ -1401,13 +1618,14 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       var stuecke = [];
       if(a.nr) stuecke.push("Nr. " + a.nr);
       if(a.ean) stuecke.push("Barcode " + a.ean);
-      if(a.bestand != null && isFinite(a.bestand)) stuecke.push("Bestand " + a.bestand);
+      if(darf("bestand") && a.bestand != null && isFinite(a.bestand)) stuecke.push("Bestand " + a.bestand);
       if(stuecke.length){ s.textContent = stuecke.join(" · "); }
       else { s.textContent = "Artikelnummer fehlt"; s.className = "fehlt"; }
       txt.appendChild(b); txt.appendChild(s);
 
       var feld = document.createElement("input");
       feld.value = a.nr || ""; feld.placeholder = "Nr."; feld.setAttribute("aria-label","Artikelnummer");
+      feld.disabled = !darf("artikel_aendern");
       feld.addEventListener("change", function(){
         a.nr = feld.value.trim().toUpperCase();
         s.textContent = a.nr ? ("Artikelnr. " + a.nr) : "Artikelnummer fehlt";
@@ -1419,6 +1637,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
       var weg = document.createElement("button");
       weg.className = "still"; weg.textContent = "Löschen";
+      weg.hidden = !darf("artikel_aendern");
       weg.addEventListener("click", function(){
         if(!window.confirm("„" + a.bezeichnung + "“ wirklich löschen?")) return;
         artikel = artikel.filter(function(x){ return x.id !== a.id; });
@@ -1858,7 +2077,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       li.appendChild(was);
 
       // Sollbestand aus dem Artikelstamm gegenrechnen, wenn er da ist
-      if(a && a.bestand != null && isFinite(a.bestand)){
+      if(darf("bestand") && a && a.bestand != null && isFinite(a.bestand)){
         var diff = g.menge - a.bestand;
         var ab = document.createElement("span");
         ab.className = "abgleich " + (diff === 0 ? "passt" : (diff > 0 ? "mehr" : "weniger"));
@@ -2090,6 +2309,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   });
 
   $("knopf-scan-leeren").addEventListener("click", function(){
+    if(!darf("inventur_leeren")){
+      scanMeldung("Die Zählliste darf nur leeren, wer das Recht dazu hat.", "fehler");
+      return;
+    }
     var frage = sb
       ? "Alle " + scans.length + " gescannten Paletten löschen?\n\nAchtung: Das gilt für alle Geräte — auch für die Kollegen, die gerade mitzählen."
       : "Alle " + scans.length + " gescannten Paletten löschen?";
@@ -2132,7 +2355,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("knopf-abmelden").hidden = false;
     statusSetzen("Angemeldet als " + angemeldet, "aktiv");
     mengenfelderBauen();
-    Promise.all([artikelHolen(), leuteHolen(), scansHolen()]).then(function(){
+    rechteHolen().then(function(){
+      rechteAnwenden();
+      if(rechteLeer && darf("verwaltung")){
+        statusSetzen("Angemeldet als " + angemeldet + " · noch keine Rechte vergeben, du darfst alles", "aktiv");
+      }
+      return Promise.all([artikelHolen(), leuteHolen(), scansHolen()]);
+    }).then(function(){
       leuteWahlFuellen();
       etikettenZeichnen();
     });
@@ -2209,7 +2438,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("knopf-abmelden").hidden = true;
     statusSetzen(grund, "lokal");
     lokalLaden();
+    rechte = ALLES;
     mengenfelderBauen();
+    $("reiter-rechte").hidden = true;
     stammZeichnen(); leuteZeichnen(); leuteWahlFuellen();
     trefferZeichnen(); scansZeichnen(); etikettenZeichnen();
   }
