@@ -664,7 +664,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v11</span>
+    <span class="version">v12</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1097,9 +1097,16 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         box2.type = "checkbox";
         box2.checked = !!r.bereiche[b.schluessel];
         box2.addEventListener("change", function(){
+          var selbst = r.email === String(angemeldet || "").toLowerCase();
+          if(selbst && b.schluessel === "verwaltung" && !box2.checked){
+            if(!window.confirm("Du nimmst dir selbst das Recht, Rechte zu vergeben.\n\nDanach kommst du nur noch über die Datenbank wieder hinein. Wirklich?")){
+              box2.checked = true;
+              return;
+            }
+          }
           r.bereiche[b.schluessel] = box2.checked;
           rechteSpeichern(r);
-          if(r.email === String(angemeldet || "").toLowerCase()){
+          if(selbst){
             rechte[b.schluessel] = box2.checked;
             rechteAnwenden();
           }
@@ -1134,12 +1141,28 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(rechteListe.some(function(r){ return r.email === mail; })){
       m.textContent = "Diese Person steht schon in der Liste."; m.className = "meldung fehler"; return;
     }
-    var neuer = { email:mail, bereiche:{ etikett:true, inventur:true } };
+    // Der erste Eintrag und der eigene Zugang bekommen alles — sonst sperrt
+    // sich aus, wer die Liste gerade erst anlegt.
+    var selbst = mail === String(angemeldet || "").toLowerCase();
+    var voll = rechteListe.length === 0 || selbst;
+    var bereiche = {};
+    Object.keys(ALLES).forEach(function(k){
+      bereiche[k] = voll ? true : !!GRUNDRECHTE[k];
+    });
+    var neuer = { email:mail, bereiche:bereiche };
     rechteListe.push(neuer);
     rechteListe.sort(function(a,b){ return a.email.localeCompare(b.email); });
     rechteSpeichern(neuer);
     $("neu-recht-mail").value = "";
     rechteLeer = false;
+    if(selbst){
+      Object.keys(bereiche).forEach(function(k){ rechte[k] = bereiche[k]; });
+      rechteAnwenden();
+    }
+    m.textContent = voll
+      ? mail + " aufgenommen — mit allen Rechten."
+      : mail + " aufgenommen — darf drucken und zählen. Häkchen unten anpassen.";
+    m.className = "meldung gut";
     rechteZeichnen();
   });
 
