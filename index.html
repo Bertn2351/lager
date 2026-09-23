@@ -384,6 +384,23 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   height:155px; resize:vertical; white-space:pre; background:var(--grund); line-height:1.6}
 
 /* ---------- Inventur ---------- */
+.modus{display:inline-flex; gap:3px; background:var(--flaeche-2); border:1px solid var(--kante);
+  border-radius:999px; padding:3px}
+.modus button{font:inherit; font-size:13px; font-weight:500; cursor:pointer; padding:7px 16px;
+  border-radius:999px; border:0; background:transparent; color:var(--gedaempft);
+  transition:background-color .14s, color .14s}
+.modus button:hover{color:var(--tinte)}
+.modus button[aria-pressed="true"]{background:var(--tinte); color:var(--grund); font-weight:600}
+
+.kamerabox{position:relative; border:1px solid var(--kante); border-radius:11px;
+  overflow:hidden; background:#000; aspect-ratio:4/3; max-height:300px}
+.kamerabox video{width:100%; height:100%; object-fit:cover; display:block}
+.kamerabox .zielbalken{position:absolute; left:8%; right:8%; top:50%; height:2px;
+  background:var(--kritisch); box-shadow:0 0 12px 2px rgba(240,101,92,.75); opacity:.85}
+.kamerabox .kamerastatus{position:absolute; left:0; right:0; bottom:0; padding:7px 11px;
+  font-size:12px; color:#fff; background:linear-gradient(0deg, rgba(0,0,0,.8), transparent)}
+.kamerabox.getroffen{border-color:var(--gut); box-shadow:0 0 0 3px color-mix(in srgb, var(--gut) 22%, transparent)}
+
 #scanfeld{font-family:"IBM Plex Mono",monospace; letter-spacing:.04em;
   transition:border-color .12s, background-color .12s, box-shadow .12s}
 #scanfeld.getroffen{border-color:var(--gut); background:color-mix(in srgb, var(--gut) 14%, var(--flaeche-2));
@@ -531,6 +548,8 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   #ansicht-inventur .karte > .inhalt,
   #ansicht-inventur .inhalt{padding:8px; gap:8px}
   #scanfeld{font-size:15px; padding:7px 9px}
+  .modus button{font-size:11.5px; padding:5px 12px}
+  .kamerabox{max-height:210px}
   .summe{gap:8px}
   .summe .zahl b{font-size:16px}
   button.tat{padding:9px 14px; font-size:13.5px}
@@ -625,7 +644,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v8</span>
+    <span class="version">v10</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -778,6 +797,17 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       <div class="inhalt">
         <div class="schritt">
           <div class="titel"><span class="nr">1</span><span>Etiketten scannen</span></div>
+          <div class="modus" role="group" aria-label="Wie wird gescannt">
+            <button type="button" id="modus-scanner" aria-pressed="true">Keyence</button>
+            <button type="button" id="modus-kamera" aria-pressed="false">Handy-Kamera</button>
+          </div>
+
+          <div class="kamerabox" id="kamerabox" hidden>
+            <video id="kamerabild" playsinline muted></video>
+            <span class="zielbalken"></span>
+            <span class="kamerastatus" id="kamerastatus">Kamera wird gestartet …</span>
+          </div>
+
           <input id="scanfeld" class="gross" placeholder="Hier scannen …" autocomplete="off"
                  autocapitalize="characters" spellcheck="false">
           <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center">
@@ -909,12 +939,16 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     });
     $("vorschauspalte").hidden = name !== "etikett";
   }
-  $("reiter-etikett").addEventListener("click", function(){ reiterWechseln("etikett"); });
-  $("reiter-artikel").addEventListener("click", function(){ reiterWechseln("artikel"); stammZeichnen(); });
-  $("reiter-leute").addEventListener("click", function(){ reiterWechseln("leute"); leuteZeichnen(); });
+  function inventurVerlassen(){ if(typeof kameraAn !== "undefined" && kameraAn) kameraStoppen(); }
+  $("reiter-etikett").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("etikett"); });
+  $("reiter-artikel").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("artikel"); stammZeichnen(); });
+  $("reiter-leute").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("leute"); leuteZeichnen(); });
   $("reiter-inventur").addEventListener("click", function(){
     reiterWechseln("inventur");
-    scansHolen().then(function(){ $("scanfeld").focus(); });
+    scansHolen().then(function(){
+      if(lies("pal-scanmodus") === "kamera") modusSetzen(true);
+      else $("scanfeld").focus();
+    });
   });
 
   // ---------- MHD ----------
@@ -1708,6 +1742,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   function scanfeldScharf(){
     if($("ansicht-inventur").hidden) return;
+    if(typeof kameraAn !== "undefined" && kameraAn) return;
     var feld = $("scanfeld");
     if(document.activeElement !== feld) feld.focus();
   }
@@ -1788,6 +1823,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var feld = $("scanfeld");
     feld.value = ""; feld.focus();
     bereitZeigen(true);
+    letzteTaste = 0;
   }
 
   function summenRechnen(){
@@ -1868,23 +1904,164 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("knopf-scan-leeren").hidden = n === 0;
   }
 
-  var scanUhr = null;
+  /* ---------- Kamera-Modus ----------
+     Chrome bringt einen eigenen Barcode-Leser mit (BarcodeDetector). Wo der fehlt
+     — vor allem auf dem iPhone — wird ZXing nachgeladen. Der Keyence braucht das
+     alles nicht, er tippt in das Feld wie eine Tastatur. */
+  var kameraAn = false, kameraStrom = null, kameraSchleife = null;
+  var zxingLeser = null, letzterCode = "", letzteCodeZeit = 0;
+
+  function kameraStatus(text){ $("kamerastatus").textContent = text; }
+
+  function codeGefunden(code){
+    var jetzt = Date.now();
+    var sauber = String(code || "").trim();
+    if(!sauber) return;
+    // Derselbe Code hintereinander zählt nur einmal — die Kamera liest ihn sonst
+    // zwanzigmal pro Sekunde.
+    if(sauber === letzterCode && jetzt - letzteCodeZeit < 1500) return;
+    letzterCode = sauber; letzteCodeZeit = jetzt;
+
+    if(scanUebernehmen(sauber)){
+      var box = $("kamerabox");
+      box.classList.add("getroffen");
+      window.setTimeout(function(){ box.classList.remove("getroffen"); }, 450);
+      kameraStatus("Zuletzt: " + sauber);
+    }
+  }
+
+  function skriptLaden(adresse){
+    return new Promise(function(fertig, fehler){
+      var s = document.createElement("script");
+      s.src = adresse; s.onload = fertig; s.onerror = fehler;
+      document.head.appendChild(s);
+    });
+  }
+
+  function kameraStarten(){
+    var video = $("kamerabild");
+    $("kamerabox").hidden = false;
+    kameraStatus("Kamera wird gestartet …");
+
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      kameraStatus("Dieses Gerät gibt keine Kamera frei — bitte den Keyence nehmen.");
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } }, audio: false
+    }).then(function(strom){
+      kameraStrom = strom;
+      video.srcObject = strom;
+      return video.play();
+    }).then(function(){
+      kameraStatus("Barcode in den roten Strich halten");
+      if("BarcodeDetector" in window){
+        var leser = new window.BarcodeDetector({
+          formats: ["ean_13","ean_8","code_128","code_39","upc_a","upc_e","itf","codabar"]
+        });
+        (function suchen(){
+          if(!kameraAn) return;
+          leser.detect(video).then(function(treffer){
+            if(treffer && treffer.length) codeGefunden(treffer[0].rawValue);
+          }).catch(function(){});
+          kameraSchleife = window.setTimeout(suchen, 220);
+        })();
+      }else{
+        kameraStatus("Barcode-Leser wird geladen …");
+        skriptLaden("https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js")
+          .then(function(){
+            if(!kameraAn) return;
+            zxingLeser = new window.ZXing.BrowserMultiFormatReader();
+            zxingLeser.decodeFromStream(kameraStrom, video, function(ergebnis){
+              if(ergebnis) codeGefunden(ergebnis.getText());
+            });
+            kameraStatus("Barcode in den roten Strich halten");
+          })
+          .catch(function(){
+            kameraStatus("Barcode-Leser konnte nicht geladen werden — bitte den Keyence nehmen.");
+          });
+      }
+    }).catch(function(e){
+      var name = e && e.name ? e.name : "";
+      kameraStatus(name === "NotAllowedError"
+        ? "Kamera ist nicht erlaubt. Im Browser oben auf das Schloss tippen und Kamera zulassen."
+        : "Kamera lässt sich nicht öffnen — bitte den Keyence nehmen.");
+    });
+  }
+
+  function kameraStoppen(){
+    window.clearTimeout(kameraSchleife);
+    try{ if(zxingLeser) zxingLeser.reset(); }catch(e){}
+    zxingLeser = null;
+    if(kameraStrom){
+      try{ kameraStrom.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
+      kameraStrom = null;
+    }
+    try{ $("kamerabild").srcObject = null; }catch(e){}
+    $("kamerabox").hidden = true;
+  }
+
+  function modusSetzen(kamera){
+    kameraAn = !!kamera;
+    $("modus-kamera").setAttribute("aria-pressed", kameraAn ? "true" : "false");
+    $("modus-scanner").setAttribute("aria-pressed", kameraAn ? "false" : "true");
+    $("scanfeld").hidden = kameraAn;
+    $("bereit").hidden = kameraAn;
+    $("knopf-scan-hinzu").hidden = kameraAn;
+    schreib("pal-scanmodus", kameraAn ? "kamera" : "scanner");
+    if(kameraAn){ kameraStarten(); }
+    else { kameraStoppen(); scanfeldScharf(); }
+  }
+
+  $("modus-kamera").addEventListener("click", function(){ if(!kameraAn) modusSetzen(true); });
+  $("modus-scanner").addEventListener("click", function(){ if(kameraAn) modusSetzen(false); });
+
+  // Kamera nicht im Hintergrund laufen lassen — das kostet nur Akku.
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState !== "visible" && kameraAn) kameraStoppen();
+    else if(document.visibilityState === "visible" && kameraAn && !kameraStrom) kameraStarten();
+  });
+
+  var scanUhr = null, letzteTaste = 0, kamScanner = false;
+
   $("scanfeld").addEventListener("input", function(){
     var feld = $("scanfeld");
     window.clearTimeout(scanUhr);
+
+    // Ein Handscanner tippt den Code in unter 35 ms je Zeichen — ein Mensch nie.
+    // Danach richtet sich, wie lange auf das Ende gewartet wird.
+    var jetzt = Date.now();
+    if(jetzt - letzteTaste < 35) kamScanner = true;
+    letzteTaste = jetzt;
+    var warten = kamScanner ? 70 : 650;
+
     var w = feld.value.trim();
+
+    // Zwei Palettencodes ineinander: wo der erste endet, ist nicht eindeutig.
     if(w.indexOf("*", w.indexOf("*") + 1) > 0){
-      scanMeldung("Zwei Codes sind zusammengelaufen. Feld leeren und die beiden Paletten einzeln scannen.", "fehler");
+      scanMeldung("Zwei Codes sind zusammengelaufen. Feld leeren und einzeln scannen.", "fehler");
       scanBlitz(false); bereitZeigen(false);
       return;
     }
+    // Zwei Artikelbarcodes ineinander: auffällig lang und ohne Stern.
+    if(w.indexOf("*") === -1 && w.length > 20){
+      scanMeldung("Der Code ist zu lang — da sind zwei zusammengelaufen. Feld leeren und einzeln scannen.", "fehler");
+      scanBlitz(false); bereitZeigen(false);
+      return;
+    }
+
     bereitZeigen(false);
     scanUhr = window.setTimeout(function(){
-      var jetzt = feld.value.trim();
-      if(jetzt.length >= 3 && jetzt.indexOf("*") > 0){
-        if(scanUebernehmen(jetzt)) scanFertig(); else bereitZeigen(true);
-      }else{ bereitZeigen(true); }
-    }, 300);
+      var code = feld.value.trim();
+      var reif = code.indexOf("*") > 0 ? code.length >= 3 : code.length >= 6;
+      if(reif){
+        if(scanUebernehmen(code)) scanFertig(); else bereitZeigen(true);
+      }else{
+        bereitZeigen(true);
+      }
+      kamScanner = false;
+    }, warten);
   });
 
   $("scanfeld").addEventListener("keydown", function(e){
