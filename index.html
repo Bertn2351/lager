@@ -114,6 +114,66 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 .schnur:hover .faden{opacity:.9}
 .schnur:focus-visible{outline:2px solid var(--akzent); outline-offset:4px; border-radius:8px}
 
+/* Staub, der im Lichtkegel treibt — eine Halle ist nie ganz staubfrei */
+.staub{position:absolute; top:112px; left:50%; width:230px; height:250px;
+  margin-left:-115px; pointer-events:none; opacity:0; transition:opacity 1.1s ease .25s}
+.staub i{position:absolute; width:2.5px; height:2.5px; border-radius:50%;
+  background:rgba(255,205,150,.85); filter:blur(.3px)}
+.staub i:nth-child(1){left:18%; animation:treiben 7.5s linear infinite}
+.staub i:nth-child(2){left:34%; animation:treiben 9.5s linear .8s infinite}
+.staub i:nth-child(3){left:47%; animation:treiben 6.4s linear 1.9s infinite}
+.staub i:nth-child(4){left:58%; animation:treiben 11s linear .4s infinite}
+.staub i:nth-child(5){left:70%; animation:treiben 8.2s linear 2.6s infinite}
+.staub i:nth-child(6){left:26%; animation:treiben 10.4s linear 3.4s infinite}
+.staub i:nth-child(7){left:82%; animation:treiben 7.8s linear 1.2s infinite}
+.staub i:nth-child(8){left:63%; animation:treiben 12s linear 4.2s infinite}
+@keyframes treiben{
+  0%{transform:translate(0,-10px) scale(.6); opacity:0}
+  12%{opacity:.9}
+  50%{transform:translate(13px,120px) scale(1); opacity:.7}
+  88%{opacity:.35}
+  100%{transform:translate(-9px,250px) scale(.55); opacity:0}
+}
+.anmelden.licht-an .staub{opacity:1}
+
+/* Beim Einschalten zündet die Lampe zweimal kurz, wie eine echte Hallenleuchte */
+@keyframes zuenden{
+  0%{opacity:0} 6%{opacity:1} 11%{opacity:.15} 19%{opacity:1}
+  25%{opacity:.25} 34%{opacity:1} 100%{opacity:1}
+}
+.anmelden.licht-an .kegel{animation:zuenden 1s ease-out}
+.anmelden.licht-an .birne{animation:zuenden 1s ease-out}
+
+/* Das Logo hängt nicht starr, es atmet leicht */
+@keyframes schweben{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-4px)}
+}
+.anmelden.licht-an .marke .logo{animation:schweben 4.5s ease-in-out 1s infinite}
+
+/* Inhalte tauchen gestaffelt auf, sobald Licht da ist */
+@keyframes auftauchen{
+  from{opacity:0; transform:translateY(9px)}
+  to{opacity:1; transform:translateY(0)}
+}
+.anmeldekarte > *{opacity:0}
+.anmelden.licht-an .anmeldekarte > *{animation:auftauchen .5s ease-out forwards}
+.anmelden.licht-an .anmeldekarte > *:nth-child(1){animation-delay:.10s}
+.anmelden.licht-an .anmeldekarte > *:nth-child(2){animation-delay:.20s}
+.anmelden.licht-an .anmeldekarte > *:nth-child(3){animation-delay:.28s}
+.anmelden.licht-an .anmeldekarte > *:nth-child(4){animation-delay:.36s}
+.anmelden.licht-an .anmeldekarte > *:nth-child(5){animation-delay:.44s}
+.anmelden.licht-an .anmeldekarte > *:nth-child(6){animation-delay:.52s}
+.anmelden.licht-an .anmeldekarte > *:nth-child(7){animation-delay:.58s}
+
+/* Wer Bewegung reduziert haben will, bekommt alles sofort und ruhig */
+@media (prefers-reduced-motion:reduce){
+  .anmeldekarte > *{opacity:1}
+  .anmelden.licht-an .kegel,.anmelden.licht-an .birne,
+  .anmelden.licht-an .marke .logo,.anmelden.licht-an .anmeldekarte > *{animation:none}
+  .staub{display:none}
+}
+
 /* Licht an */
 .anmelden.licht-an .birne{
   background:#ffd9a3;
@@ -139,6 +199,7 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 .anmeldekarte .marke{display:grid; gap:14px; justify-items:center; margin-bottom:6px}
 .anmeldekarte .marke .logo{width:190px; height:40px; background-position:center}
 .anmeldekarte h1{font-size:19px; text-align:center; letter-spacing:-.01em}
+.anmeldekarte .tat{box-shadow:0 6px 26px -10px rgba(246,135,18,.75)}
 .anmeldekarte .unter{
   font-size:11.5px; letter-spacing:.16em; text-transform:uppercase;
   color:var(--leise); margin:-9px 0 6px; text-align:center;
@@ -168,6 +229,17 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 }
 .reiter button:hover{color:var(--tinte)}
 .reiter button[aria-selected="true"]{background:var(--tinte); color:var(--grund); font-weight:600}
+
+.nachfrage{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-top:9px;
+  padding:9px 12px; border:1px solid var(--kante); border-radius:9px; background:var(--flaeche-2)}
+.nachfrage span{font-size:13.5px; color:var(--gedaempft)}
+.nachfrage button{margin:0}
+.nachfrage #nachfrage-ja{border-color:color-mix(in srgb, var(--gut) 45%, var(--kante)); color:var(--gut)}
+.pruefliste{margin-top:9px; padding:12px 14px; border:1px solid var(--kante);
+  border-radius:9px; background:var(--flaeche-2)}
+.pruefliste b{display:block; font-size:13px; margin-bottom:7px}
+.pruefliste ol{margin:0 0 11px; padding-left:20px; display:grid; gap:5px}
+.pruefliste li{font-size:12.5px; color:var(--gedaempft); line-height:1.45}
 
 .version{font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--leise);
   border:1px solid var(--kante); border-radius:999px; padding:1px 7px; margin-left:auto}
@@ -339,6 +411,11 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   background:var(--grund); border:1px solid var(--kante-hell); border-radius:9px;
   padding:7px 14px; font-variant-numeric:tabular-nums; color:var(--tinte); letter-spacing:.01em}
 .summen .was{font-size:13px; color:var(--leise); min-width:0; overflow-wrap:anywhere}
+.summen .abgleich{font-size:12px; font-weight:600; padding:2px 9px; border-radius:999px;
+  border:1px solid currentColor; white-space:nowrap}
+.summen .abgleich.passt{color:var(--gut)}
+.summen .abgleich.mehr{color:var(--akzent-weich)}
+.summen .abgleich.weniger{color:var(--kritisch)}
 .scanzeile .code{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:15px;
   font-variant-numeric:tabular-nums}
 
@@ -510,6 +587,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     <button type="button" class="schnur" id="schnur" aria-pressed="false" aria-label="Hallenlicht an- und ausschalten">
       <span class="faden"></span><span class="knauf"></span>
     </button>
+    <span class="staub"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
   </div>
   <form class="anmeldekarte" id="anmeldeformular">
     <div class="marke"><span class="logo" role="img" aria-label="Mein Döner Cash &amp; Carry"></span></div>
@@ -547,7 +625,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v7</span>
+    <span class="version">v8</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -607,6 +685,23 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
             <button type="button" class="still" id="knopf-vorschau">Vorschau</button>
           </div>
           <p class="meldung" id="meldung"></p>
+
+          <div class="nachfrage" id="nachfrage" hidden>
+            <span id="nachfrage-text">Ist das Etikett gekommen?</span>
+            <button type="button" class="still" id="nachfrage-ja">Ja</button>
+            <button type="button" class="still" id="nachfrage-nein">Nein</button>
+          </div>
+          <div class="pruefliste" id="pruefliste" hidden>
+            <b>Dann der Reihe nach prüfen:</b>
+            <ol>
+              <li>Drucker eingeschaltet, Klappe richtig zu?</li>
+              <li>Etiketten und Farbband eingelegt? Der GK420t braucht beides.</li>
+              <li>Blinkt die Lampe am Drucker rot? Dann Papier oder Band prüfen.</li>
+              <li>Hängt das Gerät im Firmen-WLAN, nicht im Gast- oder anderen Netz?</li>
+              <li>Stimmt die Adresse unter „Drucker …“? Sie kann sich geändert haben.</li>
+            </ol>
+            <button type="button" class="still" id="pruefliste-zu">Verstanden</button>
+          </div>
         </div>
 
         <details class="klapp" id="druckerbereich">
@@ -655,11 +750,14 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           <summary>Artikel aus deinem Export einfügen</summary>
           <div class="innen">
             <p class="hinweis">
-              In Excel zwei Spalten markieren — <b>Artikelnummer</b> und <b>Bezeichnung</b>, in dieser Reihenfolge —
-              kopieren und hier einfügen. Eine Überschriftenzeile darf drüberstehen.
+              In Excel die Spalten markieren, kopieren und hier einfügen. Nötig sind
+              <b>Artikelnummer</b> und <b>Bezeichnung</b>; zusätzlich kannst du
+              <b>Bestand</b> und <b>Barcode/EAN</b> mitgeben — dann erkennt die Inventur die Ware
+              am eigenen Barcode und rechnet gegen deinen Lagerbestand.
+              Nimm die Überschriftenzeile mit, dann ist die Reihenfolge der Spalten egal.
               Artikelnummern, die es schon gibt, werden aktualisiert statt doppelt angelegt.
             </p>
-            <textarea id="import" spellcheck="false" placeholder="EDC&#9;Pet Coca Cola 0,50l.  24stk./Kolli&#10;EDZ&#9;Pet Coca Cola Zero 0,50l.  24 Stk./Kolli"></textarea>
+            <textarea id="import" spellcheck="false" placeholder="Artikelnummer&#9;Bezeichnung&#9;Bestand&#9;EAN&#10;EDC&#9;Pet Coca Cola 0,50l.  24stk./Kolli&#9;480&#9;4001686315347&#10;EDZ&#9;Pet Coca Cola Zero 0,50l.  24 Stk./Kolli&#9;312&#9;4001686315361"></textarea>
             <label class="tonschalter" style="font-size:14px">
               <input type="checkbox" id="import-ersetzen"> Alle vorhandenen Artikel vorher löschen
             </label>
@@ -688,7 +786,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
             <button type="button" class="still" id="knopf-scan-hinzu" style="margin-left:auto">Von Hand hinzufügen</button>
           </div>
           <p class="meldung" id="scan-meldung"></p>
-          <p class="hinweis">Einfach eine Palette nach der anderen scannen — das Feld leert sich von selbst und ist sofort wieder bereit. Ohne Scanner kannst du auch <code>50*EDC</code> eintippen.</p>
+          <p class="hinweis">Palettenetikett scannen — oder den Barcode auf der Ware selbst, dann zählt jeder Scan ein Stück. Das Feld leert sich von selbst und ist sofort wieder bereit.</p>
         </div>
       </div>
 
@@ -1191,6 +1289,31 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     return vorgangLesen();
   }
 
+  var nachfrageUhr = null;
+  function nachfrageZeigen(anzahl){
+    window.clearTimeout(nachfrageUhr);
+    $("pruefliste").hidden = true;
+    $("nachfrage-text").textContent = anzahl > 1
+      ? "Sind die " + anzahl + " Etiketten gekommen?"
+      : "Ist das Etikett gekommen?";
+    $("nachfrage").hidden = false;
+    // Wer weiterarbeitet, hat offensichtlich sein Etikett — dann still verschwinden.
+    nachfrageUhr = window.setTimeout(function(){ $("nachfrage").hidden = true; }, 25000);
+  }
+  $("nachfrage-ja").addEventListener("click", function(){
+    window.clearTimeout(nachfrageUhr);
+    $("nachfrage").hidden = true;
+    $("pruefliste").hidden = true;
+    meldung("Gut. Weiter geht's.", "gut");
+  });
+  $("nachfrage-nein").addEventListener("click", function(){
+    window.clearTimeout(nachfrageUhr);
+    $("nachfrage").hidden = true;
+    $("pruefliste").hidden = false;
+    meldung("");
+  });
+  $("pruefliste-zu").addEventListener("click", function(){ $("pruefliste").hidden = true; });
+
   $("knopf-drucken").addEventListener("click", function(){
     var v = druckPruefen();
     if(!v) return;
@@ -1200,6 +1323,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     anDenDrucker(zplBauen(v));
     meldung(v.anzahl + " Etikett(en) an " + d.ip + " geschickt.", "gut");
     vorgangSichern(v, function(){});
+    window.setTimeout(function(){ nachfrageZeigen(v.anzahl); }, 2600);
   });
 
   $("knopf-dialog").addEventListener("click", function(){
@@ -1217,10 +1341,11 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   function artikelHolen(){
     if(!sb) return Promise.resolve();
-    return sb.from("artikel").select("id,nr,bezeichnung").limit(5000).then(function(res){
+    return sb.from("artikel").select("id,nr,bezeichnung,bestand,ean").limit(5000).then(function(res){
       if(res.error) return;
       artikel = (res.data || []).map(function(a){
-        return { id:a.id, nr:a.nr || "", bezeichnung:a.bezeichnung || "(ohne Bezeichnung)" };
+        return { id:a.id, nr:a.nr || "", bezeichnung:a.bezeichnung || "(ohne Bezeichnung)",
+                 bestand:(a.bestand == null ? null : Number(a.bestand)), ean:a.ean || "" };
       });
       artikelSortieren();
       if(gewaehlt){
@@ -1239,7 +1364,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       var txt = document.createElement("div"); txt.className = "txt";
       var b = document.createElement("b"); b.textContent = a.bezeichnung;
       var s = document.createElement("small");
-      if(a.nr){ s.textContent = "Artikelnr. " + a.nr; } else { s.textContent = "Artikelnummer fehlt"; s.className = "fehlt"; }
+      var stuecke = [];
+      if(a.nr) stuecke.push("Nr. " + a.nr);
+      if(a.ean) stuecke.push("Barcode " + a.ean);
+      if(a.bestand != null && isFinite(a.bestand)) stuecke.push("Bestand " + a.bestand);
+      if(stuecke.length){ s.textContent = stuecke.join(" · "); }
+      else { s.textContent = "Artikelnummer fehlt"; s.className = "fehlt"; }
       txt.appendChild(b); txt.appendChild(s);
 
       var feld = document.createElement("input");
@@ -1307,6 +1437,19 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     return [zeile];
   }
 
+  // Kopfzeile erkennen, damit die Spalten in beliebiger Reihenfolge stehen dürfen
+  function spaltenZuordnen(kopf){
+    var zu = { nr:-1, bez:-1, bestand:-1, ean:-1 }, treffer = 0;
+    kopf.forEach(function(name, i){
+      var n = name.toLowerCase().replace(/[^a-zäöü]/g, "");
+      if(/^(artikelnummer|artikelnr|nummer|nr|code|artnr)$/.test(n)){ zu.nr = i; treffer++; }
+      else if(/^(bezeichnung|artikel|name|artikelbezeichnung|beschreibung)$/.test(n)){ zu.bez = i; treffer++; }
+      else if(/^(bestand|lagerbestand|menge|sollbestand|istbestand)$/.test(n)){ zu.bestand = i; treffer++; }
+      else if(/^(ean|barcode|eancode|gtin|strichcode)$/.test(n)){ zu.ean = i; treffer++; }
+    });
+    return treffer >= 2 ? zu : null;
+  }
+
   $("knopf-import").addEventListener("click", function(){
     var roh = $("import").value, m = $("import-meldung");
     var zeilen = roh.split(/\r?\n/).map(function(z){ return z.trim(); }).filter(Boolean);
@@ -1319,56 +1462,76 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       artikel = [];
     }
 
+    function teile(zeile){
+      return zeileTrennen(zeile).map(function(t){ return t.replace(/^"|"$/g, "").trim(); });
+    }
+
+    // Spalten aus der Kopfzeile lesen; ohne Kopfzeile gilt die feste Reihenfolge
+    var zu = spaltenZuordnen(teile(zeilen[0]));
+    var ab = 0;
+    if(zu){ ab = 1; }
+    else { zu = { nr:0, bez:1, bestand:2, ean:3 }; }
+
     var neue = [], aenderungen = [], uebersprungen = 0;
-    zeilen.forEach(function(zeile, i){
-      var teile = zeileTrennen(zeile).map(function(t){ return t.replace(/^"|"$/g,"").trim(); });
-      var nr, bez;
-      if(teile.length >= 2){ nr = teile[0].toUpperCase(); bez = teile.slice(1).join(" ").trim(); }
-      else { nr = ""; bez = teile[0]; }
-      if(!bez){ uebersprungen++; return; }
-      if(i === 0 && /^(artikel(nummer|nr)?|nr\.?|nummer|code)$/i.test(nr)){ uebersprungen++; return; }
+    for(var i = ab; i < zeilen.length; i++){
+      var t = teile(zeilen[i]);
+      var nr  = zu.nr  >= 0 && t[zu.nr]  ? t[zu.nr].toUpperCase() : "";
+      var bez = zu.bez >= 0 && t[zu.bez] ? t[zu.bez] : (t.length === 1 ? t[0] : "");
+      var ean = zu.ean >= 0 && t[zu.ean] ? t[zu.ean].replace(/[^0-9A-Za-z]/g, "") : "";
+      var bestandRoh = zu.bestand >= 0 ? t[zu.bestand] : "";
+      var bestand = null;
+      if(bestandRoh){
+        var zahl = parseFloat(String(bestandRoh).replace(/\./g, "").replace(",", "."));
+        if(isFinite(zahl)) bestand = zahl;
+      }
+      if(!bez){ uebersprungen++; continue; }
 
       var da = nr ? artikel.filter(function(a){ return a.nr && a.nr === nr; })[0] : null;
       if(da){
-        if(da.bezeichnung !== bez){ da.bezeichnung = bez; aenderungen.push(da); }
+        var geaendert = false;
+        if(da.bezeichnung !== bez){ da.bezeichnung = bez; geaendert = true; }
+        if(ean && da.ean !== ean){ da.ean = ean; geaendert = true; }
+        if(bestand !== null && da.bestand !== bestand){ da.bestand = bestand; geaendert = true; }
+        if(geaendert) aenderungen.push(da);
       }else{
-        neue.push({ nr:nr, bezeichnung:bez });
+        neue.push({ nr:nr, bezeichnung:bez, ean:ean, bestand:bestand });
       }
-    });
+    }
 
     m.textContent = "Wird gespeichert …"; m.className = "meldung";
 
     function fertig(){
       artikelSortieren(); lokalArtikel();
-      stammZeichnen(); trefferZeichnen();
+      stammZeichnen(); trefferZeichnen(); scansZeichnen();
       if(gewaehlt) gewaehltAnzeigen();
       $("import").value = "";
       $("import-ersetzen").checked = false;
       m.textContent = (ersetzen ? "Ersetzt: " : "") + neue.length + " neu, " + aenderungen.length + " aktualisiert"
-        + (uebersprungen ? ", " + uebersprungen + " übersprungen" : "") + ".";
+        + (uebersprungen ? ", " + uebersprungen + " übersprungen" : "")
+        + (zu && ab === 1 ? " · Spalten aus der Kopfzeile erkannt" : "") + ".";
       m.className = "meldung gut";
     }
 
     if(!sb){
-      neue.forEach(function(n){ artikel.push({ id:neueId("a"), nr:n.nr, bezeichnung:n.bezeichnung }); });
+      neue.forEach(function(n){
+        artikel.push({ id:neueId("a"), nr:n.nr, bezeichnung:n.bezeichnung, ean:n.ean, bestand:n.bestand });
+      });
       fertig();
       return;
     }
 
     var kette = Promise.resolve();
     if(ersetzen){
-      kette = kette.then(function(){
-        return sb.from("artikel").delete().not("id", "is", null);
-      });
+      kette = kette.then(function(){ return sb.from("artikel").delete().not("id", "is", null); });
     }
-    for(var i = 0; i < neue.length; i += 500){
+    for(var k = 0; k < neue.length; k += 500){
       (function(teil){
         kette = kette.then(function(){ return sb.from("artikel").insert(teil); });
-      })(neue.slice(i, i + 500));
+      })(neue.slice(k, k + 500));
     }
     aenderungen.forEach(function(a){
       kette = kette.then(function(){
-        return sb.from("artikel").update({ bezeichnung: a.bezeichnung }).eq("id", a.id);
+        return sb.from("artikel").update({ bezeichnung:a.bezeichnung, ean:a.ean, bestand:a.bestand }).eq("id", a.id);
       });
     });
     kette.then(function(){ return artikelHolen(); }).then(fertig).catch(function(){
@@ -1476,9 +1639,15 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   });
 
   // ---------- Inventur ----------
+  function artikelZuCode(code){
+    if(!code) return null;
+    var c = String(code).toUpperCase();
+    var treffer = artikel.filter(function(x){ return x.ean && x.ean.toUpperCase() === c; })[0];
+    if(treffer) return treffer;
+    return artikel.filter(function(x){ return x.nr && x.nr.toUpperCase() === c; })[0] || null;
+  }
   function bezeichnungZu(nr){
-    if(!nr) return "";
-    var a = artikel.filter(function(x){ return x.nr && x.nr.toUpperCase() === nr; })[0];
+    var a = artikelZuCode(nr);
     return a ? a.bezeichnung : "";
   }
   function scanMeldung(t, art){
@@ -1487,6 +1656,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   }
 
   var tonWerk = null;
+  /* Treffer: drei schnelle aufsteigende Töne wie beim Münzeinwurf — hört man
+     auch durch Hallenlärm und Gehörschutz. Fehler: tiefes Brummen. */
   function piep(treffer){
     if(!$("ton").checked) return;
     try{
@@ -1494,18 +1665,34 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       if(!AC) return;
       if(!tonWerk) tonWerk = new AC();
       if(tonWerk.state === "suspended") tonWerk.resume();
-      var jetzt = tonWerk.currentTime;
-      function ton(hz, ab, dauer){
+      var t0 = tonWerk.currentTime;
+
+      function ton(hz, ab, dauer, art, laut){
         var o = tonWerk.createOscillator(), g = tonWerk.createGain();
-        o.type = "square"; o.frequency.value = hz;
-        g.gain.setValueAtTime(0.0001, jetzt + ab);
-        g.gain.exponentialRampToValueAtTime(0.12, jetzt + ab + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.0001, jetzt + ab + dauer);
+        o.type = art || "square";
+        o.frequency.setValueAtTime(hz, t0 + ab);
+        g.gain.setValueAtTime(0.0001, t0 + ab);
+        g.gain.exponentialRampToValueAtTime(laut, t0 + ab + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + ab + dauer);
         o.connect(g); g.connect(tonWerk.destination);
-        o.start(jetzt + ab); o.stop(jetzt + ab + dauer + 0.02);
+        o.start(t0 + ab); o.stop(t0 + ab + dauer + 0.03);
       }
-      if(treffer){ ton(1180, 0, 0.07); }
-      else { ton(280, 0, 0.11); ton(280, 0.15, 0.11); }
+
+      if(treffer){
+        ton(784,  0.000, 0.055, "square", 0.30);
+        ton(1175, 0.055, 0.055, "square", 0.30);
+        ton(1568, 0.110, 0.130, "square", 0.34);
+      }else{
+        var o = tonWerk.createOscillator(), g = tonWerk.createGain();
+        o.type = "sawtooth";
+        o.frequency.setValueAtTime(320, t0);
+        o.frequency.exponentialRampToValueAtTime(110, t0 + 0.34);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.32, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.38);
+        o.connect(g); g.connect(tonWerk.destination);
+        o.start(t0); o.stop(t0 + 0.42);
+      }
     }catch(e){}
   }
 
@@ -1540,23 +1727,45 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       });
   }
 
+  /* Zwei Sorten Code landen hier:
+     - Palettenetikett „50*EDC" → 50 Stück dieses Artikels
+     - Artikelbarcode (EAN) → 1 Stück, der Artikel wird über den Barcode gesucht */
   function scanUebernehmen(roh){
     var wert = String(roh || "").trim().toUpperCase();
     if(!wert) return false;
-    var teile = wert.split("*");
-    var menge = teile.length === 2 ? parseInt(teile[0].replace(/[^0-9]/g, ""), 10) : NaN;
-    var nr = teile.length === 2 ? teile[1].trim() : "";
-    if(teile.length !== 2 || !isFinite(menge) || menge <= 0 || !nr){
-      scanMeldung("„" + wert + "“ passt nicht — erwartet wird Menge*Artikelnummer, z. B. 50*EDC.", "fehler");
-      scanBlitz(false); piep(false);
-      return false;
+
+    var menge, nr, gefunden = null;
+
+    if(wert.indexOf("*") !== -1){
+      var teile = wert.split("*");
+      menge = teile.length === 2 ? parseInt(teile[0].replace(/[^0-9]/g, ""), 10) : NaN;
+      nr = teile.length === 2 ? teile[1].trim() : "";
+      if(teile.length !== 2 || !isFinite(menge) || menge <= 0 || !nr){
+        scanMeldung("„" + wert + "“ passt nicht — erwartet wird Menge*Artikelnummer, z. B. 50*EDC.", "fehler");
+        scanBlitz(false); piep(false);
+        return false;
+      }
+      gefunden = artikelZuCode(nr);
+      if(gefunden && gefunden.nr) nr = gefunden.nr.toUpperCase();
+    }else{
+      if(wert.length < 3){
+        scanMeldung("„" + wert + "“ ist zu kurz für einen Barcode.", "fehler");
+        scanBlitz(false); piep(false);
+        return false;
+      }
+      menge = 1;
+      gefunden = artikelZuCode(wert);
+      nr = (gefunden && gefunden.nr) ? gefunden.nr.toUpperCase() : wert;
     }
 
     var eintrag = { id:neueId("s"), menge:menge, nr:nr, wer:angemeldet || "" };
     scans.push(eintrag);
     scansZeichnen();
-    var bez = bezeichnungZu(nr);
-    scanMeldung(menge + " × " + nr + (bez ? " · " + bez : " · nicht im Artikelstamm"), "gut");
+
+    var text = menge + " × " + nr;
+    if(gefunden) text += " · " + gefunden.bezeichnung;
+    else text += " · nicht im Artikelstamm";
+    scanMeldung(text, gefunden ? "gut" : "fehler");
     scanBlitz(true); piep(true);
 
     if(sb){
@@ -1604,10 +1813,24 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       var li = document.createElement("li");
       var code = document.createElement("span");
       code.className = "code"; code.textContent = g.menge + "*" + g.nr;
+      li.appendChild(code);
+
+      var a = artikelZuCode(g.nr);
       var was = document.createElement("span"); was.className = "was";
-      var bez = bezeichnungZu(g.nr);
-      was.textContent = (bez || "nicht im Artikelstamm") + " · " + g.paletten + " Palette" + (g.paletten === 1 ? "" : "n");
-      li.appendChild(code); li.appendChild(was);
+      was.textContent = (a ? a.bezeichnung : "nicht im Artikelstamm")
+        + " · " + g.paletten + "\u00d7 gescannt";
+      li.appendChild(was);
+
+      // Sollbestand aus dem Artikelstamm gegenrechnen, wenn er da ist
+      if(a && a.bestand != null && isFinite(a.bestand)){
+        var diff = g.menge - a.bestand;
+        var ab = document.createElement("span");
+        ab.className = "abgleich " + (diff === 0 ? "passt" : (diff > 0 ? "mehr" : "weniger"));
+        ab.textContent = diff === 0
+          ? "stimmt mit dem Bestand (" + a.bestand + ")"
+          : (diff > 0 ? "+" : "") + diff + " gegenüber Bestand " + a.bestand;
+        li.appendChild(ab);
+      }
       ul.appendChild(li);
     });
 
