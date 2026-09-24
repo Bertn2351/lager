@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0f1214">
+<meta name="theme-color" content="#0b0e10">
 <style>
   :root{ color-scheme: dark; }
   html,body{ margin:0; }
@@ -56,153 +56,279 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 ::-webkit-scrollbar-thumb{background:var(--kante); border-radius:99px; border:3px solid var(--grund)}
 ::-webkit-scrollbar-thumb:hover{background:var(--kante-hell)}
 
-/* ---------- Anmeldung ---------- */
+/* ---------- Anmeldung: Nachtschicht ----------
+   Eine Halle bei Nacht. Das Tor ist zu, über dem Zugangspanel hängt eine
+   Lampe, die auf den Zeiger und auf das Feld reagiert, in dem gerade
+   getippt wird. Nach echter Anmeldung fahren Panel und Tor nach oben. */
 .anmelden{
-  position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:24px;
-  background:var(--grund); overflow:auto;
+  position:fixed; inset:0; z-index:50; overflow:hidden;
+  display:grid; place-items:center; padding:20px;
+  background:#0b0e10;
+  --warm:0;                       /* 0 = gedimmt, 1 = volles Licht */
+  --neigung:0deg;                 /* Lampenschirm */
 }
-.anmelden::before{
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background:radial-gradient(680px 460px at 50% 4%, rgba(246,135,18,.16), transparent 64%);
-  opacity:0; transition:opacity .7s ease;
+
+/* --- Halle im Hintergrund --- */
+.halle{position:absolute; inset:0; pointer-events:none;
+  opacity:0; transition:opacity 1.1s ease}
+.anmelden.wach .halle{opacity:1}
+
+.boden{
+  position:absolute; left:-10%; right:-10%; bottom:0; height:38%;
+  background:
+    radial-gradient(60% 120% at 50% 0%,
+      rgba(246,135,18,calc(.16 * var(--warm))), transparent 70%),
+    linear-gradient(180deg, #0d1114 0%, #090c0e 100%);
+  transition:background 1s ease;
 }
-.anmelden.licht-an::before{opacity:1}
-/* Hallenlampe: hängt über dem Anmeldeschein wie über einem Packtisch.
-   Das Licht geht von selbst an — die Schnur ist Zugabe, kein Hindernis. */
-.szene{display:flex; flex-direction:column; align-items:center; width:100%; max-width:392px}
-.lampe{position:relative; width:100%; height:132px; display:flex; justify-content:center}
-.kabel{position:absolute; top:0; width:2px; height:66px;
-  background:linear-gradient(180deg, transparent, var(--kante-hell) 55%)}
+.boden::after{  /* Lichtpfütze unter der Lampe */
+  content:""; position:absolute; left:50%; top:-4%; width:44%; height:52%;
+  transform:translateX(-50%); border-radius:50%;
+  background:radial-gradient(ellipse at center,
+    rgba(255,186,96,calc(.20 * var(--warm))), transparent 68%);
+  filter:blur(26px); transition:background 1s ease;
+}
+
+/* Regalreihen links und rechts, nur angedeutet */
+.regal{position:absolute; bottom:22%; width:20%; height:46%;
+  border:1px solid rgba(150,170,185,.09);
+  background:
+    repeating-linear-gradient(0deg,
+      rgba(150,170,185,.07) 0 1px, transparent 1px 33.3%),
+    repeating-linear-gradient(90deg,
+      rgba(150,170,185,.05) 0 1px, transparent 1px 50%);
+  filter:blur(.4px);
+}
+.regal.links{left:3%; transform:perspective(600px) rotateY(16deg)}
+.regal.rechts{right:3%; transform:perspective(600px) rotateY(-16deg)}
+.regal::after{ /* Paletten am Boden davor */
+  content:""; position:absolute; left:8%; right:8%; bottom:-14%; height:11%;
+  background:rgba(150,170,185,.06);
+  border:1px solid rgba(150,170,185,.08);
+}
+
+/* --- Das Tor --- */
+.tor{
+  position:absolute; left:50%; top:0; width:min(560px, 86vw); height:74%;
+  transform:translateX(-50%);
+  transition:transform .85s cubic-bezier(.65,.02,.35,1);
+}
+.tor .blatt{
+  position:absolute; inset:0; border-radius:0 0 4px 4px;
+  background:
+    repeating-linear-gradient(180deg,
+      #1b2126 0 13px, #151a1e 13px 15px, #1f262c 15px 26px, #12171b 26px 28px);
+  box-shadow:inset 0 -18px 34px rgba(0,0,0,.65), inset 0 2px 0 rgba(255,255,255,.03);
+}
+.tor .blatt::after{ /* warmer Lichtstreif, den die Lampe aufs Tor wirft */
+  content:""; position:absolute; left:14%; right:14%; top:22%; height:56%;
+  background:radial-gradient(ellipse at 50% 30%,
+    rgba(255,186,96,calc(.13 * var(--warm))), transparent 72%);
+  transition:background 1s ease;
+}
+.tor .schiene{position:absolute; top:0; bottom:0; width:7px;
+  background:linear-gradient(90deg, #232a30, #10151a);
+  box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+.tor .schiene.l{left:-7px} .tor .schiene.r{right:-7px}
+.tor .kante{position:absolute; left:0; right:0; bottom:0; height:9px;
+  background:linear-gradient(180deg, #2b333a, #161c21);
+  box-shadow:0 3px 12px rgba(0,0,0,.7)}
+
+/* --- Lampe --- */
+.szene{position:relative; display:flex; flex-direction:column; align-items:center;
+  width:100%; max-width:400px}
+
+.lampe{
+  position:relative; width:100%; height:120px; display:flex; justify-content:center;
+  transform:rotate(var(--neigung));
+  transform-origin:50% 0;
+  transition:transform .85s cubic-bezier(.22,1,.36,1);
+}
+.anmelden.schwingt .lampe{animation:einschwingen 2.6s cubic-bezier(.36,.07,.19,.97)}
+@keyframes einschwingen{
+  0%{transform:rotate(-7deg)}   22%{transform:rotate(4.6deg)}
+  45%{transform:rotate(-2.6deg)} 66%{transform:rotate(1.4deg)}
+  84%{transform:rotate(-.6deg)}  100%{transform:rotate(0deg)}
+}
+.kabel{position:absolute; top:0; width:2px; height:58px;
+  background:linear-gradient(180deg, transparent, #39434b 60%)}
 .schirm{
-  position:absolute; top:62px; width:116px; height:44px;
-  background:linear-gradient(175deg, #323b43 0%, #232a30 46%, #1a2025 100%);
-  border-radius:54% 54% 14% 14% / 86% 86% 24% 24%;
-  box-shadow:inset 0 -5px 9px rgba(0,0,0,.6), 0 3px 7px rgba(0,0,0,.5);
+  position:absolute; top:54px; width:104px; height:40px;
+  background:linear-gradient(174deg, #39444d 0%, #262e35 44%, #171d22 100%);
+  border-radius:52% 52% 15% 15% / 88% 88% 26% 26%;
+  box-shadow:inset 0 -6px 10px rgba(0,0,0,.6), 0 4px 10px rgba(0,0,0,.55);
 }
-.schirm::after{
-  content:""; position:absolute; left:8%; right:8%; bottom:-2px; height:7px;
-  border-radius:50%; background:#11161a;
-  box-shadow:inset 0 2px 4px rgba(0,0,0,.9);
-  transition:background-color .5s ease, box-shadow .5s ease;
+.schirm::before{ /* Blechkante */
+  content:""; position:absolute; left:6%; right:6%; bottom:-1px; height:4px;
+  border-radius:50%; background:linear-gradient(90deg,#2c353c,#454f58,#2c353c);
 }
+.fassung{position:absolute; top:88px; width:9px; height:9px; border-radius:2px;
+  background:#2a3238}
 .birne{
-  position:absolute; top:100px; width:17px; height:17px; border-radius:50%;
-  background:#2b3238; transition:background-color .55s ease, box-shadow .55s ease;
+  position:absolute; top:94px; width:15px; height:15px; border-radius:50%;
+  background:#2b3238; transition:background .7s ease, box-shadow .7s ease;
+}
+.anmelden.wach .birne{
+  background:rgba(255,216,160,calc(.25 + .75 * var(--warm)));
+  box-shadow:0 0 calc(14px * var(--warm)) calc(5px * var(--warm)) rgba(255,180,90,.8),
+             0 0 calc(50px * var(--warm)) calc(20px * var(--warm)) rgba(246,135,18,.4);
 }
 .kegel{
-  position:absolute; top:104px; width:420px; height:340px; pointer-events:none;
+  position:absolute; top:98px; width:400px; height:330px; pointer-events:none;
   clip-path:polygon(46% 0, 54% 0, 100% 100%, 0 100%);
   background:linear-gradient(180deg,
-    rgba(255,186,96,.34) 0%, rgba(246,135,18,.16) 38%, transparent 78%);
-  filter:blur(11px);
-  /* Licht addiert sich auf die Karte, statt sie zu überdecken */
-  mix-blend-mode:screen;
-  opacity:0; transition:opacity .6s ease;
+    rgba(255,190,104,calc(.34 * var(--warm))) 0%,
+    rgba(246,135,18,calc(.15 * var(--warm))) 38%, transparent 78%);
+  filter:blur(12px); mix-blend-mode:screen;
+  transition:background .8s ease;
 }
+@keyframes zuenden{
+  0%{opacity:.05} 8%{opacity:1} 14%{opacity:.2} 24%{opacity:1}
+  30%{opacity:.35} 42%{opacity:1} 100%{opacity:1}
+}
+.anmelden.zuendet .kegel,.anmelden.zuendet .birne{animation:zuenden .9s ease-out}
 
+/* --- Zugschnur --- */
 .schnur{
-  position:absolute; top:96px; left:calc(50% + 46px);
-  width:26px; padding:0; border:0; background:transparent; cursor:pointer;
+  position:absolute; top:88px; left:calc(50% + 42px); z-index:2;
+  width:30px; padding:0 9px; border:0; background:transparent; cursor:grab;
   display:flex; flex-direction:column; align-items:center; touch-action:none;
 }
-.schnur .faden{width:1px; height:30px; background:var(--gedaempft); opacity:.55;
-  transition:height .22s ease}
-.schnur .knauf{width:11px; height:11px; border-radius:50%;
-  background:linear-gradient(160deg,#c3ccd3,#7c8792);
-  box-shadow:0 1px 3px rgba(0,0,0,.7)}
-.schnur:hover .knauf{background:linear-gradient(160deg,#e6edf2,#9aa5ae)}
-.schnur:hover .faden{opacity:.9}
-.schnur:focus-visible{outline:2px solid var(--akzent); outline-offset:4px; border-radius:8px}
+.schnur:active{cursor:grabbing}
+.schnur .faden{width:1.5px; height:var(--zug, 34px); background:#8b959d; opacity:.6;
+  transition:height .5s cubic-bezier(.22,1.6,.4,1)}
+.schnur .knauf{width:12px; height:12px; border-radius:50%; flex:none;
+  background:linear-gradient(160deg,#cfd7dd,#7d878f);
+  box-shadow:0 2px 4px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.5);
+  transition:transform .5s cubic-bezier(.22,1.6,.4,1)}
+.schnur:hover .faden,.schnur:focus-visible .faden{opacity:.95; height:calc(var(--zug, 34px) + 5px)}
+.schnur:hover .knauf{transform:translateY(2px) scale(1.08)}
+.schnur:focus-visible{outline:2px solid var(--akzent); outline-offset:3px; border-radius:10px}
+.schnur.zieht .faden{transition:none}
+.schnur.zieht .knauf{transition:none}
 
-/* Staub, der im Lichtkegel treibt — eine Halle ist nie ganz staubfrei */
-.staub{position:absolute; top:112px; left:50%; width:230px; height:250px;
-  margin-left:-115px; pointer-events:none; opacity:0; transition:opacity 1.1s ease .25s}
-.staub i{position:absolute; width:2.5px; height:2.5px; border-radius:50%;
-  background:rgba(255,205,150,.85); filter:blur(.3px)}
-.staub i:nth-child(1){left:18%; animation:treiben 7.5s linear infinite}
-.staub i:nth-child(2){left:34%; animation:treiben 9.5s linear .8s infinite}
-.staub i:nth-child(3){left:47%; animation:treiben 6.4s linear 1.9s infinite}
-.staub i:nth-child(4){left:58%; animation:treiben 11s linear .4s infinite}
-.staub i:nth-child(5){left:70%; animation:treiben 8.2s linear 2.6s infinite}
-.staub i:nth-child(6){left:26%; animation:treiben 10.4s linear 3.4s infinite}
-.staub i:nth-child(7){left:82%; animation:treiben 7.8s linear 1.2s infinite}
-.staub i:nth-child(8){left:63%; animation:treiben 12s linear 4.2s infinite}
-@keyframes treiben{
-  0%{transform:translate(0,-10px) scale(.6); opacity:0}
-  12%{opacity:.9}
-  50%{transform:translate(13px,120px) scale(1); opacity:.7}
-  88%{opacity:.35}
-  100%{transform:translate(-9px,250px) scale(.55); opacity:0}
+/* --- Zugangspanel --- */
+.panel{
+  position:relative; width:100%; padding:26px 26px 22px;
+  display:grid; gap:14px; border-radius:18px;
+  background:linear-gradient(168deg, rgba(31,38,45,.93), rgba(19,24,29,.96));
+  border:1px solid rgba(150,170,185,.13);
+  box-shadow:0 30px 70px -40px #000, inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  transition:transform .8s cubic-bezier(.65,.02,.35,1), opacity .5s ease;
 }
-.anmelden.licht-an .staub{opacity:1}
-
-/* Beim Einschalten zündet die Lampe zweimal kurz, wie eine echte Hallenleuchte */
-@keyframes zuenden{
-  0%{opacity:0} 6%{opacity:1} 11%{opacity:.15} 19%{opacity:1}
-  25%{opacity:.25} 34%{opacity:1} 100%{opacity:1}
+.panel::before{ /* Lichtkante oben, wo die Lampe auftrifft */
+  content:""; position:absolute; left:16%; right:16%; top:-1px; height:1px;
+  background:linear-gradient(90deg, transparent,
+    rgba(255,190,110,calc(.75 * var(--warm))), transparent);
 }
-.anmelden.licht-an .kegel{animation:zuenden 1s ease-out}
-.anmelden.licht-an .birne{animation:zuenden 1s ease-out}
+.panel .marke{display:grid; justify-items:center; gap:2px}
+.panel .marke .logo{width:168px; height:36px; background-position:center}
+.panel h1{font-size:19px; text-align:center; letter-spacing:-.015em; line-height:1.3}
+.panel .unter{margin:-7px 0 4px; text-align:center; font-size:13px; color:var(--gedaempft)}
 
-/* Das Logo hängt nicht starr, es atmet leicht */
-@keyframes schweben{
-  0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-4px)}
+.feld{display:grid; gap:6px; position:relative}
+.feld label{font-size:11.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--leise)}
+.feld input{
+  font-size:17px; padding:13px 14px; border-radius:11px;
+  background:rgba(12,16,19,.75); border:1px solid rgba(150,170,185,.15);
+  transition:border-color .2s, box-shadow .3s, background-color .2s;
 }
-.anmelden.licht-an .marke .logo{animation:schweben 4.5s ease-in-out 1s infinite}
-
-/* Inhalte tauchen gestaffelt auf, sobald Licht da ist */
-@keyframes auftauchen{
-  from{opacity:0; transform:translateY(9px)}
-  to{opacity:1; transform:translateY(0)}
+.feld input:focus{
+  background:rgba(12,16,19,.95);
+  border-color:rgba(255,180,90,calc(.25 + .45 * var(--warm)));
+  box-shadow:0 0 0 3px rgba(246,135,18,.12),
+             0 0 22px -6px rgba(255,180,90,calc(.5 * var(--warm)));
+  outline:none;
 }
-.anmeldekarte > *{opacity:0}
-.anmelden.licht-an .anmeldekarte > *{animation:auftauchen .5s ease-out forwards}
-.anmelden.licht-an .anmeldekarte > *:nth-child(1){animation-delay:.10s}
-.anmelden.licht-an .anmeldekarte > *:nth-child(2){animation-delay:.20s}
-.anmelden.licht-an .anmeldekarte > *:nth-child(3){animation-delay:.28s}
-.anmelden.licht-an .anmeldekarte > *:nth-child(4){animation-delay:.36s}
-.anmelden.licht-an .anmeldekarte > *:nth-child(5){animation-delay:.44s}
-.anmelden.licht-an .anmeldekarte > *:nth-child(6){animation-delay:.52s}
-.anmelden.licht-an .anmeldekarte > *:nth-child(7){animation-delay:.58s}
+.feld .augen{
+  position:absolute; right:6px; bottom:5px; width:40px; height:40px;
+  display:grid; place-items:center; cursor:pointer;
+  background:transparent; border:0; border-radius:9px; color:var(--gedaempft);
+}
+.feld .augen:hover{color:var(--tinte)}
+.feld .augen svg{width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.7}
+#login-pw{padding-right:50px}
 
-/* Wer Bewegung reduziert haben will, bekommt alles sofort und ruhig */
+/* Anmeldetaste */
+.taste{
+  position:relative; overflow:hidden; margin-top:4px;
+  font-family:Archivo,"IBM Plex Sans",sans-serif; font-weight:600; font-size:16.5px;
+  padding:15px 20px; border:0; border-radius:12px; cursor:pointer; width:100%;
+  background:linear-gradient(180deg, #ffa53a, #f0810f);
+  color:#2a1500;
+  box-shadow:0 8px 22px -10px rgba(246,135,18,.85), inset 0 1px 0 rgba(255,255,255,.45);
+  transition:filter .16s, transform .08s, box-shadow .16s;
+}
+.taste:hover:not(:disabled){filter:brightness(1.09);
+  box-shadow:0 10px 28px -10px rgba(246,135,18,1), inset 0 1px 0 rgba(255,255,255,.5)}
+.taste:active:not(:disabled){transform:translateY(2px);
+  box-shadow:0 4px 12px -8px rgba(246,135,18,.9), inset 0 1px 0 rgba(255,255,255,.3)}
+.taste:disabled{cursor:default; filter:saturate(.75) brightness(.92)}
+.taste:focus-visible{outline:2px solid #fff; outline-offset:3px}
+.taste .laufband{
+  position:absolute; inset:0; opacity:0; pointer-events:none;
+  background:linear-gradient(100deg, transparent 20%,
+    rgba(255,255,255,.55) 50%, transparent 80%);
+  transform:translateX(-100%);
+}
+.taste.laedt .laufband{opacity:1; animation:laufen 1.05s linear infinite}
+@keyframes laufen{to{transform:translateX(100%)}}
+
+/* Statusleuchte */
+.status-zeile{display:flex; align-items:center; gap:9px; justify-content:center;
+  min-height:20px; margin-top:2px}
+.leuchte{width:8px; height:8px; border-radius:50%; flex:none;
+  background:#4a555d; transition:background .3s, box-shadow .3s}
+.leuchte.frei{background:#3fbf94; box-shadow:0 0 12px 3px rgba(63,191,148,.6)}
+.leuchte.stopp{background:var(--akzent); box-shadow:0 0 12px 3px rgba(246,135,18,.55);
+  animation:pulsen .55s ease-out 2}
+@keyframes pulsen{0%,100%{opacity:1} 50%{opacity:.35}}
+.status-zeile span{font-size:13px; color:var(--gedaempft)}
+.status-zeile span.gut{color:var(--gut)}
+.status-zeile span.fehler{color:var(--kritisch)}
+
+/* --- Der Moment des Eintretens --- */
+.anmelden.oeffnet{background:transparent; transition:background .5s ease .2s}
+.anmelden.oeffnet .halle{opacity:0; transition:opacity .5s ease .25s}
+.anmelden.oeffnet .tor{transform:translateX(-50%) translateY(-104%)}
+.anmelden.oeffnet .panel{transform:translateY(-150%); opacity:0}
+.anmelden.oeffnet .lampe{transform:translateY(-130%); opacity:0;
+  transition:transform .8s cubic-bezier(.65,.02,.35,1), opacity .6s ease}
+@keyframes eintreten{
+  from{transform:scale(1.035); opacity:.55}
+  to{transform:scale(1); opacity:1}
+}
+#app.eintritt{animation:eintreten .8s cubic-bezier(.22,1,.36,1)}
+
+@media (max-width:560px){
+  .anmelden{padding:14px}
+  .szene{max-width:100%}
+  .lampe{height:96px}
+  .kabel{height:44px}
+  .schirm{top:40px; width:86px; height:33px}
+  .fassung{top:70px} .birne{top:75px; width:13px; height:13px}
+  .kegel{top:79px; width:320px; height:270px}
+  .schnur{top:70px; left:calc(50% + 36px)}
+  .panel{padding:20px 18px 18px; gap:12px; border-radius:15px}
+  .panel .marke .logo{width:142px; height:31px}
+  .panel h1{font-size:16.5px}
+  .panel .unter{font-size:12px}
+  .feld input{font-size:16px; padding:11px 12px}
+  .taste{font-size:15px; padding:13px 18px}
+  .regal{display:none}
+  .tor{height:66%}
+}
+
 @media (prefers-reduced-motion:reduce){
-  .anmeldekarte > *{opacity:1}
-  .anmelden.licht-an .kegel,.anmelden.licht-an .birne,
-  .anmelden.licht-an .marke .logo,.anmelden.licht-an .anmeldekarte > *{animation:none}
-  .staub{display:none}
-}
-
-/* Licht an */
-.anmelden.licht-an .birne{
-  background:#ffd9a3;
-  box-shadow:0 0 14px 5px rgba(255,180,90,.85), 0 0 46px 18px rgba(246,135,18,.42);
-}
-.anmelden.licht-an .schirm::after{
-  background:#ffcf96; box-shadow:0 0 16px 5px rgba(255,180,90,.55);
-}
-.anmelden.licht-an .kegel{opacity:1}
-
-.anmeldekarte{
-  width:100%; max-width:392px; background:var(--flaeche);
-  border:1px solid var(--kante); border-radius:16px; padding:30px 28px 26px;
-  display:grid; gap:15px; box-shadow:var(--tief);
-  filter:brightness(.42) saturate(.6);
-  transition:filter .65s ease, box-shadow .65s ease;
-}
-.anmelden.licht-an .anmeldekarte{
-  filter:none;
-  box-shadow:var(--tief), 0 -1px 0 rgba(255,190,110,.22) inset,
-             0 12px 60px -30px rgba(246,135,18,.55);
-}
-.anmeldekarte .marke{display:grid; gap:14px; justify-items:center; margin-bottom:6px}
-.anmeldekarte .marke .logo{width:190px; height:40px; background-position:center}
-.anmeldekarte h1{font-size:19px; text-align:center; letter-spacing:-.01em}
-.anmeldekarte .tat{box-shadow:0 6px 26px -10px rgba(246,135,18,.75)}
-.anmeldekarte .unter{
-  font-size:11.5px; letter-spacing:.16em; text-transform:uppercase;
-  color:var(--leise); margin:-9px 0 6px; text-align:center;
+  .anmelden.schwingt .lampe{animation:none}
+  .anmelden.zuendet .kegel,.anmelden.zuendet .birne{animation:none}
+  .lampe{transition:none}
+  .taste.laedt .laufband{animation:none; opacity:.35}
+  .leuchte.stopp{animation:none}
+  .anmelden.oeffnet .tor,.anmelden.oeffnet .panel,.anmelden.oeffnet .lampe{
+    transition:opacity .35s ease; transform:none; opacity:0}
+  #app.eintritt{animation:none}
 }
 
 /* ---------- Kopfzeile ---------- */
@@ -577,17 +703,6 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   details.zpl summary{padding:10px 12px; font-size:9.5px}
   details.klapp summary{padding:9px 11px; font-size:12px}
 
-  .anmeldekarte{padding:22px 20px 20px; gap:12px; border-radius:13px}
-  .anmeldekarte .marke .logo{width:150px; height:32px}
-  .anmeldekarte h1{font-size:16px}
-  .anmeldekarte .unter{font-size:10px}
-  .lampe{height:104px}
-  .kabel{height:48px}
-  .schirm{top:44px; width:94px; height:36px}
-  .birne{top:76px; width:14px; height:14px}
-  .kegel{top:80px; width:330px; height:260px}
-  .schnur{top:72px; left:calc(50% + 38px)}
-  .anmelden.licht-an .birne{box-shadow:0 0 11px 4px rgba(255,180,90,.85), 0 0 34px 13px rgba(246,135,18,.42)}
 }
 
 @page{ size:100mm 150mm; margin:0 }
@@ -616,33 +731,65 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
 <!-- ===== Anmeldung ===== -->
 <div class="anmelden" id="anmelden" hidden>
- <div class="szene">
-  <div class="lampe">
-    <span class="kabel"></span>
-    <span class="schirm"></span>
-    <span class="birne"></span>
-    <span class="kegel"></span>
-    <button type="button" class="schnur" id="schnur" aria-pressed="false" aria-label="Hallenlicht an- und ausschalten">
+  <div class="halle" aria-hidden="true">
+    <span class="regal links"></span>
+    <span class="regal rechts"></span>
+    <div class="tor">
+      <span class="schiene l"></span>
+      <span class="blatt"></span>
+      <span class="kante"></span>
+      <span class="schiene r"></span>
+    </div>
+    <div class="boden"></div>
+  </div>
+
+  <div class="szene">
+    <div class="lampe" id="lampe" aria-hidden="true">
+      <span class="kabel"></span>
+      <span class="schirm"></span>
+      <span class="fassung"></span>
+      <span class="birne"></span>
+      <span class="kegel"></span>
+    </div>
+    <button type="button" class="schnur" id="schnur" aria-pressed="true"
+            aria-label="Hallenlicht heller oder gedimmt">
       <span class="faden"></span><span class="knauf"></span>
     </button>
-    <span class="staub"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+
+    <form class="panel" id="anmeldeformular" novalidate>
+      <div class="marke"><span class="logo" role="img" aria-label="Mein Döner Cash &amp; Carry"></span></div>
+      <h1>Willkommen zur nächsten Schicht.</h1>
+      <p class="unter">Melde dich an, um deine Paletten zu verwalten.</p>
+
+      <div class="feld">
+        <label for="login-mail">E-Mail</label>
+        <input type="email" id="login-mail" name="email" autocomplete="username"
+               inputmode="email" autocapitalize="off" spellcheck="false" required>
+      </div>
+
+      <div class="feld">
+        <label for="login-pw">Passwort</label>
+        <input type="password" id="login-pw" name="password" autocomplete="current-password" required>
+        <button type="button" class="augen" id="pw-zeigen" aria-pressed="false"
+                aria-label="Passwort anzeigen" title="Passwort anzeigen">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path id="auge-offen" d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/>
+            <circle id="auge-pupille" cx="12" cy="12" r="3"/>
+            <path id="auge-strich" d="M4 20 20 4" style="display:none"/>
+          </svg>
+        </button>
+      </div>
+
+      <button type="submit" class="taste" id="knopf-anmelden">
+        <span class="laufband"></span>Anmelden
+      </button>
+
+      <div class="status-zeile">
+        <span class="leuchte" id="leuchte"></span>
+        <span class="meldung" id="login-meldung"></span>
+      </div>
+    </form>
   </div>
-  <form class="anmeldekarte" id="anmeldeformular">
-    <div class="marke"><span class="logo" role="img" aria-label="Mein Döner Cash &amp; Carry"></span></div>
-    <h1>Palettenbeschriftung</h1>
-    <p class="unter">G.A.B GmbH · Lager</p>
-    <div>
-      <label for="login-mail">E-Mail</label>
-      <input type="email" id="login-mail" autocomplete="username" required>
-    </div>
-    <div>
-      <label for="login-pw">Passwort</label>
-      <input type="password" id="login-pw" autocomplete="current-password" required>
-    </div>
-    <button type="submit" class="tat" id="knopf-anmelden">Anmelden</button>
-    <p class="meldung" id="login-meldung"></p>
-  </form>
- </div>
 </div>
 
 <div id="app" hidden>
@@ -664,7 +811,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v12</span>
+    <span class="version">v14</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -896,17 +1043,22 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       <div class="inhalt">
         <div class="zwei">
           <div>
-            <label for="neu-recht-mail">E-Mail des Zugangs</label>
+            <label for="neu-recht-mail">E-Mail</label>
             <input id="neu-recht-mail" type="email" placeholder="name@firma.at" autocomplete="off">
           </div>
-          <div style="display:flex; align-items:flex-end">
-            <button type="button" class="still" id="knopf-recht-neu" style="width:100%">Person aufnehmen</button>
+          <div>
+            <label for="neu-recht-pw">Passwort <span style="text-transform:none">(nur für neue Zugänge)</span></label>
+            <input id="neu-recht-pw" type="text" placeholder="mindestens 6 Zeichen" autocomplete="off">
           </div>
         </div>
-        <p class="meldung" id="recht-meldung"></p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+          <button type="button" class="still" id="knopf-recht-neu">Person aufnehmen</button>
+          <span class="meldung" id="recht-meldung"></span>
+        </div>
         <p class="hinweis">
-          Trage hier genau die E-Mail ein, mit der sich die Person anmeldet — dieselbe, die du in
-          Supabase angelegt hast. Wer hier nicht steht, bekommt nur Etikett und Inventur zu sehen.
+          <b>Mit Passwort:</b> die Person wird neu angelegt und kann sich sofort anmelden.<br>
+          <b>Ohne Passwort:</b> es wird nur die Rechtezeile angelegt — für jemanden, den es
+          in Supabase schon gibt. Wer hier gar nicht steht, sieht nur Etikett und Inventur.
         </p>
       </div>
       <div id="rechteliste"></div>
@@ -1132,8 +1284,31 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       });
   }
 
+  function rechtezeileAnlegen(mail, m){
+    // Der erste Eintrag und der eigene Zugang bekommen alles — sonst sperrt
+    // sich aus, wer die Liste gerade erst anlegt.
+    var selbst = mail === String(angemeldet || "").toLowerCase();
+    var voll = rechteListe.length === 0 || selbst;
+    var bereiche = {};
+    Object.keys(ALLES).forEach(function(k){ bereiche[k] = voll ? true : !!GRUNDRECHTE[k]; });
+    var neuer = { email:mail, bereiche:bereiche };
+    rechteListe.push(neuer);
+    rechteListe.sort(function(a,b){ return a.email.localeCompare(b.email); });
+    rechteSpeichern(neuer);
+    $("neu-recht-mail").value = "";
+    $("neu-recht-pw").value = "";
+    rechteLeer = false;
+    if(selbst){
+      Object.keys(bereiche).forEach(function(k){ rechte[k] = bereiche[k]; });
+      rechteAnwenden();
+    }
+    rechteZeichnen();
+    return voll;
+  }
+
   $("knopf-recht-neu").addEventListener("click", function(){
     var mail = $("neu-recht-mail").value.trim().toLowerCase();
+    var pw = $("neu-recht-pw").value;
     var m = $("recht-meldung");
     if(!mail || mail.indexOf("@") === -1){
       m.textContent = "Bitte eine gültige E-Mail eintragen."; m.className = "meldung fehler"; return;
@@ -1141,29 +1316,51 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(rechteListe.some(function(r){ return r.email === mail; })){
       m.textContent = "Diese Person steht schon in der Liste."; m.className = "meldung fehler"; return;
     }
-    // Der erste Eintrag und der eigene Zugang bekommen alles — sonst sperrt
-    // sich aus, wer die Liste gerade erst anlegt.
-    var selbst = mail === String(angemeldet || "").toLowerCase();
-    var voll = rechteListe.length === 0 || selbst;
-    var bereiche = {};
-    Object.keys(ALLES).forEach(function(k){
-      bereiche[k] = voll ? true : !!GRUNDRECHTE[k];
-    });
-    var neuer = { email:mail, bereiche:bereiche };
-    rechteListe.push(neuer);
-    rechteListe.sort(function(a,b){ return a.email.localeCompare(b.email); });
-    rechteSpeichern(neuer);
-    $("neu-recht-mail").value = "";
-    rechteLeer = false;
-    if(selbst){
-      Object.keys(bereiche).forEach(function(k){ rechte[k] = bereiche[k]; });
-      rechteAnwenden();
+
+    // Mit Passwort: Zugang bei Supabase anlegen lassen, dann die Rechtezeile
+    if(pw){
+      if(pw.length < 6){
+        m.textContent = "Das Passwort braucht mindestens 6 Zeichen."; m.className = "meldung fehler"; return;
+      }
+      if(!sb){ m.textContent = "Ohne Datenbank lassen sich keine Zugänge anlegen."; m.className = "meldung fehler"; return; }
+      m.textContent = "Zugang wird angelegt …"; m.className = "meldung";
+      $("knopf-recht-neu").disabled = true;
+
+      sb.functions.invoke("zugang-anlegen", { body: { email: mail, passwort: pw } })
+        .then(function(res){
+          $("knopf-recht-neu").disabled = false;
+          var fehler = res.error;
+          var antwort = res.data || {};
+          if(fehler || antwort.fehler){
+            var text = String((antwort && antwort.fehler) || (fehler && fehler.message) || "");
+            if(/not found|404|Failed to send/i.test(text)){
+              m.textContent = "Das Anlegen von Zugängen ist noch nicht eingerichtet. Ohne Passwort geht es trotzdem — den Zugang dann in Supabase anlegen.";
+            }else if(/already|registered|exists/i.test(text)){
+              m.textContent = "Diesen Zugang gibt es schon. Lass das Passwort leer, dann wird nur die Rechtezeile angelegt.";
+            }else if(/darf|recht|forbidden|403/i.test(text)){
+              m.textContent = "Du darfst keine Zugänge anlegen.";
+            }else{
+              m.textContent = "Zugang konnte nicht angelegt werden.";
+            }
+            m.className = "meldung fehler";
+            return;
+          }
+          rechtezeileAnlegen(mail, m);
+          m.textContent = mail + " kann sich jetzt anmelden. Häkchen unten anpassen.";
+          m.className = "meldung gut";
+        })
+        .catch(function(){
+          $("knopf-recht-neu").disabled = false;
+          m.textContent = "Das Anlegen von Zugängen ist noch nicht eingerichtet. Ohne Passwort geht es trotzdem.";
+          m.className = "meldung fehler";
+        });
+      return;
     }
+    var voll = rechtezeileAnlegen(mail, m);
     m.textContent = voll
       ? mail + " aufgenommen — mit allen Rechten."
       : mail + " aufgenommen — darf drucken und zählen. Häkchen unten anpassen.";
     m.className = "meldung gut";
-    rechteZeichnen();
   });
 
   // ---------- Reiter ----------
@@ -2372,9 +2569,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   }, 20000);
 
   // ---------- Anmeldung ----------
-  function appZeigen(){
-    $("anmelden").hidden = true;
-    $("app").hidden = false;
+  function appEinrichten(){
     $("knopf-abmelden").hidden = false;
     statusSetzen("Angemeldet als " + angemeldet, "aktiv");
     mengenfelderBauen();
@@ -2391,66 +2586,150 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   }
 
   // ---------- Hallenlampe ----------
+  var ruhigerModus = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var hell = true;            // zwei Lichtstimmungen
+  var zeigerNeigung = 0;      // folgt dem Mauszeiger
+  var feldNeigung = 0;        // Blick aufs aktive Feld
+  var anmeldenEl, lampeEl;
+
+  function lichtStufe(){ return hell ? 1 : 0.42; }
+
+  function lampeAktualisieren(){
+    if(!anmeldenEl) return;
+    anmeldenEl.style.setProperty("--warm", String(lichtStufe()));
+    anmeldenEl.style.setProperty("--neigung", (zeigerNeigung + feldNeigung).toFixed(2) + "deg");
+  }
+
   function lichtSetzen(an){
-    $("anmelden").classList.toggle("licht-an", !!an);
-    $("schnur").setAttribute("aria-pressed", an ? "true" : "false");
+    hell = !!an;
+    $("schnur").setAttribute("aria-pressed", hell ? "true" : "false");
+    lampeAktualisieren();
   }
 
-  var lampenUhr = null;
-  function lichtAnknipsen(){
-    var ruhig = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.clearTimeout(lampenUhr);
-    if(ruhig){ lichtSetzen(true); return; }
-    lichtSetzen(false);
-    lampenUhr = window.setTimeout(function(){ lichtSetzen(true); }, 520);
+  // Beim Öffnen: Lampe schwingt einmal ein, Licht wird innerhalb von ~600 ms warm.
+  function szeneStarten(){
+    anmeldenEl = $("anmelden");
+    lampeEl = $("lampe");
+    hell = true;
+    zeigerNeigung = 0; feldNeigung = 0;
+    anmeldenEl.classList.remove("oeffnet","wach","schwingt","zuendet");
+    lampeAktualisieren();
+    anmeldenEl.style.setProperty("--warm", "0");
+
+    if(ruhigerModus){
+      anmeldenEl.classList.add("wach");
+      lampeAktualisieren();
+      return;
+    }
+    anmeldenEl.classList.add("schwingt");
+    window.setTimeout(function(){
+      anmeldenEl.classList.add("wach","zuendet");
+      lampeAktualisieren();
+    }, 120);
+    window.setTimeout(function(){ anmeldenEl.classList.remove("zuendet","schwingt"); }, 3000);
   }
 
+  // Der Schirm folgt dem Zeiger um wenige Grad — nur mit echter Maus.
+  if(window.matchMedia && window.matchMedia("(hover: hover)").matches && !ruhigerModus){
+    document.addEventListener("pointermove", function(e){
+      if(!anmeldenEl || $("anmelden").hidden || e.pointerType !== "mouse") return;
+      var mitte = window.innerWidth / 2;
+      zeigerNeigung = Math.max(-3.5, Math.min(3.5, ((e.clientX - mitte) / mitte) * 3.5));
+      lampeAktualisieren();
+    });
+  }
+
+  /* Zugschnur: ziehen, klicken, Tastatur. Nach dem Loslassen federt sie zurück. */
   (function schnurEinrichten(){
     var schnur = $("schnur");
-    var faden = schnur.querySelector(".faden");
-    var start = null;
+    var start = null, gezogen = 0;
 
     schnur.addEventListener("pointerdown", function(e){
-      start = e.clientY;
+      start = e.clientY; gezogen = 0;
+      schnur.classList.add("zieht");
       try{ schnur.setPointerCapture(e.pointerId); }catch(err){}
-      faden.style.transition = "none";
     });
     schnur.addEventListener("pointermove", function(e){
       if(start === null) return;
-      var zug = Math.max(0, Math.min(30, e.clientY - start));
-      faden.style.height = (26 + zug) + "px";
+      gezogen = Math.max(0, Math.min(34, e.clientY - start));
+      schnur.style.setProperty("--zug", (34 + gezogen) + "px");
+      if(lampeEl && !ruhigerModus){
+        anmeldenEl.style.setProperty("--neigung",
+          (zeigerNeigung + feldNeigung + gezogen * 0.06).toFixed(2) + "deg");
+      }
     });
     function loslassen(){
       if(start === null) return;
       start = null;
-      faden.style.transition = "";
-      faden.style.height = "";
+      schnur.classList.remove("zieht");
+      schnur.style.removeProperty("--zug");
+      lampeAktualisieren();
+      if(gezogen > 8) lichtSetzen(!hell);   // richtig gezogen = umschalten
+      gezogen = 0;
     }
     schnur.addEventListener("pointerup", loslassen);
     schnur.addEventListener("pointercancel", loslassen);
 
-    // Klick und Tastatur schalten gleichermaßen.
-    schnur.addEventListener("click", function(){
-      window.clearTimeout(lampenUhr);
-      lichtSetzen(!$("anmelden").classList.contains("licht-an"));
+    // Klick ohne Ziehen und Tastatur schalten ebenfalls
+    schnur.addEventListener("click", function(e){
+      if(e.detail === 0 || gezogen === 0) lichtSetzen(!hell);
     });
   })();
 
-  // Wer tippen will, bekommt Licht — auch wenn er es vorher ausgemacht hat.
-  ["login-mail","login-pw"].forEach(function(id){
-    $(id).addEventListener("focus", function(){
-      window.clearTimeout(lampenUhr);
-      lichtSetzen(true);
-    });
+  /* Beim Passwort dreht sich die Lampe höflich zur Seite. */
+  $("login-mail").addEventListener("focus", function(){ feldNeigung = -3; lampeAktualisieren(); });
+  $("login-mail").addEventListener("blur",  function(){ feldNeigung = 0;  lampeAktualisieren(); });
+  $("login-pw").addEventListener("focus",   function(){ feldNeigung = 17; lampeAktualisieren(); });
+  $("login-pw").addEventListener("blur",    function(){ feldNeigung = 0;  lampeAktualisieren(); });
+
+  /* Passwort sichtbar machen */
+  $("pw-zeigen").addEventListener("click", function(){
+    var feld = $("login-pw"), knopf = $("pw-zeigen");
+    var sichtbar = feld.type === "text";
+    feld.type = sichtbar ? "password" : "text";
+    knopf.setAttribute("aria-pressed", sichtbar ? "false" : "true");
+    var beschriftung = sichtbar ? "Passwort anzeigen" : "Passwort verbergen";
+    knopf.setAttribute("aria-label", beschriftung);
+    knopf.title = beschriftung;
+    document.getElementById("auge-strich").style.display = sichtbar ? "none" : "";
+    feld.focus();
   });
+
+  function statusZeigen(text, art){
+    var m = $("login-meldung");
+    m.textContent = text || "";
+    m.className = "meldung" + (art ? " " + art : "");
+    var l = $("leuchte");
+    l.className = "leuchte" + (art === "gut" ? " frei" : (art === "fehler" ? " stopp" : ""));
+  }
 
   function anmeldungZeigen(text, art){
     $("app").hidden = true;
     $("anmelden").hidden = false;
-    var m = $("login-meldung");
-    m.textContent = text || "";
-    m.className = "meldung" + (art ? " " + art : "");
-    lichtAnknipsen();
+    $("anmelden").classList.remove("oeffnet");
+    statusZeigen(text, art);
+    szeneStarten();
+  }
+
+  /* Das Tor geht erst auf, wenn die Anmeldung wirklich durch ist. */
+  function zugangOeffnen(){
+    statusZeigen("Zugang freigegeben", "gut");
+    var an = $("anmelden"), app = $("app");
+    var dauer = ruhigerModus ? 380 : 820;
+
+    window.setTimeout(function(){
+      app.hidden = false;                 // Lager wird hinter dem Tor sichtbar
+      appEinrichten();
+      if(!ruhigerModus){
+        app.classList.add("eintritt");
+        window.setTimeout(function(){ app.classList.remove("eintritt"); }, 820);
+      }
+      an.classList.add("oeffnet");
+      window.setTimeout(function(){
+        an.hidden = true;
+        an.classList.remove("oeffnet");
+      }, dauer);
+    }, ruhigerModus ? 60 : 260);
   }
 
   function geraetemodus(grund){
@@ -2468,32 +2747,50 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     trefferZeichnen(); scansZeichnen(); etikettenZeichnen();
   }
 
+  var meldetGerade = false;
   $("anmeldeformular").addEventListener("submit", function(e){
     e.preventDefault();
-    if(!sb) return;
+    if(!sb || meldetGerade) return;                 // keine doppelte Übermittlung
+
     var mail = $("login-mail").value.trim();
     var pw = $("login-pw").value;
-    $("knopf-anmelden").disabled = true;
-    var m = $("login-meldung");
-    m.textContent = "Wird geprüft …"; m.className = "meldung";
+    if(!mail || !pw){
+      statusZeigen("Bitte E-Mail und Passwort eintragen.", "fehler");
+      (mail ? $("login-pw") : $("login-mail")).focus();
+      return;
+    }
+
+    meldetGerade = true;
+    var taste = $("knopf-anmelden");
+    taste.disabled = true;
+    taste.classList.add("laedt");
+    statusZeigen("Zugang wird geprüft …");
+
+    function fertig(){
+      meldetGerade = false;
+      taste.disabled = false;
+      taste.classList.remove("laedt");
+    }
 
     sb.auth.signInWithPassword({ email: mail, password: pw }).then(function(res){
-      $("knopf-anmelden").disabled = false;
       if(res.error){
+        fertig();
         var text = String(res.error.message || "");
-        m.textContent = /fetch|network|load failed|timeout/i.test(text)
+        statusZeigen(/fetch|network|load failed|timeout/i.test(text)
           ? "Keine Verbindung — bitte WLAN prüfen und nochmal versuchen."
-          : "E-Mail oder Passwort stimmt nicht.";
-        m.className = "meldung fehler";
+          : "E-Mail oder Passwort stimmt nicht.", "fehler");
+        $("login-pw").select();
         return;
       }
+      // Ab hier ist die Anmeldung echt durch — erst jetzt geht das Tor auf.
+      taste.classList.remove("laedt");
       $("login-pw").value = "";
       angemeldet = res.data.user ? res.data.user.email : mail;
-      appZeigen();
+      meldetGerade = false;
+      zugangOeffnen();
     }).catch(function(){
-      $("knopf-anmelden").disabled = false;
-      m.textContent = "Keine Verbindung — bitte WLAN prüfen und nochmal versuchen.";
-      m.className = "meldung fehler";
+      fertig();
+      statusZeigen("Keine Verbindung — bitte WLAN prüfen und nochmal versuchen.", "fehler");
     });
   });
 
@@ -2502,7 +2799,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     sb.auth.signOut().then(function(){
       angemeldet = null;
       artikel = []; leute = []; scans = [];
-      anmeldungZeigen("Abgemeldet.", "gut");
+      $("login-pw").value = "";
+      anmeldungZeigen("Abgemeldet.", "");
     });
   });
 
@@ -2524,7 +2822,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       var s = res.data ? res.data.session : null;
       if(s && s.user){
         angemeldet = s.user.email;
-        appZeigen();
+        $("anmelden").hidden = true;
+        $("app").hidden = false;
+        appEinrichten();
       }else{
         anmeldungZeigen("");
         $("login-mail").focus();
