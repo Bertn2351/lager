@@ -811,7 +811,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v14</span>
+    <span class="version">v15</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -938,12 +938,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
             <p class="hinweis">
               In Excel die Spalten markieren, kopieren und hier einfügen. Nötig sind
               <b>Artikelnummer</b> und <b>Bezeichnung</b>; zusätzlich kannst du
-              <b>Bestand</b> und <b>Barcode/EAN</b> mitgeben — dann erkennt die Inventur die Ware
-              am eigenen Barcode und rechnet gegen deinen Lagerbestand.
+              <b>Bestand</b>, <b>EAN</b> und <b>VPE_VK</b> mitgeben — dann erkennt die Inventur die Ware
+              am eigenen Barcode, zählt je Scan eine ganze Verkaufseinheit und rechnet gegen deinen Lagerbestand.
               Nimm die Überschriftenzeile mit, dann ist die Reihenfolge der Spalten egal.
               Artikelnummern, die es schon gibt, werden aktualisiert statt doppelt angelegt.
             </p>
-            <textarea id="import" spellcheck="false" placeholder="Artikelnummer&#9;Bezeichnung&#9;Bestand&#9;EAN&#10;EDC&#9;Pet Coca Cola 0,50l.  24stk./Kolli&#9;480&#9;4001686315347&#10;EDZ&#9;Pet Coca Cola Zero 0,50l.  24 Stk./Kolli&#9;312&#9;4001686315361"></textarea>
+            <textarea id="import" spellcheck="false" placeholder="Artikelnummer&#9;Bezeichnung&#9;Bestand&#9;EAN&#9;VPE_VK&#10;A10&#9;Asia Döner 10kg&#9;360&#9;9120044874106&#9;10&#10;A15&#9;Asia Döner 15kg&#9;585&#9;9120044874151&#9;15"></textarea>
             <label class="tonschalter" style="font-size:14px">
               <input type="checkbox" id="import-ersetzen"> Alle vorhandenen Artikel vorher löschen
             </label>
@@ -1812,11 +1812,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   function artikelHolen(){
     if(!sb) return Promise.resolve();
-    return sb.from("artikel").select("id,nr,bezeichnung,bestand,ean").limit(5000).then(function(res){
+    return sb.from("artikel").select("id,nr,bezeichnung,bestand,ean,vpe_vk,vpe_ek").limit(5000).then(function(res){
       if(res.error) return;
       artikel = (res.data || []).map(function(a){
         return { id:a.id, nr:a.nr || "", bezeichnung:a.bezeichnung || "(ohne Bezeichnung)",
-                 bestand:(a.bestand == null ? null : Number(a.bestand)), ean:a.ean || "" };
+                 bestand:(a.bestand == null ? null : Number(a.bestand)), ean:a.ean || "",
+                 vpe_vk:(a.vpe_vk == null ? null : Number(a.vpe_vk)),
+                 vpe_ek:(a.vpe_ek == null ? null : Number(a.vpe_ek)) };
       });
       artikelSortieren();
       if(gewaehlt){
@@ -1838,6 +1840,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       var stuecke = [];
       if(a.nr) stuecke.push("Nr. " + a.nr);
       if(a.ean) stuecke.push("Barcode " + a.ean);
+      if(a.vpe_vk != null && isFinite(a.vpe_vk) && a.vpe_vk > 1) stuecke.push("VPE " + a.vpe_vk);
       if(darf("bestand") && a.bestand != null && isFinite(a.bestand)) stuecke.push("Bestand " + a.bestand);
       if(stuecke.length){ s.textContent = stuecke.join(" · "); }
       else { s.textContent = "Artikelnummer fehlt"; s.className = "fehlt"; }
@@ -1912,13 +1915,15 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   // Kopfzeile erkennen, damit die Spalten in beliebiger Reihenfolge stehen dürfen
   function spaltenZuordnen(kopf){
-    var zu = { nr:-1, bez:-1, bestand:-1, ean:-1 }, treffer = 0;
+    var zu = { nr:-1, bez:-1, bestand:-1, ean:-1, vpe_vk:-1, vpe_ek:-1 }, treffer = 0;
     kopf.forEach(function(name, i){
       var n = name.toLowerCase().replace(/[^a-zäöü]/g, "");
       if(/^(artikelnummer|artikelnr|nummer|nr|code|artnr)$/.test(n)){ zu.nr = i; treffer++; }
       else if(/^(bezeichnung|artikel|name|artikelbezeichnung|beschreibung)$/.test(n)){ zu.bez = i; treffer++; }
-      else if(/^(bestand|lagerbestand|menge|sollbestand|istbestand)$/.test(n)){ zu.bestand = i; treffer++; }
+      else if(/^(bestand|lagerbestand|sollbestand|istbestand)$/.test(n)){ zu.bestand = i; treffer++; }
       else if(/^(ean|barcode|eancode|gtin|strichcode)$/.test(n)){ zu.ean = i; treffer++; }
+      else if(/^(vpevk|vpev|verkaufseinheit|vkeinheit|vpe)$/.test(n)){ zu.vpe_vk = i; treffer++; }
+      else if(/^(vpeek|vpee|einkaufseinheit|ekeinheit)$/.test(n)){ zu.vpe_ek = i; treffer++; }
     });
     return treffer >= 2 ? zu : null;
   }
@@ -1943,7 +1948,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var zu = spaltenZuordnen(teile(zeilen[0]));
     var ab = 0;
     if(zu){ ab = 1; }
-    else { zu = { nr:0, bez:1, bestand:2, ean:3 }; }
+    else { zu = { nr:0, bez:1, bestand:2, ean:3, vpe_vk:4, vpe_ek:5 }; }
+
+    function zahl(text){
+      if(text == null || text === "") return null;
+      var z = parseFloat(String(text).replace(/\s/g, "").replace(/\.(?=\d{3}\b)/g, "").replace(",", "."));
+      return isFinite(z) ? z : null;
+    }
 
     var neue = [], aenderungen = [], uebersprungen = 0;
     for(var i = ab; i < zeilen.length; i++){
@@ -1951,12 +1962,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       var nr  = zu.nr  >= 0 && t[zu.nr]  ? t[zu.nr].toUpperCase() : "";
       var bez = zu.bez >= 0 && t[zu.bez] ? t[zu.bez] : (t.length === 1 ? t[0] : "");
       var ean = zu.ean >= 0 && t[zu.ean] ? t[zu.ean].replace(/[^0-9A-Za-z]/g, "") : "";
-      var bestandRoh = zu.bestand >= 0 ? t[zu.bestand] : "";
-      var bestand = null;
-      if(bestandRoh){
-        var zahl = parseFloat(String(bestandRoh).replace(/\./g, "").replace(",", "."));
-        if(isFinite(zahl)) bestand = zahl;
-      }
+      var bestand = zu.bestand >= 0 ? zahl(t[zu.bestand]) : null;
+      var vpeVk   = zu.vpe_vk  >= 0 ? zahl(t[zu.vpe_vk])  : null;
+      var vpeEk   = zu.vpe_ek  >= 0 ? zahl(t[zu.vpe_ek])  : null;
       if(!bez){ uebersprungen++; continue; }
 
       var da = nr ? artikel.filter(function(a){ return a.nr && a.nr === nr; })[0] : null;
@@ -1965,9 +1973,11 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         if(da.bezeichnung !== bez){ da.bezeichnung = bez; geaendert = true; }
         if(ean && da.ean !== ean){ da.ean = ean; geaendert = true; }
         if(bestand !== null && da.bestand !== bestand){ da.bestand = bestand; geaendert = true; }
+        if(vpeVk !== null && da.vpe_vk !== vpeVk){ da.vpe_vk = vpeVk; geaendert = true; }
+        if(vpeEk !== null && da.vpe_ek !== vpeEk){ da.vpe_ek = vpeEk; geaendert = true; }
         if(geaendert) aenderungen.push(da);
       }else{
-        neue.push({ nr:nr, bezeichnung:bez, ean:ean, bestand:bestand });
+        neue.push({ nr:nr, bezeichnung:bez, ean:ean, bestand:bestand, vpe_vk:vpeVk, vpe_ek:vpeEk });
       }
     }
 
@@ -1987,7 +1997,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
     if(!sb){
       neue.forEach(function(n){
-        artikel.push({ id:neueId("a"), nr:n.nr, bezeichnung:n.bezeichnung, ean:n.ean, bestand:n.bestand });
+        artikel.push({ id:neueId("a"), nr:n.nr, bezeichnung:n.bezeichnung, ean:n.ean,
+                       bestand:n.bestand, vpe_vk:n.vpe_vk, vpe_ek:n.vpe_ek });
       });
       fertig();
       return;
@@ -2004,7 +2015,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     }
     aenderungen.forEach(function(a){
       kette = kette.then(function(){
-        return sb.from("artikel").update({ bezeichnung:a.bezeichnung, ean:a.ean, bestand:a.bestand }).eq("id", a.id);
+        return sb.from("artikel").update({ bezeichnung:a.bezeichnung, ean:a.ean, bestand:a.bestand,
+                                           vpe_vk:a.vpe_vk, vpe_ek:a.vpe_ek }).eq("id", a.id);
       });
     });
     kette.then(function(){ return artikelHolen(); }).then(fertig).catch(function(){
@@ -2227,8 +2239,11 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         scanBlitz(false); piep(false);
         return false;
       }
-      menge = 1;
       gefunden = artikelZuCode(wert);
+      // Ein Scan ist eine Verkaufseinheit: A10 hat VPE 10, also zählt ein Scan 10.
+      var vpe = (gefunden && gefunden.vpe_vk != null && isFinite(gefunden.vpe_vk) && gefunden.vpe_vk > 0)
+                ? gefunden.vpe_vk : 1;
+      menge = vpe;
       nr = (gefunden && gefunden.nr) ? gefunden.nr.toUpperCase() : wert;
     }
 
@@ -2237,8 +2252,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     scansZeichnen();
 
     var text = menge + " × " + nr;
-    if(gefunden) text += " · " + gefunden.bezeichnung;
-    else text += " · nicht im Artikelstamm";
+    if(gefunden){
+      text += " · " + gefunden.bezeichnung;
+      if(menge > 1 && wert.indexOf("*") === -1) text += " (1 Einheit = " + menge + ")";
+    }else{
+      text += " · nicht im Artikelstamm";
+    }
     scanMeldung(text, gefunden ? "gut" : "fehler");
     scanBlitz(true); piep(true);
 
