@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0b0e10">
+<meta name="theme-color" content="#080b0e">
 <style>
   :root{ color-scheme: dark; }
   html,body{ margin:0; }
@@ -56,279 +56,173 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 ::-webkit-scrollbar-thumb{background:var(--kante); border-radius:99px; border:3px solid var(--grund)}
 ::-webkit-scrollbar-thumb:hover{background:var(--kante-hell)}
 
-/* ---------- Anmeldung: Nachtschicht ----------
-   Eine Halle bei Nacht. Das Tor ist zu, über dem Zugangspanel hängt eine
-   Lampe, die auf den Zeiger und auf das Feld reagiert, in dem gerade
-   getippt wird. Nach echter Anmeldung fahren Panel und Tor nach oben. */
+/* ---------- Anmeldung: PORTAL ----------
+   Werte nach der mitgelieferten Referenz. Alles auf .anmelden begrenzt,
+   damit die übrige Anwendung unberührt bleibt. */
 .anmelden{
-  position:fixed; inset:0; z-index:50; overflow:hidden;
-  display:grid; place-items:center; padding:20px;
-  background:#0b0e10;
-  --warm:0;                       /* 0 = gedimmt, 1 = volles Licht */
-  --neigung:0deg;                 /* Lampenschirm */
+  --p-orange:#ff852e; --p-ink:#080b0e; --p-text:#f6f4ef;
+  position:fixed; inset:0; z-index:50; isolation:isolate;
+  min-height:100svh; overflow-x:hidden; overflow-y:auto;
+  display:flex; flex-direction:column;
+  background:var(--p-ink); color:var(--p-text);
+  font-family:Arial,Helvetica,sans-serif;
 }
+.anmelden *{box-sizing:border-box}
+.anmelden button,.anmelden input{font:inherit}
+.anmelden button{cursor:pointer}
+.anmelden button:focus-visible,.anmelden input:focus-visible{outline:2px solid #ffd4a7; outline-offset:4px}
 
-/* --- Halle im Hintergrund --- */
-.halle{position:absolute; inset:0; pointer-events:none;
-  opacity:0; transition:opacity 1.1s ease}
-.anmelden.wach .halle{opacity:1}
+/* Kopf */
+.p-header{display:flex; align-items:center; justify-content:space-between; gap:18px;
+  padding:26px 36px; position:relative; z-index:4; border-bottom:1px solid #ffffff0d; flex:none}
+.p-header .logo{width:150px; height:32px; background-position:left center}
+.p-marke{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:1px;
+  color:#b6babe; text-align:right; line-height:1.6}
+.p-marke span{color:var(--p-orange)}
 
-.boden{
-  position:absolute; left:-10%; right:-10%; bottom:0; height:38%;
-  background:
-    radial-gradient(60% 120% at 50% 0%,
-      rgba(246,135,18,calc(.16 * var(--warm))), transparent 70%),
-    linear-gradient(180deg, #0d1114 0%, #090c0e 100%);
-  transition:background 1s ease;
-}
-.boden::after{  /* Lichtpfütze unter der Lampe */
-  content:""; position:absolute; left:50%; top:-4%; width:44%; height:52%;
-  transform:translateX(-50%); border-radius:50%;
-  background:radial-gradient(ellipse at center,
-    rgba(255,186,96,calc(.20 * var(--warm))), transparent 68%);
-  filter:blur(26px); transition:background 1s ease;
-}
+/* Rumpf */
+.p-body{position:relative; flex:1 0 auto; min-height:561px;
+  display:grid; grid-template-columns:43% 57%; padding:0 36px}
+.p-story{position:relative; z-index:2; align-self:center; padding-bottom:22px}
+.p-eyebrow{display:flex; align-items:center; gap:10px;
+  font:11px/1.5 "IBM Plex Mono",monospace; letter-spacing:2px; color:#c2c5c8; margin-bottom:28px}
+.p-eyebrow::before{content:""; width:22px; height:1px; background:var(--p-orange); flex:none}
+.p-story h1{font-size:clamp(38px,5.1vw,59px); line-height:1.05; font-weight:500;
+  letter-spacing:-2.8px; margin:0 0 23px; color:var(--p-text); font-family:inherit}
+.p-story h1 em{font-family:Georgia,"Times New Roman",serif; font-weight:400;
+  color:var(--p-orange); font-style:italic}
+.p-copy{max-width:264px; color:#aab0b5; font-size:14px; line-height:1.7; margin:0 0 40px}
+.p-marker{display:flex; gap:11px; align-items:center; font-size:11px;
+  font-family:"IBM Plex Mono",monospace; letter-spacing:1px; color:#c6cbcb}
+.p-marker b{width:6px; height:6px; border-radius:50%; background:var(--p-orange);
+  box-shadow:0 0 12px var(--p-orange); flex:none}
 
-/* Regalreihen links und rechts, nur angedeutet */
-.regal{position:absolute; bottom:22%; width:20%; height:46%;
-  border:1px solid rgba(150,170,185,.09);
-  background:
-    repeating-linear-gradient(0deg,
-      rgba(150,170,185,.07) 0 1px, transparent 1px 33.3%),
-    repeating-linear-gradient(90deg,
-      rgba(150,170,185,.05) 0 1px, transparent 1px 50%);
-  filter:blur(.4px);
-}
-.regal.links{left:3%; transform:perspective(600px) rotateY(16deg)}
-.regal.rechts{right:3%; transform:perspective(600px) rotateY(-16deg)}
-.regal::after{ /* Paletten am Boden davor */
-  content:""; position:absolute; left:8%; right:8%; bottom:-14%; height:11%;
-  background:rgba(150,170,185,.06);
-  border:1px solid rgba(150,170,185,.08);
-}
+/* Portalraum */
+.p-world{position:relative; min-width:0; display:grid; place-items:center;
+  perspective:1000px; padding:53px 28px 66px; overflow:clip}
+.p-floor{position:absolute; pointer-events:none; width:900px; height:310px; bottom:-158px;
+  left:50%; transform:translateX(-50%) rotateX(69deg);
+  background-image:linear-gradient(#ff852e15 1px,transparent 1px),
+                   linear-gradient(90deg,#ff852e15 1px,transparent 1px);
+  background-size:56px 50px;
+  -webkit-mask-image:radial-gradient(ellipse,#000 5%,transparent 65%);
+  mask-image:radial-gradient(ellipse,#000 5%,transparent 65%)}
+.p-glow{position:absolute; inset:0 -85px; pointer-events:none;
+  background:radial-gradient(ellipse at 54% 51%,#ff852e15,transparent 65%); transition:opacity .5s}
 
-/* --- Das Tor --- */
-.tor{
-  position:absolute; left:50%; top:0; width:min(560px, 86vw); height:74%;
-  transform:translateX(-50%);
-  transition:transform .85s cubic-bezier(.65,.02,.35,1);
-}
-.tor .blatt{
-  position:absolute; inset:0; border-radius:0 0 4px 4px;
-  background:
-    repeating-linear-gradient(180deg,
-      #1b2126 0 13px, #151a1e 13px 15px, #1f262c 15px 26px, #12171b 26px 28px);
-  box-shadow:inset 0 -18px 34px rgba(0,0,0,.65), inset 0 2px 0 rgba(255,255,255,.03);
-}
-.tor .blatt::after{ /* warmer Lichtstreif, den die Lampe aufs Tor wirft */
-  content:""; position:absolute; left:14%; right:14%; top:22%; height:56%;
-  background:radial-gradient(ellipse at 50% 30%,
-    rgba(255,186,96,calc(.13 * var(--warm))), transparent 72%);
-  transition:background 1s ease;
-}
-.tor .schiene{position:absolute; top:0; bottom:0; width:7px;
-  background:linear-gradient(90deg, #232a30, #10151a);
-  box-shadow:0 0 0 1px rgba(0,0,0,.5)}
-.tor .schiene.l{left:-7px} .tor .schiene.r{right:-7px}
-.tor .kante{position:absolute; left:0; right:0; bottom:0; height:9px;
-  background:linear-gradient(180deg, #2b333a, #161c21);
-  box-shadow:0 3px 12px rgba(0,0,0,.7)}
+.p-orbit{position:absolute; width:390px; height:476px; max-width:110%;
+  border:1px solid #ffa556bd; border-radius:48% 48% 46% 46%;
+  transform:rotateY(-24deg) rotateZ(-9deg);
+  box-shadow:-6px 0 3px -5px #ffe3c4, -11px 0 16px -9px var(--p-orange),
+             inset 8px 0 20px -17px var(--p-orange), 8px 0 0 -7px #ff9c685a;
+  transition:transform 1.05s cubic-bezier(.19,1,.22,1), opacity .8s, border-color .5s;
+  pointer-events:none}
+.p-orbit::before{content:""; position:absolute; inset:-13px;
+  border:1px solid #ff852e22; border-radius:inherit}
+.p-orbit::after{content:""; position:absolute; inset:9px;
+  border:1px solid #ffbc7838; border-radius:inherit; border-right-color:transparent}
+.p-orbit2{transform:rotateY(23deg) rotateZ(10deg) scale(.95);
+  border-color:#ff852e30; box-shadow:none}
 
-/* --- Lampe --- */
-.szene{position:relative; display:flex; flex-direction:column; align-items:center;
-  width:100%; max-width:400px}
+/* Terminal */
+.p-terminal{position:relative; z-index:2; width:100%; max-width:302px;
+  padding:26px 23px 23px; background:linear-gradient(145deg,#1a1c20fa,#101316fa 62%);
+  border:1px solid #ffffff21; box-shadow:0 28px 55px #0009; border-radius:19px;
+  transition:transform .9s cubic-bezier(.2,.7,.2,1), opacity .5s}
+.p-terminal::before{content:""; position:absolute; top:-1px; left:30%; right:30%; height:1px;
+  background:#ffd0a5; box-shadow:0 0 18px 3px #ff852e44}
+.p-terminal-top{display:flex; justify-content:space-between; align-items:center;
+  color:#a9afb3; font:10px "IBM Plex Mono",monospace; letter-spacing:1px; margin-bottom:23px}
+.p-terminal-top svg{width:15px; height:15px; color:var(--p-orange); display:block}
+.p-terminal h2{font-size:22px; line-height:1.2; font-weight:500; letter-spacing:-.5px;
+  margin:0 0 7px; color:var(--p-text); font-family:inherit}
+.p-subtitle{font-size:12px; color:#a9afb3; margin:0 0 24px; line-height:1.6}
 
-.lampe{
-  position:relative; width:100%; height:120px; display:flex; justify-content:center;
-  transform:rotate(var(--neigung));
-  transform-origin:50% 0;
-  transition:transform .85s cubic-bezier(.22,1,.36,1);
-}
-.anmelden.schwingt .lampe{animation:einschwingen 2.6s cubic-bezier(.36,.07,.19,.97)}
-@keyframes einschwingen{
-  0%{transform:rotate(-7deg)}   22%{transform:rotate(4.6deg)}
-  45%{transform:rotate(-2.6deg)} 66%{transform:rotate(1.4deg)}
-  84%{transform:rotate(-.6deg)}  100%{transform:rotate(0deg)}
-}
-.kabel{position:absolute; top:0; width:2px; height:58px;
-  background:linear-gradient(180deg, transparent, #39434b 60%)}
-.schirm{
-  position:absolute; top:54px; width:104px; height:40px;
-  background:linear-gradient(174deg, #39444d 0%, #262e35 44%, #171d22 100%);
-  border-radius:52% 52% 15% 15% / 88% 88% 26% 26%;
-  box-shadow:inset 0 -6px 10px rgba(0,0,0,.6), 0 4px 10px rgba(0,0,0,.55);
-}
-.schirm::before{ /* Blechkante */
-  content:""; position:absolute; left:6%; right:6%; bottom:-1px; height:4px;
-  border-radius:50%; background:linear-gradient(90deg,#2c353c,#454f58,#2c353c);
-}
-.fassung{position:absolute; top:88px; width:9px; height:9px; border-radius:2px;
-  background:#2a3238}
-.birne{
-  position:absolute; top:94px; width:15px; height:15px; border-radius:50%;
-  background:#2b3238; transition:background .7s ease, box-shadow .7s ease;
-}
-.anmelden.wach .birne{
-  background:rgba(255,216,160,calc(.25 + .75 * var(--warm)));
-  box-shadow:0 0 calc(14px * var(--warm)) calc(5px * var(--warm)) rgba(255,180,90,.8),
-             0 0 calc(50px * var(--warm)) calc(20px * var(--warm)) rgba(246,135,18,.4);
-}
-.kegel{
-  position:absolute; top:98px; width:400px; height:330px; pointer-events:none;
-  clip-path:polygon(46% 0, 54% 0, 100% 100%, 0 100%);
-  background:linear-gradient(180deg,
-    rgba(255,190,104,calc(.34 * var(--warm))) 0%,
-    rgba(246,135,18,calc(.15 * var(--warm))) 38%, transparent 78%);
-  filter:blur(12px); mix-blend-mode:screen;
-  transition:background .8s ease;
-}
-@keyframes zuenden{
-  0%{opacity:.05} 8%{opacity:1} 14%{opacity:.2} 24%{opacity:1}
-  30%{opacity:.35} 42%{opacity:1} 100%{opacity:1}
-}
-.anmelden.zuendet .kegel,.anmelden.zuendet .birne{animation:zuenden .9s ease-out}
+.p-field{display:block; margin-bottom:17px}
+.p-field > span{display:block; font-size:11px; color:#b9bfc3; margin-bottom:8px}
+.p-input-wrap{position:relative}
+.anmelden input{width:100%; min-width:0; background:#080c0f; color:#f4f1ea;
+  border:1px solid #333b40; border-radius:8px; padding:12px 11px; font-size:14px;
+  height:45px; transition:border-color .2s; box-shadow:none}
+.anmelden input:focus{border-color:var(--p-orange); outline:none}
+.anmelden input[type=password],.anmelden .p-secret{padding-right:45px}
+.p-eye{position:absolute; right:1px; top:1px; width:42px; height:43px; border:0;
+  border-radius:7px; background:transparent; color:#adb6bc; display:grid; place-items:center}
+.p-eye svg{width:17px; height:17px}
+.p-eye:hover{color:#f4f1ea}
 
-/* --- Zugschnur --- */
-.schnur{
-  position:absolute; top:88px; left:calc(50% + 42px); z-index:2;
-  width:30px; padding:0 9px; border:0; background:transparent; cursor:grab;
-  display:flex; flex-direction:column; align-items:center; touch-action:none;
-}
-.schnur:active{cursor:grabbing}
-.schnur .faden{width:1.5px; height:var(--zug, 34px); background:#8b959d; opacity:.6;
-  transition:height .5s cubic-bezier(.22,1.6,.4,1)}
-.schnur .knauf{width:12px; height:12px; border-radius:50%; flex:none;
-  background:linear-gradient(160deg,#cfd7dd,#7d878f);
-  box-shadow:0 2px 4px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.5);
-  transition:transform .5s cubic-bezier(.22,1.6,.4,1)}
-.schnur:hover .faden,.schnur:focus-visible .faden{opacity:.95; height:calc(var(--zug, 34px) + 5px)}
-.schnur:hover .knauf{transform:translateY(2px) scale(1.08)}
-.schnur:focus-visible{outline:2px solid var(--akzent); outline-offset:3px; border-radius:10px}
-.schnur.zieht .faden{transition:none}
-.schnur.zieht .knauf{transition:none}
+.p-submit{display:flex; align-items:center; justify-content:space-between; gap:10px;
+  width:100%; border:1px solid #ffb575; background:var(--p-orange); color:#1c1004;
+  padding:13px 14px; border-radius:8px; font-size:13px; font-weight:700; min-height:47px;
+  box-shadow:0 7px 22px #ff852e20; transition:filter .2s, transform .2s}
+.p-submit:hover:not(:disabled){filter:brightness(1.12); transform:translateY(-1px)}
+.p-submit:active:not(:disabled){transform:translateY(1px)}
+.p-submit:disabled{cursor:wait; filter:saturate(.8)}
+.p-submit svg{width:17px; height:17px; flex:none}
 
-/* --- Zugangspanel --- */
-.panel{
-  position:relative; width:100%; padding:26px 26px 22px;
-  display:grid; gap:14px; border-radius:18px;
-  background:linear-gradient(168deg, rgba(31,38,45,.93), rgba(19,24,29,.96));
-  border:1px solid rgba(150,170,185,.13);
-  box-shadow:0 30px 70px -40px #000, inset 0 1px 0 rgba(255,255,255,.05);
-  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-  transition:transform .8s cubic-bezier(.65,.02,.35,1), opacity .5s ease;
-}
-.panel::before{ /* Lichtkante oben, wo die Lampe auftrifft */
-  content:""; position:absolute; left:16%; right:16%; top:-1px; height:1px;
-  background:linear-gradient(90deg, transparent,
-    rgba(255,190,110,calc(.75 * var(--warm))), transparent);
-}
-.panel .marke{display:grid; justify-items:center; gap:2px}
-.panel .marke .logo{width:168px; height:36px; background-position:center}
-.panel h1{font-size:19px; text-align:center; letter-spacing:-.015em; line-height:1.3}
-.panel .unter{margin:-7px 0 4px; text-align:center; font-size:13px; color:var(--gedaempft)}
+.p-status{display:flex; align-items:center; justify-content:center; gap:7px;
+  font:10px/1.5 "IBM Plex Mono",monospace; color:#b1b8bd; margin:16px 0 0;
+  min-height:16px; text-align:center; letter-spacing:.5px}
+.p-status b{width:6px; height:6px; border-radius:50%; background:#4a555d; flex:none;
+  transition:background .3s, box-shadow .3s}
+.p-status.gut{color:#8fe0bf} .p-status.gut b{background:#3fbf94; box-shadow:0 0 10px #3fbf94aa}
+.p-status.fehler{color:#ffb1a8} .p-status.fehler b{background:var(--p-orange); box-shadow:0 0 10px #ff852eaa}
 
-.feld{display:grid; gap:6px; position:relative}
-.feld label{font-size:11.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--leise)}
-.feld input{
-  font-size:17px; padding:13px 14px; border-radius:11px;
-  background:rgba(12,16,19,.75); border:1px solid rgba(150,170,185,.15);
-  transition:border-color .2s, box-shadow .3s, background-color .2s;
-}
-.feld input:focus{
-  background:rgba(12,16,19,.95);
-  border-color:rgba(255,180,90,calc(.25 + .45 * var(--warm)));
-  box-shadow:0 0 0 3px rgba(246,135,18,.12),
-             0 0 22px -6px rgba(255,180,90,calc(.5 * var(--warm)));
-  outline:none;
-}
-.feld .augen{
-  position:absolute; right:6px; bottom:5px; width:40px; height:40px;
-  display:grid; place-items:center; cursor:pointer;
-  background:transparent; border:0; border-radius:9px; color:var(--gedaempft);
-}
-.feld .augen:hover{color:var(--tinte)}
-.feld .augen svg{width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.7}
-#login-pw{padding-right:50px}
+/* Fuß */
+.p-footer{position:relative; z-index:4; display:flex; justify-content:space-between; gap:10px;
+  align-items:center; padding:18px 36px; border-top:1px solid #ffffff0d; color:#a6adb2;
+  font:10px/1.6 "IBM Plex Mono",monospace; letter-spacing:.8px; flex:none}
+.p-footer button{display:flex; align-items:center; gap:7px; background:transparent; border:0;
+  color:#d6c2ac; font:inherit; padding:4px 0; min-height:28px}
+.p-footer svg{width:13px; height:13px}
 
-/* Anmeldetaste */
-.taste{
-  position:relative; overflow:hidden; margin-top:4px;
-  font-family:Archivo,"IBM Plex Sans",sans-serif; font-weight:600; font-size:16.5px;
-  padding:15px 20px; border:0; border-radius:12px; cursor:pointer; width:100%;
-  background:linear-gradient(180deg, #ffa53a, #f0810f);
-  color:#2a1500;
-  box-shadow:0 8px 22px -10px rgba(246,135,18,.85), inset 0 1px 0 rgba(255,255,255,.45);
-  transition:filter .16s, transform .08s, box-shadow .16s;
-}
-.taste:hover:not(:disabled){filter:brightness(1.09);
-  box-shadow:0 10px 28px -10px rgba(246,135,18,1), inset 0 1px 0 rgba(255,255,255,.5)}
-.taste:active:not(:disabled){transform:translateY(2px);
-  box-shadow:0 4px 12px -8px rgba(246,135,18,.9), inset 0 1px 0 rgba(255,255,255,.3)}
-.taste:disabled{cursor:default; filter:saturate(.75) brightness(.92)}
-.taste:focus-visible{outline:2px solid #fff; outline-offset:3px}
-.taste .laufband{
-  position:absolute; inset:0; opacity:0; pointer-events:none;
-  background:linear-gradient(100deg, transparent 20%,
-    rgba(255,255,255,.55) 50%, transparent 80%);
-  transform:translateX(-100%);
-}
-.taste.laedt .laufband{opacity:1; animation:laufen 1.05s linear infinite}
-@keyframes laufen{to{transform:translateX(100%)}}
+/* Zustände */
+.anmelden.p-email .p-orbit{transform:rotateY(-13deg) rotateZ(-5deg); border-color:#ffbc78}
+.anmelden.p-password .p-orbit{transform:rotateY(-39deg) rotateZ(-8deg); border-color:#ff852e55}
+.anmelden.p-password .p-orbit2{transform:rotateY(40deg) rotateZ(11deg)}
+.anmelden.p-dim .p-glow{opacity:.25}
+.anmelden.p-dim .p-orbit{border-color:#b7a18a; box-shadow:-4px 0 14px -6px #ffe1b9}
 
-/* Statusleuchte */
-.status-zeile{display:flex; align-items:center; gap:9px; justify-content:center;
-  min-height:20px; margin-top:2px}
-.leuchte{width:8px; height:8px; border-radius:50%; flex:none;
-  background:#4a555d; transition:background .3s, box-shadow .3s}
-.leuchte.frei{background:#3fbf94; box-shadow:0 0 12px 3px rgba(63,191,148,.6)}
-.leuchte.stopp{background:var(--akzent); box-shadow:0 0 12px 3px rgba(246,135,18,.55);
-  animation:pulsen .55s ease-out 2}
-@keyframes pulsen{0%,100%{opacity:1} 50%{opacity:.35}}
-.status-zeile span{font-size:13px; color:var(--gedaempft)}
-.status-zeile span.gut{color:var(--gut)}
-.status-zeile span.fehler{color:var(--kritisch)}
+/* Öffnung — erst nach bestätigter Anmeldung */
+.anmelden.p-launch .p-terminal{transform:translateZ(-350px) scale(.65); opacity:0; pointer-events:none}
+.anmelden.p-launch .p-orbit{transform:translateZ(420px) scale(2.4); opacity:0}
+.anmelden.p-launch .p-orbit2{transform:translateZ(300px) scale(2.1)}
+.anmelden.p-launch .p-story,.anmelden.p-launch .p-header,.anmelden.p-launch .p-footer{
+  opacity:0; transition:opacity .45s ease}
+.anmelden.p-launch{background:transparent; transition:background .5s ease .35s}
+@keyframes p-eintreten{from{transform:scale(1.03); opacity:.5} to{transform:scale(1); opacity:1}}
+#app.p-eintritt{animation:p-eintreten .8s cubic-bezier(.22,1,.36,1)}
 
-/* --- Der Moment des Eintretens --- */
-.anmelden.oeffnet{background:transparent; transition:background .5s ease .2s}
-.anmelden.oeffnet .halle{opacity:0; transition:opacity .5s ease .25s}
-.anmelden.oeffnet .tor{transform:translateX(-50%) translateY(-104%)}
-.anmelden.oeffnet .panel{transform:translateY(-150%); opacity:0}
-.anmelden.oeffnet .lampe{transform:translateY(-130%); opacity:0;
-  transition:transform .8s cubic-bezier(.65,.02,.35,1), opacity .6s ease}
-@keyframes eintreten{
-  from{transform:scale(1.035); opacity:.55}
-  to{transform:scale(1); opacity:1}
+@media(max-width:800px){
+  .p-header{padding:22px 25px}
+  .p-header .logo{width:126px; height:27px}
+  .p-body{padding:0 25px; grid-template-columns:42% 58%}
+  .p-story h1{font-size:43px; letter-spacing:-2px}
+  .p-world{padding-left:18px; padding-right:9px}
+  .p-orbit{width:340px; height:453px}
+  .p-footer{padding:16px 25px}
 }
-#app.eintritt{animation:eintreten .8s cubic-bezier(.22,1,.36,1)}
-
-@media (max-width:560px){
-  .anmelden{padding:14px}
-  .szene{max-width:100%}
-  .lampe{height:96px}
-  .kabel{height:44px}
-  .schirm{top:40px; width:86px; height:33px}
-  .fassung{top:70px} .birne{top:75px; width:13px; height:13px}
-  .kegel{top:79px; width:320px; height:270px}
-  .schnur{top:70px; left:calc(50% + 36px)}
-  .panel{padding:20px 18px 18px; gap:12px; border-radius:15px}
-  .panel .marke .logo{width:142px; height:31px}
-  .panel h1{font-size:16.5px}
-  .panel .unter{font-size:12px}
-  .feld input{font-size:16px; padding:11px 12px}
-  .taste{font-size:15px; padding:13px 18px}
-  .regal{display:none}
-  .tor{height:66%}
+@media(max-width:590px){
+  .p-header{padding:20px}
+  .p-header .logo{width:112px; height:24px}
+  .p-marke{font-size:10px; letter-spacing:0}
+  .p-body{grid-template-columns:1fr; padding:0 20px; min-height:0}
+  .p-story{padding:29px 0 0}
+  .p-eyebrow{margin-bottom:13px; font-size:10px}
+  .p-story h1{font-size:38px; line-height:1.07; letter-spacing:-1.8px; margin-bottom:13px}
+  .p-copy{font-size:12px; margin:0; max-width:280px}
+  .p-marker{display:none}
+  .p-world{min-height:min(491px, 62svh); padding:36px 6px 40px}
+  .p-orbit{max-width:111%; width:347px; height:440px}
+  .p-terminal{max-width:302px}
+  .anmelden input{font-size:16px; height:48px}
+  .p-submit{min-height:48px}
+  .p-footer{padding:14px 20px; font-size:9px}
+  .p-footer button{min-height:44px}
 }
-
-@media (prefers-reduced-motion:reduce){
-  .anmelden.schwingt .lampe{animation:none}
-  .anmelden.zuendet .kegel,.anmelden.zuendet .birne{animation:none}
-  .lampe{transition:none}
-  .taste.laedt .laufband{animation:none; opacity:.35}
-  .leuchte.stopp{animation:none}
-  .anmelden.oeffnet .tor,.anmelden.oeffnet .panel,.anmelden.oeffnet .lampe{
-    transition:opacity .35s ease; transform:none; opacity:0}
-  #app.eintritt{animation:none}
+@media(prefers-reduced-motion:reduce){
+  .anmelden *,.anmelden *::before,.anmelden *::after{animation:none !important; transition:none !important}
+  #app.p-eintritt{animation:none}
 }
 
 /* ---------- Kopfzeile ---------- */
@@ -731,65 +625,83 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
 <!-- ===== Anmeldung ===== -->
 <div class="anmelden" id="anmelden" hidden>
-  <div class="halle" aria-hidden="true">
-    <span class="regal links"></span>
-    <span class="regal rechts"></span>
-    <div class="tor">
-      <span class="schiene l"></span>
-      <span class="blatt"></span>
-      <span class="kante"></span>
-      <span class="schiene r"></span>
-    </div>
-    <div class="boden"></div>
-  </div>
+  <header class="p-header">
+    <span class="logo" role="img" aria-label="Mein Döner Cash &amp; Carry"></span>
+    <div class="p-marke">G.A.B GMBH<br><span>LAGER</span></div>
+  </header>
 
-  <div class="szene">
-    <div class="lampe" id="lampe" aria-hidden="true">
-      <span class="kabel"></span>
-      <span class="schirm"></span>
-      <span class="fassung"></span>
-      <span class="birne"></span>
-      <span class="kegel"></span>
-    </div>
-    <button type="button" class="schnur" id="schnur" aria-pressed="true"
-            aria-label="Hallenlicht heller oder gedimmt">
-      <span class="faden"></span><span class="knauf"></span>
-    </button>
+  <div class="p-body">
+    <section class="p-story">
+      <div class="p-eyebrow">G.A.B · PALETTENVERWALTUNG</div>
+      <h1>Dein Zugang.<br>Eine andere<br><em>Dimension.</em></h1>
+      <p class="p-copy">Die Nacht liegt vor der Tür.<br>Dein Lager wartet dahinter.</p>
+      <div class="p-marker"><b></b> TOR 01 · BEREIT FÜR DICH</div>
+    </section>
 
-    <form class="panel" id="anmeldeformular" novalidate>
-      <div class="marke"><span class="logo" role="img" aria-label="Mein Döner Cash &amp; Carry"></span></div>
-      <h1>Willkommen zur nächsten Schicht.</h1>
-      <p class="unter">Melde dich an, um deine Paletten zu verwalten.</p>
+    <div class="p-world">
+      <div class="p-floor" aria-hidden="true"></div>
+      <div class="p-glow" aria-hidden="true"></div>
+      <div class="p-orbit" aria-hidden="true"></div>
+      <div class="p-orbit p-orbit2" aria-hidden="true"></div>
 
-      <div class="feld">
-        <label for="login-mail">E-Mail</label>
-        <input type="email" id="login-mail" name="email" autocomplete="username"
-               inputmode="email" autocapitalize="off" spellcheck="false" required>
-      </div>
+      <form class="p-terminal" id="anmeldeformular" novalidate>
+        <div class="p-terminal-top">
+          <span>DEIN ZUGANG ZUM LAGER</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/>
+          </svg>
+        </div>
 
-      <div class="feld">
-        <label for="login-pw">Passwort</label>
-        <input type="password" id="login-pw" name="password" autocomplete="current-password" required>
-        <button type="button" class="augen" id="pw-zeigen" aria-pressed="false"
-                aria-label="Passwort anzeigen" title="Passwort anzeigen">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path id="auge-offen" d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/>
-            <circle id="auge-pupille" cx="12" cy="12" r="3"/>
-            <path id="auge-strich" d="M4 20 20 4" style="display:none"/>
+        <h2>Schön, dass du da bist.</h2>
+        <p class="p-subtitle">Die nächste Schicht beginnt mit dir.</p>
+
+        <label class="p-field">
+          <span>E-Mail</span>
+          <input type="email" id="login-mail" name="email" autocomplete="username"
+                 inputmode="email" autocapitalize="off" spellcheck="false" required>
+        </label>
+
+        <label class="p-field">
+          <span>Passwort</span>
+          <div class="p-input-wrap">
+            <input class="p-secret" type="password" id="login-pw" name="password"
+                   autocomplete="current-password" required>
+            <button class="p-eye" type="button" id="pw-zeigen" aria-pressed="false"
+                    aria-label="Passwort anzeigen" title="Passwort anzeigen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/>
+                <circle cx="12" cy="12" r="3"/>
+                <path id="auge-strich" d="M4 20 20 4" style="display:none"/>
+              </svg>
+            </button>
+          </div>
+        </label>
+
+        <button class="p-submit" type="submit" id="knopf-anmelden">
+          <span id="knopf-text">Anmelden &amp; Tor öffnen</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 17 17 7M7 7h10v10"/>
           </svg>
         </button>
-      </div>
 
-      <button type="submit" class="taste" id="knopf-anmelden">
-        <span class="laufband"></span>Anmelden
-      </button>
-
-      <div class="status-zeile">
-        <span class="leuchte" id="leuchte"></span>
-        <span class="meldung" id="login-meldung"></span>
-      </div>
-    </form>
+        <p class="p-status" id="login-meldung" aria-live="polite"><b></b><span id="login-text"></span></p>
+      </form>
+    </div>
   </div>
+
+  <footer class="p-footer">
+    <span>MEIN DÖNER / G.A.B GMBH</span>
+    <button class="p-light" type="button" id="licht" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"/><path d="M12 3v1M12 20v1M3 12h1M20 12h1M5.6 5.6l.7.7M17.7 17.7l.7.7M18.4 5.6l-.7.7M6.3 17.7l-.7.7"/>
+      </svg>
+      <span id="licht-text">Licht dimmen</span>
+    </button>
+  </footer>
 </div>
 
 <div id="app" hidden>
@@ -811,7 +723,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v16</span>
+    <span class="version">v18</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -826,8 +738,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
         <div class="schritt">
           <div class="titel"><span class="nr">1</span><span>Artikel suchen</span></div>
-          <input id="suche" class="gross" placeholder="z. B. cola" autocomplete="off" enterkeyhint="search">
+          <input id="suche" class="gross" placeholder="Barcode scannen oder z. B. cola" autocomplete="off" enterkeyhint="search">
           <ul class="treffer" id="treffer" role="listbox" hidden></ul>
+          <p class="hinweis" id="such-hinweis">Du kannst den Barcode auf der Ware scannen — der Artikel wird dann sofort übernommen.</p>
           <div class="gewaehlt-karte" id="gewaehlt-karte" hidden>
             <div><b id="gewaehlt-bez"></b><small id="gewaehlt-nr"></small></div>
             <button type="button" class="still" id="knopf-anders">Ändern</button>
@@ -1101,6 +1014,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   var scans = [];             // {id, menge, nr, wer}
   var mengen = [""];
   var gewaehlt = null;
+  var sichtbareTreffer = [];
   var $ = function(id){ return document.getElementById(id); };
 
   function heute(){
@@ -1420,6 +1334,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       if(!q) return true;
       return (a.bezeichnung + " " + (a.nr||"")).toLowerCase().indexOf(q) !== -1;
     }).slice(0, 60);
+    sichtbareTreffer = gefunden;
 
     if(gefunden.length === 0){
       var nix = document.createElement("li");
@@ -1455,6 +1370,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   function artikelWaehlen(a){
     gewaehlt = a;
+    suchLaenge = 0;
     $("treffer").hidden = true;
     $("gewaehlt-karte").hidden = false;
     gewaehltAnzeigen();
@@ -1467,10 +1383,60 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     gewaehlt = null;
     $("gewaehlt-karte").hidden = true;
     $("suche").value = "";
+    suchLaenge = 0; suchScanner = false;
     trefferZeichnen(); etikettenZeichnen();
     $("suche").focus();
   });
-  $("suche").addEventListener("input", trefferZeichnen);
+  /* Das Suchfeld nimmt beides: getippten Text und gescannte Barcodes.
+     Ein Scanner wirft mehrere Zeichen auf einmal ins Feld — dann wird geprüft,
+     ob der Code zu einem Artikel gehört, und der direkt übernommen. */
+  var suchLaenge = 0, suchUhr = null, suchScanner = false;
+
+  function barcodeUebernehmen(code){
+    var treffer = artikelZuCode(code);
+    if(!treffer) return false;
+    artikelWaehlen(treffer);
+    piep(true);
+    return true;
+  }
+
+  $("suche").addEventListener("input", function(){
+    var feld = $("suche");
+    var w = feld.value.trim();
+    window.clearTimeout(suchUhr);
+
+    if(w.length - suchLaenge > 2) suchScanner = true;
+    suchLaenge = w.length;
+
+    if(suchScanner && w.length >= 4){
+      suchUhr = window.setTimeout(function(){
+        var code = feld.value.trim();
+        if(barcodeUebernehmen(code)){
+          suchScanner = false; suchLaenge = 0;
+          return;
+        }
+        // Kein bekannter Code — dann ist es eben ein Suchbegriff
+        suchScanner = false;
+        trefferZeichnen();
+      }, 70);
+      return;
+    }
+    trefferZeichnen();
+  });
+
+  // Enter nimmt den Barcode oder den ersten Treffer der Liste
+  $("suche").addEventListener("keydown", function(e){
+    if(e.key !== "Enter") return;
+    e.preventDefault();
+    window.clearTimeout(suchUhr);
+    var code = $("suche").value.trim();
+    if(!code) return;
+    if(barcodeUebernehmen(code)){ suchScanner = false; suchLaenge = 0; return; }
+    if(sichtbareTreffer.length === 1){ artikelWaehlen(sichtbareTreffer[0]); return; }
+    if(sichtbareTreffer.length > 1){
+      $("treffer").querySelectorAll("li")[0].focus();
+    }
+  });
 
   // ---------- Mengen ----------
   function mengenfelderBauen(){
@@ -2641,104 +2607,41 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     });
   }
 
-  // ---------- Hallenlampe ----------
+  // ---------- Portal ----------
   var ruhigerModus = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var hell = true;            // zwei Lichtstimmungen
-  var zeigerNeigung = 0;      // folgt dem Mauszeiger
-  var feldNeigung = 0;        // Blick aufs aktive Feld
-  var anmeldenEl, lampeEl;
+  var portalUhr = null;
 
-  function lichtStufe(){ return hell ? 1 : 0.42; }
-
-  function lampeAktualisieren(){
-    if(!anmeldenEl) return;
-    anmeldenEl.style.setProperty("--warm", String(lichtStufe()));
-    anmeldenEl.style.setProperty("--neigung", (zeigerNeigung + feldNeigung).toFixed(2) + "deg");
+  function statusZeigen(text, art){
+    var zeile = $("login-meldung");
+    $("login-text").textContent = text || "";
+    zeile.className = "p-status" + (art ? " " + art : "");
   }
 
-  function lichtSetzen(an){
-    hell = !!an;
-    $("schnur").setAttribute("aria-pressed", hell ? "true" : "false");
-    lampeAktualisieren();
+  function portalZuruecksetzen(){
+    var an = $("anmelden");
+    window.clearTimeout(portalUhr);
+    an.classList.remove("p-launch","p-email","p-password");
+    $("anmeldeformular").inert = false;
+    $("knopf-anmelden").disabled = false;
+    $("knopf-text").textContent = "Anmelden & Tor öffnen";
   }
 
-  // Beim Öffnen: Lampe schwingt einmal ein, Licht wird innerhalb von ~600 ms warm.
-  function szeneStarten(){
-    anmeldenEl = $("anmelden");
-    lampeEl = $("lampe");
-    hell = true;
-    zeigerNeigung = 0; feldNeigung = 0;
-    anmeldenEl.classList.remove("oeffnet","wach","schwingt","zuendet");
-    lampeAktualisieren();
-    anmeldenEl.style.setProperty("--warm", "0");
-
-    if(ruhigerModus){
-      anmeldenEl.classList.add("wach");
-      lampeAktualisieren();
-      return;
+  /* Die Ringe richten sich nach dem Feld, in dem gerade gearbeitet wird.
+     Das Formular selbst bleibt unbewegt und lesbar. */
+  $("login-mail").addEventListener("focus", function(){
+    $("anmelden").classList.add("p-email");
+    $("anmelden").classList.remove("p-password");
+  });
+  $("login-pw").addEventListener("focus", function(){
+    $("anmelden").classList.add("p-password");
+    $("anmelden").classList.remove("p-email");
+  });
+  $("anmeldeformular").addEventListener("focusout", function(e){
+    if(!$("anmeldeformular").contains(e.relatedTarget)){
+      $("anmelden").classList.remove("p-email","p-password");
     }
-    anmeldenEl.classList.add("schwingt");
-    window.setTimeout(function(){
-      anmeldenEl.classList.add("wach","zuendet");
-      lampeAktualisieren();
-    }, 120);
-    window.setTimeout(function(){ anmeldenEl.classList.remove("zuendet","schwingt"); }, 3000);
-  }
+  });
 
-  // Der Schirm folgt dem Zeiger um wenige Grad — nur mit echter Maus.
-  if(window.matchMedia && window.matchMedia("(hover: hover)").matches && !ruhigerModus){
-    document.addEventListener("pointermove", function(e){
-      if(!anmeldenEl || $("anmelden").hidden || e.pointerType !== "mouse") return;
-      var mitte = window.innerWidth / 2;
-      zeigerNeigung = Math.max(-3.5, Math.min(3.5, ((e.clientX - mitte) / mitte) * 3.5));
-      lampeAktualisieren();
-    });
-  }
-
-  /* Zugschnur: ziehen, klicken, Tastatur. Nach dem Loslassen federt sie zurück. */
-  (function schnurEinrichten(){
-    var schnur = $("schnur");
-    var start = null, gezogen = 0;
-
-    schnur.addEventListener("pointerdown", function(e){
-      start = e.clientY; gezogen = 0;
-      schnur.classList.add("zieht");
-      try{ schnur.setPointerCapture(e.pointerId); }catch(err){}
-    });
-    schnur.addEventListener("pointermove", function(e){
-      if(start === null) return;
-      gezogen = Math.max(0, Math.min(34, e.clientY - start));
-      schnur.style.setProperty("--zug", (34 + gezogen) + "px");
-      if(lampeEl && !ruhigerModus){
-        anmeldenEl.style.setProperty("--neigung",
-          (zeigerNeigung + feldNeigung + gezogen * 0.06).toFixed(2) + "deg");
-      }
-    });
-    function loslassen(){
-      if(start === null) return;
-      start = null;
-      schnur.classList.remove("zieht");
-      schnur.style.removeProperty("--zug");
-      lampeAktualisieren();
-      if(gezogen > 8) lichtSetzen(!hell);   // richtig gezogen = umschalten
-      gezogen = 0;
-    }
-    schnur.addEventListener("pointerup", loslassen);
-    schnur.addEventListener("pointercancel", loslassen);
-
-    // Klick ohne Ziehen und Tastatur schalten ebenfalls
-    schnur.addEventListener("click", function(e){
-      if(e.detail === 0 || gezogen === 0) lichtSetzen(!hell);
-    });
-  })();
-
-  /* Beim Passwort dreht sich die Lampe höflich zur Seite. */
-  $("login-mail").addEventListener("focus", function(){ feldNeigung = -3; lampeAktualisieren(); });
-  $("login-mail").addEventListener("blur",  function(){ feldNeigung = 0;  lampeAktualisieren(); });
-  $("login-pw").addEventListener("focus",   function(){ feldNeigung = 17; lampeAktualisieren(); });
-  $("login-pw").addEventListener("blur",    function(){ feldNeigung = 0;  lampeAktualisieren(); });
-
-  /* Passwort sichtbar machen */
   $("pw-zeigen").addEventListener("click", function(){
     var feld = $("login-pw"), knopf = $("pw-zeigen");
     var sichtbar = feld.type === "text";
@@ -2748,59 +2651,54 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     knopf.setAttribute("aria-label", beschriftung);
     knopf.title = beschriftung;
     document.getElementById("auge-strich").style.display = sichtbar ? "none" : "";
-    feld.focus();
+    feld.focus({ preventScroll:true });
   });
 
-  function statusZeigen(text, art){
-    var m = $("login-meldung");
-    m.textContent = text || "";
-    m.className = "meldung" + (art ? " " + art : "");
-    var l = $("leuchte");
-    l.className = "leuchte" + (art === "gut" ? " frei" : (art === "fehler" ? " stopp" : ""));
+  // Ändert nur die Dekoration, nie die Lesbarkeit des Formulars
+  $("licht").addEventListener("click", function(){
+    var gedimmt = $("anmelden").classList.toggle("p-dim");
+    $("licht").setAttribute("aria-pressed", gedimmt ? "true" : "false");
+    $("licht-text").textContent = gedimmt ? "Licht aufdrehen" : "Licht dimmen";
+    schreib("pal-licht", gedimmt ? "dim" : "hell");
+  });
+  if(lies("pal-licht") === "dim"){
+    $("anmelden").classList.add("p-dim");
+    $("licht").setAttribute("aria-pressed", "true");
+    $("licht-text").textContent = "Licht aufdrehen";
   }
 
   function anmeldungZeigen(text, art){
     $("app").hidden = true;
     $("anmelden").hidden = false;
-    $("anmelden").classList.remove("oeffnet");
+    portalZuruecksetzen();
     statusZeigen(text, art);
-    szeneStarten();
   }
 
-  /* Das Tor geht erst auf, wenn die Anmeldung wirklich durch ist. */
+  /* Das Portal öffnet sich ausschließlich nach bestätigter Anmeldung.
+     Die Weiterleitung hängt nicht an der Animation — sie läuft auch,
+     wenn kein transitionend kommt. */
   function zugangOeffnen(){
-    statusZeigen("Zugang freigegeben", "gut");
     var an = $("anmelden"), app = $("app");
-    var dauer = ruhigerModus ? 380 : 820;
+    statusZeigen("Das Tor öffnet sich …", "gut");
+    $("knopf-text").textContent = "Das Tor öffnet sich …";
+    an.classList.remove("p-email","p-password");
+    $("anmeldeformular").inert = true;
 
-    window.setTimeout(function(){
-      app.hidden = false;                 // Lager wird hinter dem Tor sichtbar
+    var dauer = ruhigerModus ? 260 : 1000;
+    if(!ruhigerModus) an.classList.add("p-launch");
+
+    window.clearTimeout(portalUhr);
+    portalUhr = window.setTimeout(function(){
+      app.hidden = false;
       appEinrichten();
       if(!ruhigerModus){
-        app.classList.add("eintritt");
-        window.setTimeout(function(){ app.classList.remove("eintritt"); }, 820);
+        app.classList.add("p-eintritt");
+        window.setTimeout(function(){ app.classList.remove("p-eintritt"); }, 820);
       }
-      an.classList.add("oeffnet");
-      window.setTimeout(function(){
-        an.hidden = true;
-        an.classList.remove("oeffnet");
-      }, dauer);
-    }, ruhigerModus ? 60 : 260);
-  }
-
-  function geraetemodus(grund){
-    sb = null;
-    angemeldet = null;
-    $("anmelden").hidden = true;
-    $("app").hidden = false;
-    $("knopf-abmelden").hidden = true;
-    statusSetzen(grund, "lokal");
-    lokalLaden();
-    rechte = ALLES;
-    mengenfelderBauen();
-    $("reiter-rechte").hidden = true;
-    stammZeichnen(); leuteZeichnen(); leuteWahlFuellen();
-    trefferZeichnen(); scansZeichnen(); etikettenZeichnen();
+      an.hidden = true;
+      portalZuruecksetzen();
+      statusZeigen("");
+    }, dauer);
   }
 
   var meldetGerade = false;
@@ -2819,13 +2717,16 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     meldetGerade = true;
     var taste = $("knopf-anmelden");
     taste.disabled = true;
-    taste.classList.add("laedt");
-    statusZeigen("Zugang wird geprüft …");
+    $("knopf-text").textContent = "Anmeldung wird geprüft …";
+    $("anmeldeformular").setAttribute("aria-busy", "true");
+    statusZeigen("Anmeldung wird geprüft …");
 
     function fertig(){
       meldetGerade = false;
       taste.disabled = false;
-      taste.classList.remove("laedt");
+      $("knopf-text").textContent = "Anmelden & Tor öffnen";
+      $("anmeldeformular").removeAttribute("aria-busy");
+      $("anmeldeformular").inert = false;
     }
 
     sb.auth.signInWithPassword({ email: mail, password: pw }).then(function(res){
@@ -2835,11 +2736,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         statusZeigen(/fetch|network|load failed|timeout/i.test(text)
           ? "Keine Verbindung — bitte WLAN prüfen und nochmal versuchen."
           : "E-Mail oder Passwort stimmt nicht.", "fehler");
+        $("login-pw").focus({ preventScroll:true });
         $("login-pw").select();
         return;
       }
-      // Ab hier ist die Anmeldung echt durch — erst jetzt geht das Tor auf.
-      taste.classList.remove("laedt");
+      // Ab hier ist die Anmeldung echt durch — erst jetzt öffnet sich das Portal.
+      $("anmeldeformular").removeAttribute("aria-busy");
       $("login-pw").value = "";
       angemeldet = res.data.user ? res.data.user.email : mail;
       meldetGerade = false;
