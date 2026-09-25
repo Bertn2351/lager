@@ -811,7 +811,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v15</span>
+    <span class="version">v16</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -2277,11 +2277,34 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     return true;
   }
 
+  /* Laufen mehrere Artikelbarcodes ineinander, lässt sich das retten: Ein Code
+     aus lauter Ziffern, dessen Länge ein glattes Vielfaches ist und dessen Teile
+     ALLE im Artikelstamm stehen, ist eindeutig zerlegbar. Nur dann wird geteilt. */
+  function codeZerlegen(code){
+    if(!/^[0-9]+$/.test(code) || code.length < 12) return null;
+    var laengen = {};
+    artikel.forEach(function(a){
+      if(a.ean && /^[0-9]+$/.test(a.ean) && a.ean.length >= 6) laengen[a.ean.length] = true;
+    });
+    [13, 12, 8, 14].forEach(function(l){ laengen[l] = true; });
+
+    var passende = Object.keys(laengen).map(Number).sort(function(a, b){ return b - a; });
+    for(var i = 0; i < passende.length; i++){
+      var laenge = passende[i];
+      if(laenge < 6 || code.length <= laenge || code.length % laenge !== 0) continue;
+      var teile = [];
+      for(var s = 0; s < code.length; s += laenge) teile.push(code.slice(s, s + laenge));
+      var alleBekannt = teile.every(function(t){ return !!artikelZuCode(t); });
+      if(alleBekannt) return teile;
+    }
+    return null;
+  }
+
   function scanFertig(){
     var feld = $("scanfeld");
     feld.value = ""; feld.focus();
     bereitZeigen(true);
-    letzteTaste = 0;
+    letzteTaste = 0; letzteLaenge = 0;
   }
 
   function summenRechnen(){
@@ -2481,20 +2504,22 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     else if(document.visibilityState === "visible" && kameraAn && !kameraStrom) kameraStarten();
   });
 
-  var scanUhr = null, letzteTaste = 0, kamScanner = false;
+  var scanUhr = null, letzteTaste = 0, letzteLaenge = 0, kamScanner = false;
 
   $("scanfeld").addEventListener("input", function(){
     var feld = $("scanfeld");
     window.clearTimeout(scanUhr);
 
-    // Ein Handscanner tippt den Code in unter 35 ms je Zeichen — ein Mensch nie.
-    // Danach richtet sich, wie lange auf das Ende gewartet wird.
+    var w = feld.value.trim();
+
+    /* Woran man den Scanner erkennt: Er wirft mehrere Zeichen auf einmal ins Feld
+       oder tippt schneller als 35 ms je Zeichen. Beim Menschen trifft beides nie zu. */
     var jetzt = Date.now();
+    if(w.length - letzteLaenge > 2) kamScanner = true;
     if(jetzt - letzteTaste < 35) kamScanner = true;
     letzteTaste = jetzt;
-    var warten = kamScanner ? 70 : 650;
-
-    var w = feld.value.trim();
+    letzteLaenge = w.length;
+    var warten = kamScanner ? 60 : 650;
 
     // Zwei Palettencodes ineinander: wo der erste endet, ist nicht eindeutig.
     if(w.indexOf("*", w.indexOf("*") + 1) > 0){
@@ -2502,16 +2527,28 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       scanBlitz(false); bereitZeigen(false);
       return;
     }
-    // Zwei Artikelbarcodes ineinander: auffällig lang und ohne Stern.
-    if(w.indexOf("*") === -1 && w.length > 20){
-      scanMeldung("Der Code ist zu lang — da sind zwei zusammengelaufen. Feld leeren und einzeln scannen.", "fehler");
-      scanBlitz(false); bereitZeigen(false);
-      return;
-    }
 
     bereitZeigen(false);
     scanUhr = window.setTimeout(function(){
       var code = feld.value.trim();
+
+      // Erst versuchen, ineinandergelaufene Artikelbarcodes sauber zu trennen
+      if(code.indexOf("*") === -1 && code.length > 14){
+        var teile = codeZerlegen(code);
+        if(teile){
+          var gezaehlt = 0;
+          teile.forEach(function(t){ if(scanUebernehmen(t)) gezaehlt++; });
+          scanFertig();
+          if(gezaehlt > 1) scanMeldung(gezaehlt + " Codes waren zusammengelaufen und wurden einzeln gezählt.", "gut");
+          kamScanner = false;
+          return;
+        }
+        scanMeldung("Der Code ist zu lang und lässt sich nicht eindeutig trennen. Feld leeren und einzeln scannen.", "fehler");
+        scanBlitz(false); bereitZeigen(false);
+        kamScanner = false;
+        return;
+      }
+
       var reif = code.indexOf("*") > 0 ? code.length >= 3 : code.length >= 6;
       if(reif){
         if(scanUebernehmen(code)) scanFertig(); else bereitZeigen(true);
