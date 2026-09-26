@@ -764,7 +764,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v22</span>
+    <span class="version">v23</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1520,7 +1520,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(w.length - suchLaenge > 2) suchScanner = true;
     suchLaenge = w.length;
 
-    if(suchScanner && w.length >= 4){
+    if(suchScanner && (w.length >= 4 || !!artikelZuCode(w))){
       suchUhr = window.setTimeout(function(){
         var code = feld.value.trim();
         if(barcodeUebernehmen(code)){
@@ -2325,18 +2325,22 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       nr = (gefunden && gefunden.nr) ? gefunden.nr.toUpperCase() : wert;
     }
 
+    // Was nicht im Artikelstamm steht, wird nicht gezählt — sonst stehen später
+    // Zahlen in der Inventur, zu denen es keinen Artikel gibt.
+    if(!gefunden){
+      scanMeldung("„" + wert + "“ steht nicht im Artikelstamm — nicht gezählt.", "fehler");
+      scanBlitz(false); piep(false);
+      return false;
+    }
+
     var eintrag = { id:neueId("s"), menge:menge, nr:nr, wer:angemeldet || "" };
     scans.push(eintrag);
     scansZeichnen();
 
     var text = menge + " × " + nr;
-    if(gefunden){
-      if(darf("artikelname")) text += " · " + gefunden.bezeichnung;
-      if(menge > 1 && wert.indexOf("*") === -1) text += " (1 Einheit = " + menge + ")";
-    }else{
-      text += " · nicht im Artikelstamm";
-    }
-    scanMeldung(text, gefunden ? "gut" : "fehler");
+    if(darf("artikelname")) text += " · " + gefunden.bezeichnung;
+    if(menge > 1 && wert.indexOf("*") === -1) text += " (1 Einheit = " + menge + ")";
+    scanMeldung(text, "gut");
     scanBlitz(true); piep(true);
 
     if(sb){
@@ -2685,7 +2689,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         bereitZeigen(true);
         return;
       }
-      var reif = code.indexOf("*") > 0 ? code.length >= 3 : code.length >= 6;
+      // Kurze Codes wie „G50" sind gültig, sobald sie zu einem Artikel gehören.
+      var reif = code.indexOf("*") > 0
+        ? code.length >= 3
+        : (code.length >= 6 || !!artikelZuCode(code));
       if(reif){
         if(scanUebernehmen(code)) scanFertig(); else bereitZeigen(true);
       }else{
