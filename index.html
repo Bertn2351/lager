@@ -456,6 +456,12 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   .bereichszeile input{font-size:14px; padding:6px 9px}
   .modus.klein button{font-size:10.5px; padding:4px 9px}
 }
+.papierkorb{margin:0 18px 14px}
+.papierkorb summary{color:var(--akzent-weich)}
+.papierkorb .stammliste{max-height:260px; border:1px solid var(--kante); border-radius:9px}
+.papierkorb .stammliste li:hover{background:var(--flaeche-3)}
+@media (max-width:700px){ .papierkorb{margin:0 9px 10px} }
+
 .sicherung{display:grid; gap:9px; padding:12px; border:1px solid var(--akzent);
   border-radius:10px; background:var(--flaeche-2)}
 .sicherung textarea{font-family:"IBM Plex Mono",monospace; font-size:11.5px; height:190px;
@@ -830,7 +836,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v28</span>
+    <span class="version">v29</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1046,6 +1052,20 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       </div>
 
       <ul class="stammliste" id="scanliste"></ul>
+
+      <details class="klapp papierkorb" id="papierkorb" hidden>
+        <summary><span id="papierkorb-titel">Papierkorb</span></summary>
+        <div class="innen">
+          <p class="hinweis">Gelöschtes bleibt hier liegen und lässt sich zurückholen.
+            Erst „Endgültig leeren“ entfernt es wirklich.</p>
+          <ul class="stammliste" id="papierkorbliste"></ul>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+            <button type="button" class="still" id="knopf-alles-zurueck">Alles zurückholen</button>
+            <button type="button" class="still" id="knopf-korb-leeren">Endgültig leeren</button>
+            <span class="meldung" id="korb-meldung"></span>
+          </div>
+        </div>
+      </details>
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:12px 16px">
         <span class="hinweis" id="scan-zaehler">Noch nichts gescannt.</span>
         <button type="button" class="still" id="knopf-scan-leeren" style="margin-left:auto" hidden>Liste leeren</button>
@@ -1177,12 +1197,19 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     try{
       var a = lies("pal-artikel"); if(a) artikel = JSON.parse(a) || [];
       var l = lies("pal-leute-stamm"); if(l) leute = JSON.parse(l) || [];
-      var s = lies("pal-scans"); if(s) scans = JSON.parse(s) || [];
+      var s = lies("pal-scans");
+      if(s){
+        var alle = JSON.parse(s) || [];
+        scans = alle.filter(function(x){ return !x.geloescht_am; });
+        papierkorb = alle.filter(function(x){ return !!x.geloescht_am; });
+      }
     }catch(e){}
   }
   function lokalArtikel(){ if(!sb) schreib("pal-artikel", JSON.stringify(artikel)); }
   function lokalLeute(){ if(!sb) schreib("pal-leute-stamm", JSON.stringify(leute)); }
-  function lokalScans(){ if(!sb) schreib("pal-scans", JSON.stringify(scans.slice(-2000))); }
+  function lokalScans(){
+    if(!sb) schreib("pal-scans", JSON.stringify(scans.concat(papierkorb).slice(-4000)));
+  }
 
   /* Supabase gibt pro Abfrage höchstens 1000 Zeilen zurück. Bei mehr Artikeln
      oder Scans fehlt der Rest stillschweigend — deshalb blockweise laden. */
@@ -2401,7 +2428,128 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     el.lastChild.nodeValue = bereit ? "Bereit für die nächste Palette" : "Ins Feld tippen, dann geht es weiter";
   }
 
+  var papierkorb = [];     // gelöschte Scans, rückholbar
   var scansStand = null;   // Zeitstempel des jüngsten geladenen Scans
+
+  /* Löschen heißt hier: beiseitelegen. Erst „Endgültig leeren" entfernt wirklich —
+     eine Fehlbedienung mitten in der Inventur darf nicht unwiederbringlich sein. */
+  function inDenKorb(liste, grund){
+    if(liste.length === 0) return;
+    var wegIds = {};
+    var zeitpunkt = new Date().toISOString();
+    liste.forEach(function(s){
+      wegIds[s.id] = true;
+      s.geloescht_am = zeitpunkt;
+      s.geloescht_von = angemeldet || "";
+      papierkorb.push(s);
+    });
+    scans = scans.filter(function(s){ return !wegIds[s.id]; });
+    scansZeichnen();
+
+    if(sb){
+      var kette = Promise.resolve();
+      liste.forEach(function(s){
+        kette = kette.then(function(){
+          return sb.from("scans").update({ geloescht_am: zeitpunkt, geloescht_von: angemeldet || "" })
+            .eq("id", s.id);
+        });
+      });
+      kette.catch(function(){
+        scanMeldung("Nicht überall gespeichert — bitte neu laden.", "fehler");
+      });
+    }else{ lokalScans(); }
+  }
+
+  function ausDemKorb(liste){
+    if(liste.length === 0) return;
+    var zurueckIds = {};
+    liste.forEach(function(s){
+      zurueckIds[s.id] = true;
+      delete s.geloescht_am;
+      delete s.geloescht_von;
+      scans.push(s);
+    });
+    papierkorb = papierkorb.filter(function(s){ return !zurueckIds[s.id]; });
+    scansZeichnen();
+
+    if(sb){
+      var kette = Promise.resolve();
+      liste.forEach(function(s){
+        kette = kette.then(function(){
+          return sb.from("scans").update({ geloescht_am:null, geloescht_von:null }).eq("id", s.id);
+        });
+      });
+      kette.catch(function(){});
+    }else{ lokalScans(); }
+  }
+
+  function meinKorb(){
+    if(darf("inventur_gesamt")) return papierkorb;
+    var ich = String(angemeldet || "").toLowerCase();
+    return papierkorb.filter(function(s){ return String(s.wer || "").toLowerCase() === ich; });
+  }
+
+  function papierkorbZeichnen(){
+    var meine = meinKorb();
+    var kasten = $("papierkorb");
+    kasten.hidden = meine.length === 0;
+    if(meine.length === 0) return;
+
+    $("papierkorb-titel").textContent = "Papierkorb · " + meine.length
+      + (meine.length === 1 ? " Eintrag" : " Einträge");
+
+    var ul = $("papierkorbliste");
+    ul.textContent = "";
+    meine.slice().reverse().slice(0, 200).forEach(function(s){
+      var li = document.createElement("li");
+      var txt = document.createElement("div"); txt.className = "txt";
+      var b = document.createElement("b"); b.className = "code"; b.textContent = s.menge + "*" + s.nr;
+      var kl = document.createElement("small");
+      var teile = [];
+      if(darf("artikelname")){ var bez = bezeichnungZu(s.nr); if(bez) teile.push(bez); }
+      if(s.bereich) teile.push("Bereich " + s.bereich);
+      if(darf("inventur_gesamt") && s.geloescht_von) teile.push("gelöscht von " + s.geloescht_von);
+      kl.textContent = teile.join(" · ");
+      txt.appendChild(b); txt.appendChild(kl);
+
+      var zurueck = document.createElement("button");
+      zurueck.type = "button"; zurueck.className = "still"; zurueck.textContent = "Zurückholen";
+      zurueck.addEventListener("click", function(){
+        ausDemKorb([s]);
+        scanMeldung(s.menge + "*" + s.nr + " ist wieder in der Zählung.", "gut");
+      });
+      li.appendChild(txt); li.appendChild(zurueck);
+      ul.appendChild(li);
+    });
+  }
+
+  $("knopf-alles-zurueck").addEventListener("click", function(){
+    var meine = meinKorb();
+    if(meine.length === 0) return;
+    ausDemKorb(meine.slice());
+    scanMeldung(meine.length + " Einträge sind wieder in der Zählung.", "gut");
+  });
+
+  $("knopf-korb-leeren").addEventListener("click", function(){
+    var meine = meinKorb();
+    if(meine.length === 0) return;
+    if(!window.confirm("Die " + meine.length + " Einträge im Papierkorb endgültig entfernen?\n\nDanach sind sie wirklich weg.")) return;
+    var wegIds = {};
+    meine.forEach(function(s){ wegIds[s.id] = true; });
+    papierkorb = papierkorb.filter(function(s){ return !wegIds[s.id]; });
+    scansZeichnen();
+    $("korb-meldung").textContent = meine.length + " endgültig entfernt.";
+    $("korb-meldung").className = "meldung gut";
+
+    if(sb){
+      var kette = Promise.resolve();
+      meine.forEach(function(s){
+        kette = kette.then(function(){ return sb.from("scans").delete().eq("id", s.id); });
+      });
+      kette.catch(function(){});
+    }else{ lokalScans(); }
+  });
+
 
   function standMerken(){
     scansStand = scans.reduce(function(hoechster, s){
@@ -2415,14 +2563,17 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(!sb){ scansZeichnen(); return Promise.resolve(); }
 
     if(vollstaendig || !scansStand){
-      return alleZeilen("scans", "id,menge,nr,wer,bereich,erstellt_am", "erstellt_am").then(function(daten){
-        scans = daten;
-        standMerken();
-        scansZeichnen();
-      }).catch(function(){});
+      return alleZeilen("scans", "id,menge,nr,wer,bereich,erstellt_am,geloescht_am,geloescht_von", "erstellt_am")
+        .then(function(daten){
+          scans = daten.filter(function(s){ return !s.geloescht_am; });
+          papierkorb = daten.filter(function(s){ return !!s.geloescht_am; });
+          standMerken();
+          scansZeichnen();
+        }).catch(function(){});
     }
 
-    return sb.from("scans").select("id,menge,nr,wer,bereich,erstellt_am")
+    return sb.from("scans").select("id,menge,nr,wer,bereich,erstellt_am,geloescht_am")
+      .is("geloescht_am", null)
       .gt("erstellt_am", scansStand)
       .order("erstellt_am", { ascending:true })
       .limit(1000)
@@ -2854,20 +3005,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           if(!window.confirm("Alle " + betroffen.length + " Scans von " + g.nr + wo
             + " löschen?\n\nDie Zählung dieses Artikels beginnt danach wieder bei null.")) return;
 
-          var wegIds = {};
-          betroffen.forEach(function(s){ wegIds[s.id] = true; });
-          scans = scans.filter(function(s){ return !wegIds[s.id]; });
-          scansZeichnen();
-          scanMeldung(betroffen.length + " Scans von " + g.nr + " gelöscht.", "gut");
+          inDenKorb(betroffen);
+          scanMeldung(betroffen.length + " Scans von " + g.nr + " in den Papierkorb gelegt.", "gut");
           $("zuletzt").hidden = true;
-
-          if(sb){
-            var kette = Promise.resolve();
-            betroffen.forEach(function(s){
-              kette = kette.then(function(){ return sb.from("scans").delete().eq("id", s.id); });
-            });
-            kette.catch(function(){});
-          }else{ lokalScans(); }
           scanfeldScharf();
         });
         li.appendChild(weg);
@@ -2878,6 +3018,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
     bereichslisteFuellen();
     tafelZeichnen();
+    papierkorbZeichnen();
     var meine = meineScans();
     var liste = $("scanliste");
     liste.textContent = "";
@@ -2898,12 +3039,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       var weg = document.createElement("button");
       weg.className = "still"; weg.textContent = "Entfernen";
       weg.addEventListener("click", function(){
-        scans = scans.filter(function(x){ return x.id !== s.id; });
-        scansZeichnen();
-        scanMeldung("Entfernt: " + s.menge + "*" + s.nr, "gut");
+        inDenKorb([s]);
+        scanMeldung("Entfernt: " + s.menge + "*" + s.nr + " — liegt im Papierkorb.", "gut");
         zuletztZeigen(s.nr);
-        if(sb) sb.from("scans").delete().eq("id", s.id).then(function(){});
-        else lokalScans();
         scanfeldScharf();
       });
       li.appendChild(txt); li.appendChild(weg);
@@ -3103,9 +3241,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         return;
       }
       // Kurze Codes wie „G50" sind gültig, sobald sie zu einem Artikel gehören.
-      var reif = code.indexOf("*") > 0
-        ? code.length >= 3
-        : (code.length >= 6 || !!artikelZuCode(code));
+      /* Vom Scanner kommt der Code vollständig in einem Stück — dann wird sofort
+         geprüft, auch bei kurzen Nummern wie „G99". Nur bei Handeingabe wird
+         gewartet, damit nicht schon das halbe Wort als Fehler gilt. */
+      var reif = kamScanner
+        ? code.length >= 2
+        : (code.indexOf("*") > 0 ? code.length >= 3 : (code.length >= 6 || !!artikelZuCode(code)));
       if(reif){
         // Angenommen oder abgelehnt — das Feld ist danach in beiden Fällen leer,
         // sonst klebt ein falscher Code am nächsten Scan.
@@ -3154,27 +3295,16 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       return;
     }
     var betroffen = meineScans();
-    var alleSehen = darf("inventur_gesamt");
+    if(betroffen.length === 0) return;
     var wo = (nurBereich && aktuellerBereich()) ? " im Bereich „" + aktuellerBereich() + "“" : "";
-    var frage = alleSehen
-      ? "Alle " + betroffen.length + " gescannten Paletten" + wo + " löschen?\n\nAchtung: Das gilt für alle Geräte — auch für die Kollegen, die gerade mitzählen."
-      : "Deine " + betroffen.length + " gescannten Paletten" + wo + " löschen?\n\nDie Zählung der anderen bleibt bestehen.";
+    var frage = darf("inventur_gesamt")
+      ? "Alle " + betroffen.length + " gescannten Paletten" + wo + " in den Papierkorb legen?\n\nDas gilt für alle Geräte. Zurückholen ist möglich."
+      : "Deine " + betroffen.length + " gescannten Paletten" + wo + " in den Papierkorb legen?\n\nZurückholen ist möglich.";
     if(!window.confirm(frage)) return;
-    var alte = betroffen.slice();
-    var wegIds = {};
-    alte.forEach(function(s){ wegIds[s.id] = true; });
-    scans = scans.filter(function(s){ return !wegIds[s.id]; });
-    scansZeichnen();
-    scanMeldung("Liste geleert.", "gut");
+
+    inDenKorb(betroffen.slice());
+    scanMeldung(betroffen.length + " Einträge liegen im Papierkorb.", "gut");
     $("zuletzt").hidden = true;
-    if(sb){
-      var kette = Promise.resolve();
-      alte.forEach(function(s){
-        kette = kette.then(function(){ return sb.from("scans").delete().eq("id", s.id); });
-      });
-      scansStand = null;
-      kette.then(function(){ return scansHolen(true); });
-    }else{ lokalScans(); }
     scanFertig();
   });
 
