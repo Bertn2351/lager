@@ -464,6 +464,8 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   background:var(--grund); border:1px solid var(--kante-hell); border-radius:9px;
   padding:7px 14px; font-variant-numeric:tabular-nums; color:var(--tinte); letter-spacing:.01em}
 .summen .was{font-size:13px; color:var(--leise); min-width:0; overflow-wrap:anywhere}
+.summen .aufteilung{font-size:11.5px; color:var(--gedaempft); font-family:"IBM Plex Mono",monospace;
+  flex-basis:100%; padding-left:2px; letter-spacing:.01em}
 .summen .abgleich{font-size:12px; font-weight:600; padding:2px 9px; border-radius:999px;
   border:1px solid currentColor; white-space:nowrap}
 .summen .abgleich.passt{color:var(--gut)}
@@ -723,7 +725,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v18</span>
+    <span class="version">v20</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1051,6 +1053,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   var BEREICHE = [
     { schluessel:"etikett",         name:"Etiketten drucken" },
     { schluessel:"inventur",        name:"Inventur zählen" },
+    { schluessel:"inventur_gesamt", name:"Zählung aller sehen" },
     { schluessel:"bestand",         name:"Lagerbestand sehen" },
     { schluessel:"inventur_leeren", name:"Zählliste leeren",   wichtig:true },
     { schluessel:"artikel",         name:"Artikel ansehen" },
@@ -1059,10 +1062,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     { schluessel:"verwaltung",      name:"Rechte vergeben",    wichtig:true }
   ];
   // Wer nicht eingetragen ist, darf das Nötigste: drucken und zählen.
-  var GRUNDRECHTE = { etikett:true, inventur:true, bestand:false, inventur_leeren:false,
-                      artikel:false, artikel_aendern:false, mitarbeiter:false, verwaltung:false };
-  var ALLES = { etikett:true, inventur:true, bestand:true, inventur_leeren:true,
-                artikel:true, artikel_aendern:true, mitarbeiter:true, verwaltung:true };
+  var GRUNDRECHTE = { etikett:true, inventur:true, inventur_gesamt:false, bestand:false,
+                      inventur_leeren:false, artikel:false, artikel_aendern:false,
+                      mitarbeiter:false, verwaltung:false };
+  var ALLES = { etikett:true, inventur:true, inventur_gesamt:true, bestand:true,
+                inventur_leeren:true, artikel:true, artikel_aendern:true,
+                mitarbeiter:true, verwaltung:true };
 
   var rechte = {};               // was ICH darf
   var rechteListe = [];          // {email, bereiche}
@@ -1253,8 +1258,11 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
               m.textContent = "Diesen Zugang gibt es schon. Lass das Passwort leer, dann wird nur die Rechtezeile angelegt.";
             }else if(/darf|recht|forbidden|403/i.test(text)){
               m.textContent = "Du darfst keine Zugänge anlegen.";
+            }else if(/service|env|key|schl\u00fcssel/i.test(text)){
+              m.textContent = "Der Funktion fehlt ihr Schlüssel — bitte den Code der Edge Function erneuern.";
             }else{
-              m.textContent = "Zugang konnte nicht angelegt werden.";
+              // Den echten Grund zeigen, statt ihn zu verschlucken
+              m.textContent = "Zugang konnte nicht angelegt werden: " + (text || "unbekannter Fehler");
             }
             m.className = "meldung fehler";
             return;
@@ -2273,12 +2281,21 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     letzteTaste = 0; letzteLaenge = 0;
   }
 
+  // Wer die Gesamtzählung nicht sehen darf, arbeitet nur mit seinen eigenen Scans.
+  function meineScans(){
+    if(darf("inventur_gesamt")) return scans;
+    var ich = String(angemeldet || "").toLowerCase();
+    return scans.filter(function(s){ return String(s.wer || "").toLowerCase() === ich; });
+  }
+
   function summenRechnen(){
     var nachNr = {}, reihe = [];
-    scans.forEach(function(s){
-      if(!nachNr[s.nr]){ nachNr[s.nr] = { nr:s.nr, menge:0, paletten:0 }; reihe.push(nachNr[s.nr]); }
+    meineScans().forEach(function(s){
+      if(!nachNr[s.nr]){ nachNr[s.nr] = { nr:s.nr, menge:0, paletten:0, leute:{} }; reihe.push(nachNr[s.nr]); }
       nachNr[s.nr].menge += s.menge;
       nachNr[s.nr].paletten += 1;
+      var wer = s.wer || "ohne Namen";
+      nachNr[s.nr].leute[wer] = (nachNr[s.nr].leute[wer] || 0) + s.menge;
     });
     return reihe;
   }
@@ -2304,6 +2321,17 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         + " · " + g.paletten + "\u00d7 gescannt";
       li.appendChild(was);
 
+      // Wer alles sieht, sieht auch, wer wie viel gezählt hat
+      if(darf("inventur_gesamt")){
+        var namen = Object.keys(g.leute);
+        if(namen.length > 1){
+          var auf = document.createElement("span");
+          auf.className = "aufteilung";
+          auf.textContent = namen.map(function(n){ return n + " " + g.leute[n]; }).join("  ·  ");
+          li.appendChild(auf);
+        }
+      }
+
       // Sollbestand aus dem Artikelstamm gegenrechnen, wenn er da ist
       if(darf("bestand") && a && a.bestand != null && isFinite(a.bestand)){
         var diff = g.menge - a.bestand;
@@ -2317,9 +2345,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       ul.appendChild(li);
     });
 
+    var meine = meineScans();
     var liste = $("scanliste");
     liste.textContent = "";
-    scans.slice().reverse().slice(0, 300).forEach(function(s){
+    meine.slice().reverse().slice(0, 300).forEach(function(s){
       var li = document.createElement("li");
       li.className = "scanzeile";
       var txt = document.createElement("div"); txt.className = "txt";
@@ -2344,10 +2373,20 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       liste.appendChild(li);
     });
 
-    var n = scans.length;
-    $("scan-zaehler").textContent = n === 0
-      ? "Noch nichts gescannt."
-      : n + " Palette" + (n === 1 ? "" : "n") + " gescannt.";
+    var n = meine.length;
+    var alleZahl = scans.length;
+    if(n === 0){
+      $("scan-zaehler").textContent = "Noch nichts gescannt.";
+    }else if(darf("inventur_gesamt")){
+      var koepfe = {};
+      scans.forEach(function(s){ koepfe[s.wer || "ohne Namen"] = true; });
+      var wieViele = Object.keys(koepfe).length;
+      $("scan-zaehler").textContent = n + " Palette" + (n === 1 ? "" : "n") + " gescannt"
+        + (wieViele > 1 ? " · von " + wieViele + " Personen" : "") + ".";
+    }else{
+      $("scan-zaehler").textContent = n + " Palette" + (n === 1 ? "" : "n") + " von dir gescannt"
+        + (alleZahl > n ? " (andere zählen parallel)" : "") + ".";
+    }
     $("knopf-scan-leeren").hidden = n === 0;
   }
 
@@ -2555,12 +2594,16 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       scanMeldung("Die Zählliste darf nur leeren, wer das Recht dazu hat.", "fehler");
       return;
     }
-    var frage = sb
-      ? "Alle " + scans.length + " gescannten Paletten löschen?\n\nAchtung: Das gilt für alle Geräte — auch für die Kollegen, die gerade mitzählen."
-      : "Alle " + scans.length + " gescannten Paletten löschen?";
+    var betroffen = meineScans();
+    var alleSehen = darf("inventur_gesamt");
+    var frage = alleSehen
+      ? "Alle " + betroffen.length + " gescannten Paletten löschen?\n\nAchtung: Das gilt für alle Geräte — auch für die Kollegen, die gerade mitzählen."
+      : "Deine " + betroffen.length + " gescannten Paletten löschen?\n\nDie Zählung der anderen bleibt bestehen.";
     if(!window.confirm(frage)) return;
-    var alte = scans.slice();
-    scans = [];
+    var alte = betroffen.slice();
+    var wegIds = {};
+    alte.forEach(function(s){ wegIds[s.id] = true; });
+    scans = scans.filter(function(s){ return !wegIds[s.id]; });
     scansZeichnen();
     scanMeldung("Liste geleert.", "gut");
     if(sb){
