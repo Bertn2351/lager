@@ -446,6 +446,47 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   height:155px; resize:vertical; white-space:pre; background:var(--grund); line-height:1.6}
 
 /* ---------- Inventur ---------- */
+.bereichszeile{display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:10px 12px; border:1px solid var(--kante); border-radius:10px; background:var(--flaeche-2)}
+.bereichszeile label{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--leise)}
+.bereichszeile input{width:auto; flex:1 1 150px; min-width:120px; font-size:15px; padding:7px 10px}
+.modus.klein button{font-size:11.5px; padding:5px 11px}
+@media (max-width:700px){
+  .bereichszeile{padding:7px 9px; gap:7px}
+  .bereichszeile input{font-size:14px; padding:6px 9px}
+  .modus.klein button{font-size:10.5px; padding:4px 9px}
+}
+.sicherung{display:grid; gap:9px; padding:12px; border:1px solid var(--akzent);
+  border-radius:10px; background:var(--flaeche-2)}
+.sicherung textarea{font-family:"IBM Plex Mono",monospace; font-size:11.5px; height:190px;
+  white-space:pre; background:var(--grund); line-height:1.5}
+.sicherung button{justify-self:start}
+
+.bereiche-tafel{display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:9px 12px; border:1px solid var(--kante); border-radius:10px; background:var(--flaeche-2)}
+.tafel-titel{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--leise)}
+.tafel-chips{display:flex; gap:6px; flex-wrap:wrap; flex:1 1 auto; min-width:0}
+.tafel-chips button{font:inherit; font-size:12.5px; cursor:pointer; padding:5px 11px;
+  border-radius:999px; border:1px solid var(--kante); background:var(--grund);
+  color:var(--gedaempft); display:inline-flex; align-items:center; gap:7px}
+.tafel-chips button:hover{border-color:var(--kante-hell); color:var(--tinte)}
+.tafel-chips button[aria-current="true"]{border-color:var(--akzent);
+  color:var(--tinte); background:color-mix(in srgb, var(--akzent) 14%, var(--grund))}
+.tafel-chips button b{font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:600;
+  color:var(--leise)}
+.tafel-chips button.ohne{border-style:dashed; border-color:var(--akzent-weich); color:var(--akzent-weich)}
+.tafel-zuordnen{font:inherit; font-size:11.5px; cursor:pointer; padding:4px 10px;
+  border-radius:999px; border:1px solid var(--akzent); background:transparent; color:var(--akzent)}
+.tafel-zuordnen:hover{background:color-mix(in srgb, var(--akzent) 16%, transparent)}
+@media (max-width:700px){
+  .bereiche-tafel{padding:7px 9px; gap:7px}
+  .tafel-chips button{font-size:11px; padding:4px 9px}
+}
+
+.summen .weggruppe{background:transparent; border:1px solid var(--kante); color:var(--leise);
+  border-radius:8px; padding:3px 9px; font-size:11.5px; cursor:pointer; margin-left:8px}
+.summen .weggruppe:hover{border-color:var(--kritisch); color:var(--kritisch)}
+
 .modus{display:inline-flex; gap:3px; background:var(--flaeche-2); border:1px solid var(--kante);
   border-radius:999px; padding:3px}
 .modus button{font:inherit; font-size:13px; font-weight:500; cursor:pointer; padding:7px 16px;
@@ -789,7 +830,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v25</span>
+    <span class="version">v28</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -943,6 +984,22 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       <div class="inhalt">
         <div class="schritt">
           <div class="titel"><span class="nr">1</span><span>Etiketten scannen</span></div>
+          <div class="bereichszeile">
+            <label for="bereich">Bereich</label>
+            <input id="bereich" placeholder="z. B. Ebene 1" autocomplete="off" list="bereiche-liste">
+            <datalist id="bereiche-liste"></datalist>
+            <div class="modus klein" role="group" aria-label="Welche Zählung anzeigen">
+              <button type="button" id="sicht-bereich" aria-pressed="true">Nur dieser Bereich</button>
+              <button type="button" id="sicht-alles" aria-pressed="false">Alles</button>
+            </div>
+          </div>
+
+          <div class="bereiche-tafel" id="bereiche-tafel" hidden>
+            <span class="tafel-titel">Bereiche</span>
+            <div class="tafel-chips" id="tafel-chips"></div>
+            <button type="button" class="still" id="knopf-sichern">Zählung sichern</button>
+          </div>
+
           <div class="modus" role="group" aria-label="Wie wird gescannt">
             <button type="button" id="modus-scanner" aria-pressed="true">Keyence</button>
             <button type="button" id="modus-kamera" aria-pressed="false">Handy-Kamera</button>
@@ -968,6 +1025,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
               <small id="zuletzt-zusatz"></small>
             </span>
             <span class="zabgleich" id="zuletzt-abgleich" hidden></span>
+          </div>
+          <div class="sicherung" id="sicherung" hidden>
+            <p class="hinweis">Kopieren hat nicht geklappt. Markier den Text unten von Hand
+              (langes Antippen → Alles auswählen) und sichere ihn, wo du ihn wiederfindest.</p>
+            <textarea id="sicherungstext" readonly spellcheck="false"></textarea>
+            <button type="button" class="still" id="sicherung-zu">Schließen</button>
           </div>
           <p class="meldung" id="scan-meldung"></p>
           <p class="hinweis">Palettenetikett scannen — oder den Barcode auf der Ware selbst, dann zählt jeder Scan ein Stück. Das Feld leert sich von selbst und ist sofort wieder bereit.</p>
@@ -1151,6 +1214,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     { schluessel:"handeingabe",     name:"Von Hand eintragen" },
     { schluessel:"bestand",         name:"Lagerbestand sehen" },
     { schluessel:"inventur_leeren", name:"Zählliste leeren",   wichtig:true },
+    { schluessel:"gruppe_loeschen", name:"Ganzen Artikel löschen", wichtig:true },
     { schluessel:"artikel",         name:"Artikel ansehen" },
     { schluessel:"artikel_aendern", name:"Artikel ändern",     wichtig:true },
     { schluessel:"mitarbeiter",     name:"Mitarbeiter pflegen" },
@@ -1172,12 +1236,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   // Wer nicht eingetragen ist, darf das Nötigste: drucken und zählen.
   var GRUNDRECHTE = { etikett:true, inventur:true, inventur_gesamt:false, artikelname:true,
                       scanliste:true, handeingabe:true, bestand:false,
-                      inventur_leeren:false, artikel:false, artikel_aendern:false,
-                      mitarbeiter:false, verwaltung:false };
+                      inventur_leeren:false, gruppe_loeschen:false, artikel:false,
+                      artikel_aendern:false, mitarbeiter:false, verwaltung:false };
   var ALLES = { etikett:true, inventur:true, inventur_gesamt:true, artikelname:true,
                 scanliste:true, handeingabe:true, bestand:true,
-                inventur_leeren:true, artikel:true, artikel_aendern:true,
-                mitarbeiter:true, verwaltung:true };
+                inventur_leeren:true, gruppe_loeschen:true, artikel:true,
+                artikel_aendern:true, mitarbeiter:true, verwaltung:true };
 
   var rechte = {};               // was ICH darf
   var rechteListe = [];          // {email, bereiche}
@@ -2327,6 +2391,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   function scanfeldScharf(){
     if($("ansicht-inventur").hidden) return;
     if(typeof kameraAn !== "undefined" && kameraAn) return;
+    if(!$("sicherung").hidden) return;
     var feld = $("scanfeld");
     if(document.activeElement !== feld) feld.focus();
   }
@@ -2350,14 +2415,14 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(!sb){ scansZeichnen(); return Promise.resolve(); }
 
     if(vollstaendig || !scansStand){
-      return alleZeilen("scans", "id,menge,nr,wer,erstellt_am", "erstellt_am").then(function(daten){
+      return alleZeilen("scans", "id,menge,nr,wer,bereich,erstellt_am", "erstellt_am").then(function(daten){
         scans = daten;
         standMerken();
         scansZeichnen();
       }).catch(function(){});
     }
 
-    return sb.from("scans").select("id,menge,nr,wer,erstellt_am")
+    return sb.from("scans").select("id,menge,nr,wer,bereich,erstellt_am")
       .gt("erstellt_am", scansStand)
       .order("erstellt_am", { ascending:true })
       .limit(1000)
@@ -2413,7 +2478,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       return false;
     }
 
-    var eintrag = { id:neueId("s"), menge:menge, nr:nr, wer:angemeldet || "" };
+    var eintrag = { id:neueId("s"), menge:menge, nr:nr, wer:angemeldet || "",
+                    bereich:aktuellerBereich() };
     scans.push(eintrag);
     scansZeichnen();
 
@@ -2431,7 +2497,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         scansZeichnen();
         notBlitz(titel, menge + " × " + nr + " zählt nicht. Verbindung prüfen und nochmal scannen.");
       };
-      sb.from("scans").insert({ menge:menge, nr:nr, wer:angemeldet || "" }).select("id,menge,nr,wer,erstellt_am")
+      sb.from("scans").insert({ menge:menge, nr:nr, wer:angemeldet || "", bereich:aktuellerBereich() })
+        .select("id,menge,nr,wer,bereich,erstellt_am")
         .then(function(res){
           if(res.error || !res.data || !res.data[0]){ verloren("Nicht gespeichert"); return; }
           eintrag.id = res.data[0].id;
@@ -2510,16 +2577,216 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   function scanFertig(){
     var feld = $("scanfeld");
-    feld.value = ""; feld.focus();
+    feld.value = "";
+    if(!kameraAn) feld.focus();
     bereitZeigen(true);
     letzteTaste = 0; letzteLaenge = 0;
   }
 
+  /* Der Bereich trennt die Zählung in Abschnitte — etwa Ebene 1, Ebene 2.
+     Jeder Scan merkt sich seinen Bereich, damit man einen Abschnitt später
+     allein ansehen, nachzählen oder verwerfen kann. */
+  var nurBereich = true;
+
+  function aktuellerBereich(){ return $("bereich").value.trim(); }
+
+  function bereicheSammeln(){
+    var gesehen = {}, liste = [];
+    scans.forEach(function(s){
+      var b = (s.bereich || "").trim();
+      if(b && !gesehen[b]){ gesehen[b] = true; liste.push(b); }
+    });
+    return liste.sort();
+  }
+
+  /* Übersicht über alle Bereiche samt Anzahl — und vor allem: die Scans OHNE
+     Bereich bleiben sichtbar und lassen sich nachträglich zuordnen. */
+  function tafelZeichnen(){
+    var grundmenge = darf("inventur_gesamt")
+      ? scans
+      : scans.filter(function(s){ return String(s.wer || "").toLowerCase() === String(angemeldet || "").toLowerCase(); });
+
+    var zaehler = {}, ohne = 0;
+    grundmenge.forEach(function(s){
+      var b = (s.bereich || "").trim();
+      if(b) zaehler[b] = (zaehler[b] || 0) + 1;
+      else ohne++;
+    });
+
+    var namen = Object.keys(zaehler).sort();
+    var tafel = $("bereiche-tafel"), chips = $("tafel-chips");
+    chips.textContent = "";
+
+    if(namen.length === 0 && ohne === 0){ tafel.hidden = true; return; }
+    tafel.hidden = false;
+
+    var jetzt = aktuellerBereich();
+    namen.forEach(function(name){
+      var b = document.createElement("button");
+      b.type = "button";
+      if(name === jetzt) b.setAttribute("aria-current", "true");
+      b.appendChild(document.createTextNode(name));
+      var z = document.createElement("b"); z.textContent = zaehler[name];
+      b.appendChild(z);
+      b.addEventListener("click", function(){
+        $("bereich").value = name;
+        schreib("pal-bereich", name);
+        sichtSetzen(true);
+        scanfeldScharf();
+      });
+      chips.appendChild(b);
+    });
+
+    if(ohne > 0){
+      var o = document.createElement("button");
+      o.type = "button"; o.className = "ohne";
+      if(jetzt === "") o.setAttribute("aria-current", "true");
+      o.appendChild(document.createTextNode("ohne Bereich"));
+      var z2 = document.createElement("b"); z2.textContent = ohne;
+      o.appendChild(z2);
+      o.title = "Diese Scans wurden gezählt, bevor es Bereiche gab";
+      o.addEventListener("click", function(){
+        $("bereich").value = "";
+        schreib("pal-bereich", "");
+        sichtSetzen(true);
+        scanfeldScharf();
+      });
+      chips.appendChild(o);
+
+      var zu = document.createElement("button");
+      zu.type = "button"; zu.className = "tafel-zuordnen";
+      zu.textContent = "diese " + ohne + " zuordnen";
+      zu.addEventListener("click", function(){ ohneBereichZuordnen(ohne); });
+      chips.appendChild(zu);
+    }
+  }
+
+  /* Trägt den bisher bereichslosen Scans nachträglich einen Namen ein.
+     Nichts wird gelöscht — nur beschriftet. */
+  function ohneBereichZuordnen(anzahl){
+    var ziel = aktuellerBereich();
+    if(!ziel){
+      ziel = window.prompt("Wie soll dieser Abschnitt heißen?\n\nDie " + anzahl
+        + " bisher unbenannten Scans bekommen diesen Namen. Gezählt bleibt alles.",
+        "Vor den Bereichen");
+      if(ziel === null) return;
+      ziel = String(ziel).trim();
+      if(!ziel) return;
+    }else{
+      if(!window.confirm("Die " + anzahl + " Scans ohne Bereich dem Bereich „" + ziel
+        + "“ zuordnen?\n\nEs geht nichts verloren — sie bekommen nur einen Namen.")) return;
+    }
+
+    var betroffen = scans.filter(function(s){ return !(s.bereich || "").trim(); });
+    betroffen.forEach(function(s){ s.bereich = ziel; });
+    $("bereich").value = ziel;
+    schreib("pal-bereich", ziel);
+    scansZeichnen();
+    scanMeldung(betroffen.length + " Scans gehören jetzt zu „" + ziel + "“.", "gut");
+
+    if(sb){
+      var kette = Promise.resolve();
+      betroffen.forEach(function(s){
+        kette = kette.then(function(){
+          return sb.from("scans").update({ bereich: ziel }).eq("id", s.id);
+        });
+      });
+      kette.catch(function(){
+        scanMeldung("Zuordnung konnte nicht überall gespeichert werden — bitte neu laden.", "fehler");
+      });
+    }else{ lokalScans(); }
+  }
+
+  /* Sicherungskopie zum Aufheben — die ganze Zählung als Text. */
+  $("knopf-sichern").addEventListener("click", function(){
+    var quelle = darf("inventur_gesamt")
+      ? scans
+      : scans.filter(function(s){ return String(s.wer || "").toLowerCase() === String(angemeldet || "").toLowerCase(); });
+    if(quelle.length === 0){ scanMeldung("Es gibt noch nichts zu sichern.", "fehler"); return; }
+
+    var zeilen = ["Bereich\tMenge\tArtikel\tPerson\tZeitpunkt"];
+    quelle.forEach(function(s){
+      zeilen.push([(s.bereich || "ohne Bereich"), s.menge, s.nr, (s.wer || ""),
+                   (s.erstellt_am || "")].join("\t"));
+    });
+    zeilen.push("");
+    zeilen.push("Summen:");
+    summenRechnenRoh(quelle).forEach(function(g){ zeilen.push(g.menge + "*" + g.nr); });
+
+    var text = zeilen.join("\n");
+
+    function zumAbschreiben(){
+      $("sicherungstext").value = text;
+      $("sicherung").hidden = false;
+      $("sicherungstext").focus();
+      $("sicherungstext").select();
+      scanMeldung("Kopieren ging nicht — der Text steht unten zum Sichern bereit.", "fehler");
+    }
+
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        $("sicherung").hidden = true;
+        scanMeldung(quelle.length + " Scans kopiert — in Excel oder eine Notiz einfügen.", "gut");
+      }).catch(zumAbschreiben);
+    }else{
+      zumAbschreiben();
+    }
+  });
+
+  $("sicherung-zu").addEventListener("click", function(){
+    $("sicherung").hidden = true;
+    $("sicherungstext").value = "";
+    scanfeldScharf();
+  });
+
+  function bereichslisteFuellen(){
+    var dl = $("bereiche-liste");
+    dl.textContent = "";
+    bereicheSammeln().forEach(function(b){
+      var o = document.createElement("option"); o.value = b; dl.appendChild(o);
+    });
+  }
+
+  function sichtSetzen(nur){
+    nurBereich = !!nur;
+    $("sicht-bereich").setAttribute("aria-pressed", nurBereich ? "true" : "false");
+    $("sicht-alles").setAttribute("aria-pressed", nurBereich ? "false" : "true");
+    schreib("pal-sicht", nurBereich ? "bereich" : "alles");
+    scansZeichnen();
+  }
+  $("sicht-bereich").addEventListener("click", function(){ sichtSetzen(true); });
+  $("sicht-alles").addEventListener("click", function(){ sichtSetzen(false); });
+
+  $("bereich").addEventListener("change", function(){
+    schreib("pal-bereich", aktuellerBereich());
+    scansZeichnen();
+    scanfeldScharf();
+  });
+  $("bereich").value = lies("pal-bereich");
+  if(lies("pal-sicht") === "alles") nurBereich = false;
+
   // Wer die Gesamtzählung nicht sehen darf, arbeitet nur mit seinen eigenen Scans.
   function meineScans(){
-    if(darf("inventur_gesamt")) return scans;
-    var ich = String(angemeldet || "").toLowerCase();
-    return scans.filter(function(s){ return String(s.wer || "").toLowerCase() === ich; });
+    var liste = scans;
+    if(!darf("inventur_gesamt")){
+      var ich = String(angemeldet || "").toLowerCase();
+      liste = liste.filter(function(s){ return String(s.wer || "").toLowerCase() === ich; });
+    }
+    var b = aktuellerBereich();
+    if(nurBereich && b){
+      liste = liste.filter(function(s){ return (s.bereich || "").trim() === b; });
+    }
+    return liste;
+  }
+
+  function summenRechnenRoh(liste){
+    var nachNr = {}, reihe = [];
+    liste.forEach(function(s){
+      if(!nachNr[s.nr]){ nachNr[s.nr] = { nr:s.nr, menge:0, paletten:0, leute:{} }; reihe.push(nachNr[s.nr]); }
+      nachNr[s.nr].menge += s.menge;
+      nachNr[s.nr].paletten += 1;
+    });
+    return reihe;
   }
 
   function summenRechnen(){
@@ -2576,9 +2843,41 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           : (diff > 0 ? "+" : "") + diff + " gegenüber Bestand " + a.bestand;
         li.appendChild(ab);
       }
+      // Ganze Artikelgruppe verwerfen — für alle Scans dieses Artikels auf einmal
+      if(darf("gruppe_loeschen")){
+        var weg = document.createElement("button");
+        weg.type = "button"; weg.className = "weggruppe";
+        weg.textContent = "Artikel löschen";
+        weg.addEventListener("click", function(){
+          var betroffen = meineScans().filter(function(s){ return s.nr === g.nr; });
+          var wo = (nurBereich && aktuellerBereich()) ? " im Bereich „" + aktuellerBereich() + "“" : "";
+          if(!window.confirm("Alle " + betroffen.length + " Scans von " + g.nr + wo
+            + " löschen?\n\nDie Zählung dieses Artikels beginnt danach wieder bei null.")) return;
+
+          var wegIds = {};
+          betroffen.forEach(function(s){ wegIds[s.id] = true; });
+          scans = scans.filter(function(s){ return !wegIds[s.id]; });
+          scansZeichnen();
+          scanMeldung(betroffen.length + " Scans von " + g.nr + " gelöscht.", "gut");
+          $("zuletzt").hidden = true;
+
+          if(sb){
+            var kette = Promise.resolve();
+            betroffen.forEach(function(s){
+              kette = kette.then(function(){ return sb.from("scans").delete().eq("id", s.id); });
+            });
+            kette.catch(function(){});
+          }else{ lokalScans(); }
+          scanfeldScharf();
+        });
+        li.appendChild(weg);
+      }
+
       ul.appendChild(li);
     });
 
+    bereichslisteFuellen();
+    tafelZeichnen();
     var meine = meineScans();
     var liste = $("scanliste");
     liste.textContent = "";
@@ -2624,6 +2923,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     }else{
       $("scan-zaehler").textContent = n + " Palette" + (n === 1 ? "" : "n") + " von dir gescannt"
         + (alleZahl > n ? " (andere zählen parallel)" : "") + ".";
+    }
+    var b = aktuellerBereich();
+    if(nurBereich && b && n > 0){
+      $("scan-zaehler").textContent += "  ·  Bereich „" + b + "“";
     }
     $("knopf-scan-leeren").hidden = n === 0;
   }
@@ -2804,7 +3107,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         ? code.length >= 3
         : (code.length >= 6 || !!artikelZuCode(code));
       if(reif){
-        if(scanUebernehmen(code)) scanFertig(); else bereitZeigen(true);
+        // Angenommen oder abgelehnt — das Feld ist danach in beiden Fällen leer,
+        // sonst klebt ein falscher Code am nächsten Scan.
+        scanUebernehmen(code);
+        scanFertig();
       }else{
         bereitZeigen(true);
       }
@@ -2816,7 +3122,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(e.key !== "Enter") return;
     e.preventDefault();
     window.clearTimeout(scanUhr);
-    if(scanUebernehmen($("scanfeld").value)) scanFertig();
+    scanUebernehmen($("scanfeld").value);
+    scanFertig();
   });
 
   $("scanfeld").addEventListener("blur", function(){
@@ -2837,8 +3144,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       return;
     }
     window.clearTimeout(scanUhr);
-    if(scanUebernehmen($("scanfeld").value)) scanFertig();
-    else $("scanfeld").focus();
+    scanUebernehmen($("scanfeld").value);
+    scanFertig();
   });
 
   $("knopf-scan-leeren").addEventListener("click", function(){
@@ -2848,9 +3155,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     }
     var betroffen = meineScans();
     var alleSehen = darf("inventur_gesamt");
+    var wo = (nurBereich && aktuellerBereich()) ? " im Bereich „" + aktuellerBereich() + "“" : "";
     var frage = alleSehen
-      ? "Alle " + betroffen.length + " gescannten Paletten löschen?\n\nAchtung: Das gilt für alle Geräte — auch für die Kollegen, die gerade mitzählen."
-      : "Deine " + betroffen.length + " gescannten Paletten löschen?\n\nDie Zählung der anderen bleibt bestehen.";
+      ? "Alle " + betroffen.length + " gescannten Paletten" + wo + " löschen?\n\nAchtung: Das gilt für alle Geräte — auch für die Kollegen, die gerade mitzählen."
+      : "Deine " + betroffen.length + " gescannten Paletten" + wo + " löschen?\n\nDie Zählung der anderen bleibt bestehen.";
     if(!window.confirm(frage)) return;
     var alte = betroffen.slice();
     var wegIds = {};
