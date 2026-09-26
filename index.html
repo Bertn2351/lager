@@ -290,6 +290,11 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 .rechtekarte .ichselbst{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
   color:var(--gut); border:1px solid currentColor; border-radius:999px; padding:1px 8px}
 .rechtekarte .weg{margin-left:auto; flex:none}
+.darstellung{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-top:9px;
+  padding-top:9px; border-top:1px dashed var(--kante)}
+.darstellung > span{font-size:12px; color:var(--leise); letter-spacing:.05em}
+.darstellung select{width:auto; min-width:118px; font-size:13px; padding:6px 30px 6px 10px;
+  background-position:calc(100% - 16px) 53%, calc(100% - 10px) 53%}
 .haken{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:7px}
 .haken label{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--gedaempft);
   cursor:pointer; padding:6px 9px; border:1px solid var(--kante); border-radius:8px;
@@ -481,9 +486,10 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
 .summenkopf button{margin-left:auto}
 .summen{list-style:none; margin:0; padding:0 18px 17px; display:grid; gap:10px}
 .summen li{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
-.summen .code{font-family:"IBM Plex Mono",monospace; font-size:21px; font-weight:600;
+.summen .code{font-family:"IBM Plex Mono",monospace;
+  font-size:var(--code-groesse, 21px); color:var(--code-farbe, var(--tinte)); font-weight:600;
   background:var(--grund); border:1px solid var(--kante-hell); border-radius:9px;
-  padding:7px 14px; font-variant-numeric:tabular-nums; color:var(--tinte); letter-spacing:.01em}
+  padding:7px 14px; font-variant-numeric:tabular-nums; letter-spacing:.01em; line-height:1.15}
 .summen .was{font-size:13px; color:var(--leise); min-width:0; overflow-wrap:anywhere}
 .summen .aufteilung{font-size:11.5px; color:var(--gedaempft); font-family:"IBM Plex Mono",monospace;
   flex-basis:100%; padding-left:2px; letter-spacing:.01em}
@@ -588,7 +594,7 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   .summenkopf{padding:11px 12px 8px}
   .summenkopf span{font-size:9.5px}
   .summen{padding:0 12px 12px; gap:7px}
-  .summen .code{font-size:15px; padding:4px 9px}
+  .summen .code{padding:4px 9px}
   .summen .was{font-size:11px}
   .bereit{font-size:11.5px}
   .tonschalter{font-size:11.5px}
@@ -758,7 +764,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v21</span>
+    <span class="version">v22</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1097,6 +1103,19 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     { schluessel:"mitarbeiter",     name:"Mitarbeiter pflegen" },
     { schluessel:"verwaltung",      name:"Rechte vergeben",    wichtig:true }
   ];
+  var GROESSEN = [
+    { wert:"normal", name:"Normal",     px:"21px" },
+    { wert:"gross",  name:"Groß",       px:"30px" },
+    { wert:"riesig", name:"Sehr groß",  px:"42px" }
+  ];
+  var FARBEN = [
+    { wert:"hell",   name:"Hell",   farbe:"var(--tinte)" },
+    { wert:"orange", name:"Orange", farbe:"var(--akzent)" },
+    { wert:"gruen",  name:"Grün",   farbe:"var(--gut)" },
+    { wert:"gelb",   name:"Gelb",   farbe:"#f5d06a" }
+  ];
+  var anzeige = { groesse:"normal", farbe:"hell" };
+
   // Wer nicht eingetragen ist, darf das Nötigste: drucken und zählen.
   var GRUNDRECHTE = { etikett:true, inventur:true, inventur_gesamt:false, artikelname:true,
                       scanliste:true, handeingabe:true, bestand:false,
@@ -1138,6 +1157,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         if(meiner && meiner.bereiche[k] !== undefined) rechte[k] = !!meiner.bereiche[k];
         else rechte[k] = !!GRUNDRECHTE[k];
       });
+      anzeige.groesse = (meiner && meiner.bereiche.codegroesse) || "normal";
+      anzeige.farbe   = (meiner && meiner.bereiche.codefarbe)   || "hell";
     }).catch(function(){ rechte = GRUNDRECHTE; });
   }
 
@@ -1150,6 +1171,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("reiter-rechte").hidden = !darf("verwaltung");
     $("knopf-scan-leeren").dataset.gesperrt = darf("inventur_leeren") ? "" : "ja";
     $("scanliste").hidden = !darf("scanliste");
+    anzeigeAnwenden();
     $("knopf-scan-hinzu").hidden = !darf("handeingabe");
 
     // Artikel nur ansehen: alles zum Ändern verschwindet
@@ -1177,6 +1199,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("keinzugang").hidden = true;
     if(!offen || !erlaubt[offen]) reiterWechseln(ziel);
     stammZeichnen(); scansZeichnen();
+  }
+
+  function anzeigeAnwenden(){
+    var g = GROESSEN.filter(function(x){ return x.wert === anzeige.groesse; })[0] || GROESSEN[0];
+    var f = FARBEN.filter(function(x){ return x.wert === anzeige.farbe; })[0] || FARBEN[0];
+    document.documentElement.style.setProperty("--code-groesse", g.px);
+    document.documentElement.style.setProperty("--code-farbe", f.farbe);
   }
 
   function rechteZeichnen(){
@@ -1231,6 +1260,37 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         haken.appendChild(label);
       });
       karte.appendChild(haken);
+
+      // Darstellung des Codes für diese Person
+      var darstellung = document.createElement("div");
+      darstellung.className = "darstellung";
+      var titel = document.createElement("span");
+      titel.textContent = "Anzeige des Codes";
+      darstellung.appendChild(titel);
+
+      function auswahl(liste, feld, standard){
+        var sel = document.createElement("select");
+        liste.forEach(function(o){
+          var opt = document.createElement("option");
+          opt.value = o.wert; opt.textContent = o.name;
+          sel.appendChild(opt);
+        });
+        sel.value = r.bereiche[feld] || standard;
+        sel.addEventListener("change", function(){
+          r.bereiche[feld] = sel.value;
+          rechteSpeichern(r);
+          if(r.email === String(angemeldet || "").toLowerCase()){
+            anzeige[feld === "codegroesse" ? "groesse" : "farbe"] = sel.value;
+            anzeigeAnwenden();
+          }
+        });
+        darstellung.appendChild(sel);
+        return sel;
+      }
+      auswahl(GROESSEN, "codegroesse", "normal");
+      auswahl(FARBEN, "codefarbe", "hell");
+
+      karte.appendChild(darstellung);
       box.appendChild(karte);
     });
     $("rechte-leer").hidden = rechteListe.length > 0;
