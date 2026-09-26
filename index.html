@@ -4,12 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#080b0e">
-<style>
-  :root{ color-scheme: dark; }
-  html,body{ margin:0; }
-  img{ max-width:100%; }
-  [hidden]{ display:none !important; }
-</style>
+<title>Palettenbeschriftung — G.A.B GmbH</title>
+</head>
+<body>
 <title>Palettenbeschriftung</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -510,11 +507,11 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   font-size:12px; color:#fff; background:linear-gradient(0deg, rgba(0,0,0,.8), transparent)}
 .kamerabox.getroffen{border-color:var(--gut); box-shadow:0 0 0 3px color-mix(in srgb, var(--gut) 22%, transparent)}
 
-#scanfeld{font-family:"IBM Plex Mono",monospace; letter-spacing:.04em;
+#scanfeld,#i2-feld{font-family:"IBM Plex Mono",monospace; letter-spacing:.04em;
   transition:border-color .12s, background-color .12s, box-shadow .12s}
-#scanfeld.getroffen{border-color:var(--gut); background:color-mix(in srgb, var(--gut) 14%, var(--flaeche-2));
+#scanfeld.getroffen,#i2-feld.getroffen{border-color:var(--gut); background:color-mix(in srgb, var(--gut) 14%, var(--flaeche-2));
   box-shadow:0 0 0 3px color-mix(in srgb, var(--gut) 18%, transparent)}
-#scanfeld.daneben{border-color:var(--kritisch); background:color-mix(in srgb, var(--kritisch) 13%, var(--flaeche-2));
+#scanfeld.daneben,#i2-feld.daneben{border-color:var(--kritisch); background:color-mix(in srgb, var(--kritisch) 13%, var(--flaeche-2));
   box-shadow:0 0 0 3px color-mix(in srgb, var(--kritisch) 16%, transparent)}
 .bereit{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--gut)}
 .bereit .punkt{width:8px; height:8px; border-radius:50%; background:var(--gut); flex:none;
@@ -609,6 +606,76 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
 .et-fuss div{flex:1; text-align:center}
 .et-fuss .l{border-right:0.55mm solid #000}
 
+/* ===== Inventur 2.0 — Zählplätze mit Zustand =====
+   Drei Ansichten hintereinander: Inventuren wählen → Tafel der Plätze → zählen.
+   Immer nur eine davon sichtbar, damit am Handgerät nichts scrollt. */
+.i2pfad{display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:12px; color:var(--leise)}
+.i2pfad b{color:var(--tinte); font-size:13.5px; font-weight:600}
+.i2pfad .pfeil{color:var(--kante-hell)}
+.i2pfad button{font-size:11px; padding:3px 9px}
+.i2pfad .schieb{margin-left:auto}
+
+.i2liste{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+.i2zeile{display:flex; align-items:center; gap:11px; background:var(--flaeche-2);
+  border:1px solid var(--kante); border-radius:10px; padding:11px 13px; text-align:left;
+  color:var(--tinte); font:inherit; cursor:pointer; width:100%}
+.i2zeile:hover{border-color:var(--kante-hell); background:var(--flaeche-3)}
+.i2zeile .txt{flex:1; min-width:0; display:grid; gap:2px}
+.i2zeile .txt b{font-size:14.5px; font-weight:600; overflow-wrap:anywhere}
+.i2zeile .txt small{font-size:11.5px; color:var(--gedaempft)}
+.i2fahne{font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; white-space:nowrap;
+  border:1px solid currentColor; border-radius:999px; padding:2px 9px; flex:none; color:var(--leise)}
+.i2fahne.offen{color:var(--akzent)}
+.i2fahne.fertig{color:var(--gut)}
+
+.i2bereich{border:1px solid var(--kante); border-radius:11px; background:var(--flaeche);
+  overflow:hidden; margin-bottom:9px}
+.i2bkopf{display:flex; align-items:center; gap:10px; padding:9px 12px;
+  background:var(--flaeche-2); border-bottom:1px solid var(--kante)}
+.i2bkopf b{font-size:13.5px; font-weight:600; flex:1; min-width:0; overflow-wrap:anywhere}
+.i2bkopf .zahl{font-size:11.5px; color:var(--gedaempft); font-variant-numeric:tabular-nums;
+  font-family:"IBM Plex Mono",monospace; white-space:nowrap}
+.i2balken{height:5px; width:64px; flex:none; background:var(--kante); border-radius:999px; overflow:hidden}
+.i2balken i{display:block; height:100%; background:var(--gut); border-radius:999px;
+  transition:width .25s ease-out}
+.i2bkopf button{font-size:10.5px; padding:3px 9px}
+
+.i2plaetze{display:grid; grid-template-columns:repeat(auto-fill, minmax(152px,1fr));
+  gap:8px; padding:10px 12px}
+.i2platz{display:grid; gap:3px; text-align:left; cursor:pointer; font:inherit; color:var(--tinte);
+  background:var(--flaeche-2); border:1px solid var(--kante); border-radius:9px; padding:9px 11px}
+.i2platz:hover{border-color:var(--kante-hell); background:var(--flaeche-3)}
+.i2platz .pname{font-size:13.5px; font-weight:600; overflow-wrap:anywhere}
+.i2platz .pzahl{font-size:11px; color:var(--gedaempft); font-variant-numeric:tabular-nums;
+  font-family:"IBM Plex Mono",monospace}
+.i2platz .pzustand{font-size:9.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--leise);
+  overflow-wrap:anywhere}
+.i2platz.laeuft{border-color:var(--akzent);
+  background:color-mix(in srgb, var(--akzent) 9%, var(--flaeche-2))}
+.i2platz.laeuft .pzustand{color:var(--akzent-weich)}
+.i2platz.fertig{border-color:color-mix(in srgb, var(--gut) 48%, var(--kante));
+  background:color-mix(in srgb, var(--gut) 7%, var(--flaeche-2))}
+.i2platz.fertig .pzustand{color:var(--gut)}
+.i2platz.ich{box-shadow:0 0 0 2px color-mix(in srgb, var(--akzent) 32%, transparent)}
+
+.i2neu{display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end}
+.i2neu > div{flex:1 1 150px; min-width:0}
+.i2neu button{flex:none}
+
+.i2platzkopf{display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:11px 13px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--akzent) 9%, var(--flaeche-2)), var(--flaeche-2));
+  border:1px solid var(--kante-hell); border-radius:11px}
+.i2platzkopf .wo{flex:1; min-width:0; display:grid; gap:2px}
+.i2platzkopf .wo b{font-size:17px; font-weight:700; overflow-wrap:anywhere}
+.i2platzkopf .wo small{font-size:11.5px; color:var(--gedaempft)}
+.i2platzkopf .stand{font-family:"IBM Plex Mono",monospace; font-size:19px; font-weight:600;
+  font-variant-numeric:tabular-nums; white-space:nowrap}
+
+.i2warnung{display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:10px;
+  border:1px solid color-mix(in srgb, var(--akzent) 45%, var(--kante));
+  background:color-mix(in srgb, var(--akzent) 10%, var(--flaeche-2)); font-size:12.5px; line-height:1.5}
+.i2warnung b{color:var(--akzent-weich)}
+
 @media (max-width:700px){
   body{font-size:12.5px}
   .kopf{gap:6px; padding:5px 8px}
@@ -698,6 +765,30 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   details.zpl summary{padding:10px 12px; font-size:9.5px}
   details.klapp summary{padding:9px 11px; font-size:12px}
 
+  /* Inventur 2.0 am Handgerät: zwei Plätze je Zeile, sonst nur Daumenkino */
+  #ansicht-inv2 > .inhalt{padding:8px; gap:9px}
+  .i2pfad{font-size:10.5px; gap:6px}
+  .i2pfad b{font-size:12px}
+  .i2pfad button{font-size:10px; padding:3px 8px}
+  .i2zeile{padding:9px 10px; gap:9px; border-radius:9px}
+  .i2zeile .txt b{font-size:12.5px}
+  .i2zeile .txt small{font-size:10px}
+  .i2fahne{font-size:8.5px; padding:1px 7px}
+  .i2bkopf{padding:7px 10px; gap:8px}
+  .i2bkopf b{font-size:12px}
+  .i2bkopf .zahl{font-size:10px}
+  .i2balken{width:48px; height:4px}
+  .i2plaetze{grid-template-columns:repeat(auto-fill, minmax(116px,1fr)); gap:6px; padding:8px 10px}
+  .i2platz{padding:7px 9px; border-radius:8px}
+  .i2platz .pname{font-size:12px}
+  .i2platz .pzahl{font-size:10px}
+  .i2platz .pzustand{font-size:8.5px}
+  .i2platzkopf{padding:8px 10px; gap:9px; border-radius:9px}
+  .i2platzkopf .wo b{font-size:14px}
+  .i2platzkopf .wo small{font-size:10px}
+  .i2platzkopf .stand{font-size:15px}
+  .i2warnung{font-size:11px; padding:8px 10px}
+  #i2-feld{font-size:15px; padding:7px 9px}
 }
 
 @page{ size:100mm 150mm; margin:0 }
@@ -831,12 +922,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     <button type="button" id="reiter-etikett" role="tab" aria-selected="true">Etikett</button>
     <button type="button" id="reiter-artikel" role="tab" aria-selected="false">Artikel</button>
     <button type="button" id="reiter-inventur" role="tab" aria-selected="false">Inventur</button>
+    <button type="button" id="reiter-inv2" role="tab" aria-selected="false" hidden>Inventur 2.0</button>
     <button type="button" id="reiter-leute" role="tab" aria-selected="false">Mitarbeiter</button>
     <button type="button" id="reiter-rechte" role="tab" aria-selected="false" hidden>Rechte</button>
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v29</span>
+    <span class="version">v30</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1072,6 +1164,121 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       </div>
     </section>
 
+    <!-- ===== Inventur 2.0 ===== -->
+    <section class="karte" id="ansicht-inv2" hidden>
+      <h2 id="inv2-titel">Inventur 2.0</h2>
+      <div class="inhalt">
+
+        <div class="i2pfad" id="i2-pfad" hidden></div>
+
+        <!-- A) Welche Inventur -->
+        <div id="i2-start">
+          <div class="schritt">
+            <div class="titel"><span class="nr">1</span><span>Inventur wählen</span></div>
+            <ul class="i2liste" id="i2-invliste"></ul>
+            <p class="hinweis" id="i2-invleer" hidden>Noch keine Inventur angelegt.</p>
+          </div>
+          <div class="schritt" id="i2-invneu" hidden>
+            <div class="titel"><span class="nr">2</span><span>Neue Inventur</span></div>
+            <div class="i2neu">
+              <div>
+                <label for="i2-neuname">Name</label>
+                <input id="i2-neuname" placeholder="z. B. Inventur September 2026" autocomplete="off">
+              </div>
+              <button type="button" class="still" id="i2-knopf-invneu">Inventur anlegen</button>
+            </div>
+            <p class="hinweis">Eine Inventur ist die Klammer um eine ganze Zählung.
+              Solange sie offen ist, wird in sie gezählt.</p>
+          </div>
+          <p class="meldung" id="i2-startmeldung"></p>
+        </div>
+
+        <!-- B) Tafel: Bereiche und ihre Zählplätze -->
+        <div id="i2-tafel" hidden>
+          <div id="i2-bereiche"></div>
+          <p class="hinweis" id="i2-tafelleer" hidden>Noch kein Bereich angelegt.
+            Trag unten den ersten ein, zum Beispiel „Tiefkühl“.</p>
+
+          <div class="schritt" id="i2-bereichneu" hidden>
+            <div class="titel"><span class="nr">+</span><span>Bereich anlegen</span></div>
+            <div class="i2neu">
+              <div>
+                <label for="i2-bname">Bereich</label>
+                <input id="i2-bname" placeholder="z. B. Tiefkühl" autocomplete="off">
+              </div>
+              <div>
+                <label for="i2-bplaetze">Zählplätze <span style="text-transform:none">(mit Komma trennen)</span></label>
+                <input id="i2-bplaetze" placeholder="Ebene 1, Ebene 2, Ebene 3" autocomplete="off">
+              </div>
+              <button type="button" class="still" id="i2-knopf-bereichneu">Anlegen</button>
+            </div>
+            <p class="hinweis">Statt einer Liste geht auch eine Spanne: <b>1-8</b> wird zu
+              Ebene 1 … Ebene 8, <b>Regal 1-8</b> zu Regal 1 … Regal 8.
+              Lässt du das Feld leer, bekommt der Bereich einen einzigen Platz.</p>
+          </div>
+
+          <div style="display:flex; gap:9px; flex-wrap:wrap; align-items:center">
+            <button type="button" class="still" id="i2-knopf-summe">Summe für CAO</button>
+            <button type="button" class="still" id="i2-knopf-auffrischen">Auffrischen</button>
+            <span class="meldung" id="i2-tafelmeldung" style="margin-left:auto"></span>
+          </div>
+
+          <div class="sicherung" id="i2-sicherung" hidden>
+            <p class="hinweis">Das fügst du in dein Warenwirtschaftsprogramm ein — eine Zeile
+              je Artikel, über alle Bereiche dieser Inventur zusammengezählt.</p>
+            <textarea id="i2-sicherungstext" readonly spellcheck="false"></textarea>
+            <button type="button" class="still" id="i2-sicherung-zu">Schließen</button>
+          </div>
+        </div>
+
+        <!-- C) Zählen auf einem Platz -->
+        <div id="i2-zaehlen" hidden>
+          <div class="i2platzkopf">
+            <span class="wo">
+              <b id="i2-wo">—</b>
+              <small id="i2-wozusatz"></small>
+            </span>
+            <span class="stand" id="i2-stand">0</span>
+          </div>
+
+          <div class="i2warnung" id="i2-doppelt" hidden>
+            <span>⚠</span>
+            <span><b id="i2-doppelt-wer">Jemand</b> hat diesen Platz schon begonnen.
+              Sprich dich ab, bevor du weiterzählst — sonst zählt ihr doppelt.</span>
+          </div>
+
+          <input id="i2-feld" class="gross" placeholder="Hier scannen …" autocomplete="off"
+                 autocapitalize="characters" spellcheck="false">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center">
+            <span class="bereit" id="i2-bereit"><span class="punkt"></span>Bereit für die nächste Palette</span>
+            <button type="button" class="still" id="i2-knopf-hand" style="margin-left:auto">Von Hand hinzufügen</button>
+          </div>
+
+          <div class="zuletzt" id="i2-zuletzt" hidden>
+            <span class="zcode" id="i2-zcode"></span>
+            <span class="ztext">
+              <b id="i2-zname"></b>
+              <small id="i2-zzusatz"></small>
+            </span>
+            <span class="zabgleich" id="i2-zabgleich" hidden></span>
+          </div>
+
+          <p class="meldung" id="i2-meldung"></p>
+
+          <ul class="stammliste" id="i2-scanliste"></ul>
+
+          <div style="display:flex; gap:9px; flex-wrap:wrap; align-items:center">
+            <button type="button" class="tat" id="i2-knopf-fertig">Platz fertig</button>
+            <button type="button" class="still" id="i2-knopf-zurueck">Zurück zur Tafel</button>
+            <span class="hinweis" id="i2-zaehler" style="margin-left:auto">Noch nichts gescannt.</span>
+          </div>
+          <p class="hinweis">Jeder Scan gehört zu diesem Platz. „Platz fertig“ macht ihn auf
+            der Tafel grün — dann weiß jeder, dass hier gezählt ist.</p>
+        </div>
+
+      </div>
+    </section>
+
     <!-- ===== Mitarbeiter ===== -->
     <section class="karte" id="ansicht-leute" hidden>
       <h2>Mitarbeiter</h2>
@@ -1213,13 +1420,14 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   /* Supabase gibt pro Abfrage höchstens 1000 Zeilen zurück. Bei mehr Artikeln
      oder Scans fehlt der Rest stillschweigend — deshalb blockweise laden. */
-  function alleZeilen(tabelle, spalten, sortieren){
+  function alleZeilen(tabelle, spalten, sortieren, filter){
     if(!sb) return Promise.resolve([]);
     var gesammelt = [];
     var BLOCK = 1000, OBERGRENZE = 50000;
 
     function block(von){
       var abfrage = sb.from(tabelle).select(spalten);
+      if(filter) abfrage = filter(abfrage);
       if(sortieren) abfrage = abfrage.order(sortieren, { ascending:true });
       return abfrage.range(von, von + BLOCK - 1).then(function(res){
         if(res.error) throw res.error;
@@ -1235,6 +1443,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   var BEREICHE = [
     { schluessel:"etikett",         name:"Etiketten drucken" },
     { schluessel:"inventur",        name:"Inventur zählen" },
+    { schluessel:"inventur2",       name:"Inventur 2.0 benutzen" },
+    { schluessel:"inventur2_bauen", name:"Inventur 2.0 einrichten", wichtig:true },
     { schluessel:"inventur_gesamt", name:"Zählung aller sehen" },
     { schluessel:"artikelname",     name:"Artikelbezeichnung sehen" },
     { schluessel:"scanliste",       name:"Einzelne Scans sehen" },
@@ -1261,11 +1471,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   var anzeige = { groesse:"normal", farbe:"hell" };
 
   // Wer nicht eingetragen ist, darf das Nötigste: drucken und zählen.
-  var GRUNDRECHTE = { etikett:true, inventur:true, inventur_gesamt:false, artikelname:true,
+  var GRUNDRECHTE = { etikett:true, inventur:true, inventur2:false, inventur2_bauen:false,
+                      inventur_gesamt:false, artikelname:true,
                       scanliste:true, handeingabe:true, bestand:false,
                       inventur_leeren:false, gruppe_loeschen:false, artikel:false,
                       artikel_aendern:false, mitarbeiter:false, verwaltung:false };
-  var ALLES = { etikett:true, inventur:true, inventur_gesamt:true, artikelname:true,
+  var ALLES = { etikett:true, inventur:true, inventur2:true, inventur2_bauen:true,
+                inventur_gesamt:true, artikelname:true,
                 scanliste:true, handeingabe:true, bestand:true,
                 inventur_leeren:true, gruppe_loeschen:true, artikel:true,
                 artikel_aendern:true, mitarbeiter:true, verwaltung:true };
@@ -1310,6 +1522,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   function rechteAnwenden(){
     $("reiter-etikett").hidden = !darf("etikett");
     $("reiter-inventur").hidden = !darf("inventur");
+    $("reiter-inv2").hidden = !darf("inventur2");
     $("reiter-artikel").hidden = !darf("artikel");
     $("reiter-leute").hidden = !darf("mitarbeiter");
     $("reiter-rechte").hidden = !darf("verwaltung");
@@ -1327,15 +1540,15 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(klapp) klapp.hidden = !aendern;
 
     // Auf einen erlaubten Reiter springen, falls der aktuelle weg ist
-    var offen = ["etikett","artikel","inventur","leute","rechte"].filter(function(r){
+    var offen = ["etikett","artikel","inventur","inv2","leute","rechte"].filter(function(r){
       return !$("ansicht-" + r).hidden;
     })[0];
     var erlaubt = { etikett:darf("etikett"), artikel:darf("artikel"), inventur:darf("inventur"),
-                    leute:darf("mitarbeiter"), rechte:darf("verwaltung") };
-    var ziel = ["etikett","inventur","artikel","leute","rechte"].filter(function(r){ return erlaubt[r]; })[0];
+                    inv2:darf("inventur2"), leute:darf("mitarbeiter"), rechte:darf("verwaltung") };
+    var ziel = ["etikett","inventur","inv2","artikel","leute","rechte"].filter(function(r){ return erlaubt[r]; })[0];
     if(!ziel){
       // Niemandem etwas erlaubt: alles zu, sonst bliebe ein Bereich offen stehen
-      ["etikett","artikel","inventur","leute","rechte"].forEach(function(r){ $("ansicht-" + r).hidden = true; });
+      ["etikett","artikel","inventur","inv2","leute","rechte"].forEach(function(r){ $("ansicht-" + r).hidden = true; });
       $("vorschauspalte").hidden = true;
       $("keinzugang").hidden = false;
       return;
@@ -1538,9 +1751,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("ansicht-etikett").hidden  = name !== "etikett";
     $("ansicht-artikel").hidden  = name !== "artikel";
     $("ansicht-inventur").hidden = name !== "inventur";
+    $("ansicht-inv2").hidden     = name !== "inv2";
     $("ansicht-leute").hidden    = name !== "leute";
     $("ansicht-rechte").hidden   = name !== "rechte";
-    ["etikett","artikel","inventur","leute","rechte"].forEach(function(r){
+    ["etikett","artikel","inventur","inv2","leute","rechte"].forEach(function(r){
       $("reiter-" + r).setAttribute("aria-selected", name === r ? "true" : "false");
     });
     $("vorschauspalte").hidden = name !== "etikett";
@@ -1550,6 +1764,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   $("reiter-artikel").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("artikel"); stammZeichnen(); });
   $("reiter-leute").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("leute"); leuteZeichnen(); });
   $("reiter-rechte").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("rechte"); rechteZeichnen(); });
+  $("reiter-inv2").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("inv2"); i2Oeffnen(); });
   $("reiter-inventur").addEventListener("click", function(){
     reiterWechseln("inventur");
     scansHolen(true).then(function(){
@@ -3205,10 +3420,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     letzteLaenge = w.length;
     var warten = kamScanner ? 60 : 650;
 
-    // Zwei Palettencodes ineinander: wo der erste endet, ist nicht eindeutig.
+    /* Zwei Palettencodes ineinander: wo der erste endet, ist nicht eindeutig.
+       Das Feld wird sofort geleert — sonst klebt der Rest am nächsten Scan. */
     if(w.indexOf("*", w.indexOf("*") + 1) > 0){
-      scanMeldung("Zwei Codes sind zusammengelaufen. Feld leeren und einzeln scannen.", "fehler");
-      scanBlitz(false); bereitZeigen(false);
+      scanMeldung("Zwei Codes sind zusammengelaufen („" + w + "“) — einzeln scannen.", "fehler");
+      scanBlitz(false); piep(false);
+      scanFertig();
+      kamScanner = false;
       return;
     }
 
@@ -3227,8 +3445,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           kamScanner = false;
           return;
         }
-        scanMeldung("Der Code ist zu lang und lässt sich nicht eindeutig trennen. Feld leeren und einzeln scannen.", "fehler");
-        scanBlitz(false); bereitZeigen(false);
+        scanMeldung("„" + code + "“ ist zu lang und lässt sich nicht eindeutig trennen — einzeln scannen.", "fehler");
+        scanBlitz(false); piep(false);
+        scanFertig();
         kamScanner = false;
         return;
       }
@@ -3324,6 +3543,665 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   window.setInterval(function(){
     if(sb && !$("ansicht-inventur").hidden && document.visibilityState === "visible") scansHolen(false);
   }, 20000);
+
+  /* ================== Inventur 2.0 ==================
+     Drei Ebenen: Inventur → Bereich → Zählplatz. Gezählt wird immer auf einem
+     Platz, und jeder Platz hat einen Zustand: offen / läuft / fertig.
+     Das ist der Unterschied zur alten Inventur — dort sagt der Bereich nur,
+     WOHIN ein Scan gehört, hier sagt der Platz auch, OB er schon gezählt ist.
+     Die alte Inventur bleibt unberührt; beide schreiben in dieselbe Tabelle
+     `scans`, Inventur 2.0 setzt zusätzlich inventur_id und platz_id. */
+  var i2Inv = [];          // alle Inventuren, neueste zuerst
+  var i2Aktiv = null;      // gewählte Inventur
+  var i2Plaetze = [];      // Zählplätze der gewählten Inventur
+  var i2Platz = null;      // Platz, auf dem gerade gezählt wird
+  var i2PlatzScans = [];   // Scans nur dieses Platzes — darum immer eine kurze Liste
+  var i2Summen = {};       // platz_id -> {anzahl, menge} für die Tafel
+
+  function i2Kurz(mail){ return String(mail || "").split("@")[0] || "jemand"; }
+  function i2Datum(iso){
+    try{
+      var d = new Date(iso);
+      return ("0"+d.getDate()).slice(-2) + "." + ("0"+(d.getMonth()+1)).slice(-2) + "." + d.getFullYear();
+    }catch(e){ return ""; }
+  }
+  function i2Sage(id, text, art){
+    var el = $(id); if(!el) return;
+    el.textContent = text || "";
+    el.className = "meldung" + (art ? " " + art : "");
+  }
+  function i2Meldung(t, art){ i2Sage("i2-meldung", t, art); }
+  function i2Mengensumme(liste){
+    return liste.reduce(function(s, x){ return s + (x.menge || 0); }, 0);
+  }
+
+  var i2BlitzUhr = null;
+  function i2Blitz(treffer){
+    var feld = $("i2-feld");
+    window.clearTimeout(i2BlitzUhr);
+    feld.classList.remove("getroffen","daneben");
+    void feld.offsetWidth;
+    feld.classList.add(treffer ? "getroffen" : "daneben");
+    i2BlitzUhr = window.setTimeout(function(){ feld.classList.remove("getroffen","daneben"); }, 400);
+  }
+  function i2Bereit(bereit){
+    var el = $("i2-bereit");
+    el.className = "bereit" + (bereit ? "" : " schlaeft");
+    el.lastChild.nodeValue = bereit ? "Bereit für die nächste Palette" : "Ins Feld tippen, dann geht es weiter";
+  }
+  function i2FeldScharf(){
+    if($("ansicht-inv2").hidden || $("i2-zaehlen").hidden) return;
+    var feld = $("i2-feld");
+    if(document.activeElement !== feld) feld.focus();
+  }
+
+  function i2AnsichtZeigen(welche){
+    $("i2-start").hidden   = welche !== "start";
+    $("i2-tafel").hidden   = welche !== "tafel";
+    $("i2-zaehlen").hidden = welche !== "zaehlen";
+    i2PfadZeichnen(welche);
+  }
+
+  function i2PfadZeichnen(welche){
+    var pfad = $("i2-pfad");
+    pfad.textContent = "";
+    pfad.hidden = welche === "start";
+    if(welche === "start") return;
+
+    function stufe(text, aufKlick){
+      if(aufKlick){
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "still"; b.textContent = text;
+        b.addEventListener("click", aufKlick);
+        pfad.appendChild(b);
+      }else{
+        var s = document.createElement("b"); s.textContent = text;
+        pfad.appendChild(s);
+      }
+    }
+    function pfeil(){
+      var s = document.createElement("span"); s.className = "pfeil"; s.textContent = "›";
+      pfad.appendChild(s);
+    }
+
+    stufe("Inventuren", function(){ i2Platz = null; i2Aktiv = null; i2InvHolen(); });
+    if(i2Aktiv){
+      pfeil();
+      if(welche === "zaehlen") stufe(i2Aktiv.name, function(){ i2TafelLaden(); });
+      else stufe(i2Aktiv.name, null);
+    }
+    if(welche === "zaehlen" && i2Platz){
+      pfeil();
+      stufe(i2Platz.bereich + " · " + i2Platz.name, null);
+    }
+  }
+
+  // Reiter betreten: dort weitermachen, wo man war
+  function i2Oeffnen(){
+    $("i2-invneu").hidden     = !darf("inventur2_bauen");
+    $("i2-bereichneu").hidden = !darf("inventur2_bauen");
+    if(!sb){
+      i2Sage("i2-startmeldung", "Inventur 2.0 braucht die Datenbank — ohne Verbindung geht sie nicht.", "fehler");
+      i2AnsichtZeigen("start");
+      return;
+    }
+    if(i2Platz && i2Aktiv){ i2PlatzScansHolen().then(function(){ i2AnsichtZeigen("zaehlen"); i2ZaehlenZeichnen(); i2FeldScharf(); }); return; }
+    if(i2Aktiv){ i2TafelLaden(); return; }
+    i2InvHolen();
+  }
+
+  // ----- A) Inventuren -----
+  function i2InvHolen(){
+    if(!sb) return Promise.resolve();
+    return alleZeilen("inventuren", "id,name,status,erstellt_am,erstellt_von,abgeschlossen_am", "erstellt_am")
+      .then(function(daten){
+        i2Inv = daten.slice().reverse();          // neueste oben
+        i2InvZeichnen();
+        i2AnsichtZeigen("start");
+        i2Sage("i2-startmeldung", "");
+      })
+      .catch(function(e){
+        i2AnsichtZeigen("start");
+        i2Sage("i2-startmeldung", "Inventuren konnten nicht geladen werden: "
+          + ((e && e.message) || e) + " — ist der SQL-Block schon gelaufen?", "fehler");
+      });
+  }
+
+  function i2InvZeichnen(){
+    var ul = $("i2-invliste");
+    ul.textContent = "";
+    i2Inv.forEach(function(inv){
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "i2zeile";
+
+      var txt = document.createElement("span"); txt.className = "txt";
+      var name = document.createElement("b"); name.textContent = inv.name;
+      var klein = document.createElement("small");
+      klein.textContent = (inv.erstellt_am ? "angelegt " + i2Datum(inv.erstellt_am) : "")
+        + (inv.erstellt_von ? " · " + i2Kurz(inv.erstellt_von) : "");
+      txt.appendChild(name); txt.appendChild(klein);
+
+      var fahne = document.createElement("span");
+      var fertig = inv.status === "fertig";
+      fahne.className = "i2fahne " + (fertig ? "fertig" : "offen");
+      fahne.textContent = fertig ? "abgeschlossen" : "offen";
+
+      b.appendChild(txt); b.appendChild(fahne);
+      b.addEventListener("click", function(){ i2Aktiv = inv; i2TafelLaden(); });
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+    $("i2-invleer").hidden = i2Inv.length > 0;
+  }
+
+  $("i2-knopf-invneu").addEventListener("click", function(){
+    if(!darf("inventur2_bauen") || !sb) return;
+    var name = $("i2-neuname").value.trim();
+    if(!name){ i2Sage("i2-startmeldung", "Bitte einen Namen eingeben.", "fehler"); return; }
+    sb.from("inventuren").insert({ name:name, status:"offen", erstellt_von:angemeldet || "" })
+      .select("id,name,status,erstellt_am,erstellt_von")
+      .then(function(res){
+        if(res.error || !res.data || !res.data[0]){
+          i2Sage("i2-startmeldung", "Nicht angelegt: " + ((res.error && res.error.message) || "unbekannter Fehler"), "fehler");
+          return;
+        }
+        $("i2-neuname").value = "";
+        i2Inv.unshift(res.data[0]);
+        i2Aktiv = res.data[0];
+        i2TafelLaden();
+      })
+      .catch(function(){ i2Sage("i2-startmeldung", "Nicht angelegt — Verbindung prüfen.", "fehler"); });
+  });
+
+  // ----- B) Tafel -----
+  function i2TafelLaden(){
+    if(!sb || !i2Aktiv) return Promise.resolve();
+    i2Platz = null;
+    return Promise.all([
+      alleZeilen("zaehlplaetze", "id,inventur_id,bereich,name,status,zaehler,begonnen_am,fertig_am,sortierung",
+        "sortierung", function(q){ return q.eq("inventur_id", i2Aktiv.id); }),
+      alleZeilen("scans", "menge,platz_id", "",
+        function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
+    ]).then(function(beides){
+      i2Plaetze = beides[0];
+      i2Summen = {};
+      beides[1].forEach(function(s){
+        var k = s.platz_id || "-";
+        if(!i2Summen[k]) i2Summen[k] = { anzahl:0, menge:0 };
+        i2Summen[k].anzahl++;
+        i2Summen[k].menge += (s.menge || 0);
+      });
+      i2TafelZeichnen();
+      i2AnsichtZeigen("tafel");
+      i2Sage("i2-tafelmeldung", "");
+    }).catch(function(e){
+      i2AnsichtZeigen("tafel");
+      i2Sage("i2-tafelmeldung", "Nicht geladen: " + ((e && e.message) || e), "fehler");
+    });
+  }
+
+  function i2TafelZeichnen(){
+    var box = $("i2-bereiche");
+    box.textContent = "";
+
+    // Nach Bereich gruppieren, Reihenfolge wie angelegt
+    var folge = [], nach = {};
+    i2Plaetze.forEach(function(p){
+      if(!nach[p.bereich]){ nach[p.bereich] = []; folge.push(p.bereich); }
+      nach[p.bereich].push(p);
+    });
+
+    folge.forEach(function(bname){
+      var liste = nach[bname];
+      var fertig = liste.filter(function(p){ return p.status === "fertig"; }).length;
+      var menge = liste.reduce(function(s, p){ return s + ((i2Summen[p.id] || {}).menge || 0); }, 0);
+
+      var karte = document.createElement("div"); karte.className = "i2bereich";
+
+      var kopf = document.createElement("div"); kopf.className = "i2bkopf";
+      var titel = document.createElement("b"); titel.textContent = bname;
+      var zahl = document.createElement("span"); zahl.className = "zahl";
+      zahl.textContent = fertig + "/" + liste.length + " fertig · " + menge + " Stück";
+      var balken = document.createElement("span"); balken.className = "i2balken";
+      var fuellung = document.createElement("i");
+      fuellung.style.width = (liste.length ? Math.round(fertig / liste.length * 100) : 0) + "%";
+      balken.appendChild(fuellung);
+      kopf.appendChild(titel); kopf.appendChild(zahl); kopf.appendChild(balken);
+      if(darf("inventur2_bauen")){
+        var plus = document.createElement("button");
+        plus.type = "button"; plus.className = "still"; plus.textContent = "+ Platz";
+        plus.addEventListener("click", function(){ i2PlatzNachtragen(bname); });
+        kopf.appendChild(plus);
+      }
+      karte.appendChild(kopf);
+
+      var gitter = document.createElement("div"); gitter.className = "i2plaetze";
+      liste.forEach(function(p){ gitter.appendChild(i2Kachel(p)); });
+      karte.appendChild(gitter);
+
+      box.appendChild(karte);
+    });
+
+    $("i2-tafelleer").hidden = i2Plaetze.length > 0;
+  }
+
+  function i2Kachel(p){
+    var k = document.createElement("button");
+    k.type = "button";
+    var meiner = p.zaehler && p.zaehler === (angemeldet || "");
+    k.className = "i2platz"
+      + (p.status === "fertig" ? " fertig" : (p.status === "laeuft" ? " laeuft" : ""))
+      + (meiner && p.status === "laeuft" ? " ich" : "");
+
+    var name = document.createElement("span"); name.className = "pname"; name.textContent = p.name;
+    var s = i2Summen[p.id] || { anzahl:0, menge:0 };
+    var zahl = document.createElement("span"); zahl.className = "pzahl";
+    zahl.textContent = s.menge + " Stück · " + s.anzahl + " Scans";
+    var zustand = document.createElement("span"); zustand.className = "pzustand";
+    zustand.textContent = p.status === "fertig"
+      ? ("fertig" + (p.zaehler ? " · " + i2Kurz(p.zaehler) : ""))
+      : p.status === "laeuft"
+        ? (meiner ? "du zählst hier" : i2Kurz(p.zaehler) + " zählt")
+        : "offen";
+
+    k.appendChild(name); k.appendChild(zahl); k.appendChild(zustand);
+    k.addEventListener("click", function(){ i2PlatzOeffnen(p); });
+    return k;
+  }
+
+  /* „Ebene 1, Ebene 2" → zwei Plätze. „1-8" → Ebene 1 … Ebene 8.
+     „Regal 1-8" → Regal 1 … Regal 8. Leer → ein einziger Platz. */
+  function i2PlaetzeAusText(text){
+    var roh = String(text || "").trim();
+    if(!roh) return [];
+    var spanne = roh.match(/^(.*?)(\d+)\s*-\s*(\d+)$/);
+    if(spanne){
+      var wort = spanne[1].trim() || "Ebene";
+      var von = parseInt(spanne[2], 10), bis = parseInt(spanne[3], 10);
+      if(isFinite(von) && isFinite(bis) && bis >= von && bis - von <= 199){
+        var aus = [];
+        for(var i = von; i <= bis; i++) aus.push(wort + " " + i);
+        return aus;
+      }
+    }
+    return roh.split(/[,;\n]/).map(function(t){ return t.trim(); }).filter(Boolean);
+  }
+
+  function i2PlaetzeAnlegen(bereich, namen){
+    if(!sb || !i2Aktiv) return;
+    // Doppelte überspringen, damit zweimaliges Drücken nichts verdoppelt
+    var da = {};
+    i2Plaetze.forEach(function(p){ da[p.bereich + " " + p.name] = true; });
+    var neu = namen.filter(function(n){ return !da[bereich + " " + n]; });
+    if(!neu.length){ i2Sage("i2-tafelmeldung", "Diese Plätze gibt es schon.", "fehler"); return; }
+
+    var basis = i2Plaetze.length;
+    var zeilen = neu.map(function(n, i){
+      return { inventur_id:i2Aktiv.id, bereich:bereich, name:n, status:"offen", sortierung: basis + i };
+    });
+    sb.from("zaehlplaetze").insert(zeilen)
+      .select("id,inventur_id,bereich,name,status,zaehler,sortierung")
+      .then(function(res){
+        if(res.error){ i2Sage("i2-tafelmeldung", "Nicht angelegt: " + res.error.message, "fehler"); return; }
+        $("i2-bname").value = ""; $("i2-bplaetze").value = "";
+        i2Sage("i2-tafelmeldung", neu.length + (neu.length === 1 ? " Platz" : " Plätze") + " angelegt.", "gut");
+        i2TafelLaden();
+      })
+      .catch(function(){ i2Sage("i2-tafelmeldung", "Nicht angelegt — Verbindung prüfen.", "fehler"); });
+  }
+
+  $("i2-knopf-bereichneu").addEventListener("click", function(){
+    if(!darf("inventur2_bauen")) return;
+    var bereich = $("i2-bname").value.trim();
+    if(!bereich){ i2Sage("i2-tafelmeldung", "Bitte einen Bereichsnamen eingeben.", "fehler"); return; }
+    var namen = i2PlaetzeAusText($("i2-bplaetze").value);
+    if(!namen.length) namen = [bereich];     // Bereich ohne Unterteilung
+    i2PlaetzeAnlegen(bereich, namen);
+  });
+
+  function i2PlatzNachtragen(bereich){
+    var eingabe = window.prompt("Neue Zählplätze in „" + bereich + "“\n\n"
+      + "Mehrere mit Komma trennen, oder eine Spanne wie 5-8:", "");
+    if(eingabe === null) return;
+    var namen = i2PlaetzeAusText(eingabe);
+    if(!namen.length){ i2Sage("i2-tafelmeldung", "Kein Name eingegeben.", "fehler"); return; }
+    i2PlaetzeAnlegen(bereich, namen);
+  }
+
+  $("i2-knopf-auffrischen").addEventListener("click", function(){ i2TafelLaden(); });
+
+  // Summe über die ganze Inventur — eine Zeile je Artikel, fertig für CAO
+  $("i2-knopf-summe").addEventListener("click", function(){
+    if(!sb || !i2Aktiv) return;
+    i2Sage("i2-tafelmeldung", "Wird gerechnet …");
+    alleZeilen("scans", "menge,nr", "",
+      function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
+      .then(function(daten){
+        var nach = {};
+        daten.forEach(function(s){ nach[s.nr] = (nach[s.nr] || 0) + (s.menge || 0); });
+        var nummern = Object.keys(nach).sort();
+        if(!nummern.length){ i2Sage("i2-tafelmeldung", "In dieser Inventur ist noch nichts gezählt.", "fehler"); return; }
+        var text = nummern.map(function(nr){ return nach[nr] + "*" + nr; }).join("\n");
+        $("i2-sicherungstext").value = text;
+        $("i2-sicherung").hidden = false;
+        try{
+          navigator.clipboard.writeText(text).then(function(){
+            i2Sage("i2-tafelmeldung", nummern.length + " Artikel kopiert.", "gut");
+          }, function(){
+            i2Sage("i2-tafelmeldung", nummern.length + " Artikel — Text unten von Hand markieren.", "gut");
+          });
+        }catch(e){
+          i2Sage("i2-tafelmeldung", nummern.length + " Artikel — Text unten von Hand markieren.", "gut");
+        }
+      })
+      .catch(function(e){ i2Sage("i2-tafelmeldung", "Nicht gerechnet: " + ((e && e.message) || e), "fehler"); });
+  });
+
+  $("i2-sicherung-zu").addEventListener("click", function(){ $("i2-sicherung").hidden = true; });
+
+  // ----- C) Zählen auf einem Platz -----
+  function i2PlatzStatus(p, status){
+    p.status = status;
+    p.zaehler = angemeldet || "";
+    var daten = { status:status, zaehler:p.zaehler };
+    if(status === "laeuft"){ daten.begonnen_am = new Date().toISOString(); daten.fertig_am = null; }
+    if(status === "fertig"){ daten.fertig_am = new Date().toISOString(); }
+    if(!sb) return Promise.resolve();
+    return sb.from("zaehlplaetze").update(daten).eq("id", p.id).then(function(res){
+      if(res.error) i2Meldung("Zustand nicht gespeichert: " + res.error.message, "fehler");
+    }).catch(function(){ i2Meldung("Zustand nicht gespeichert — Verbindung prüfen.", "fehler"); });
+  }
+
+  function i2PlatzScansHolen(){
+    if(!sb || !i2Platz){ i2PlatzScans = []; return Promise.resolve(); }
+    return alleZeilen("scans", "id,menge,nr,wer,erstellt_am", "erstellt_am",
+      function(q){ return q.eq("platz_id", i2Platz.id).is("geloescht_am", null); })
+      .then(function(daten){ i2PlatzScans = daten; })
+      .catch(function(){ i2PlatzScans = []; });
+  }
+
+  function i2PlatzOeffnen(p){
+    if(p.status === "fertig"){
+      if(!window.confirm("„" + p.name + "“ ist als fertig gezählt"
+        + (p.zaehler ? " von " + i2Kurz(p.zaehler) : "") + ".\n\n"
+        + "Wieder öffnen und nachzählen?\n\nDie bisherigen Scans bleiben stehen — es wird nichts gelöscht.")) return;
+    }
+    i2Platz = p;
+    i2Meldung("");
+    $("i2-zuletzt").hidden = true;
+
+    // Warnen, wenn jemand anderes gerade auf diesem Platz zählt — sonst zählt man doppelt
+    var fremd = p.status === "laeuft" && p.zaehler && p.zaehler !== (angemeldet || "");
+    $("i2-doppelt-wer").textContent = fremd ? i2Kurz(p.zaehler) : "Jemand";
+    $("i2-doppelt").hidden = !fremd;
+
+    i2PlatzScansHolen().then(function(){
+      i2AnsichtZeigen("zaehlen");
+      i2ZaehlenZeichnen();
+      i2FeldScharf();
+    });
+    if(p.status !== "laeuft" || p.zaehler !== (angemeldet || "")) i2PlatzStatus(p, "laeuft");
+  }
+
+  function i2ZaehlenZeichnen(){
+    if(!i2Platz) return;
+    $("i2-wo").textContent = i2Platz.name;
+    $("i2-wozusatz").textContent = (i2Aktiv ? i2Aktiv.name + " · " : "") + i2Platz.bereich;
+    var menge = i2Mengensumme(i2PlatzScans);
+    $("i2-stand").textContent = menge;
+    $("i2-knopf-hand").hidden = !darf("handeingabe");
+
+    var ul = $("i2-scanliste");
+    ul.hidden = !darf("scanliste");
+    ul.textContent = "";
+    if(darf("scanliste")){
+      i2PlatzScans.slice().reverse().slice(0, 200).forEach(function(s){
+        var li = document.createElement("li"); li.className = "scanzeile";
+        var txt = document.createElement("div"); txt.className = "txt";
+        var code = document.createElement("b"); code.className = "code";
+        code.textContent = s.menge + "*" + s.nr;
+        var klein = document.createElement("small");
+        var teile = [];
+        if(darf("artikelname")){
+          var bez = bezeichnungZu(s.nr);
+          teile.push(bez || "nicht im Artikelstamm");
+          if(!bez) klein.className = "fehlt";
+        }
+        if(darf("inventur_gesamt") && s.wer && s.wer !== (angemeldet || "")) teile.push(i2Kurz(s.wer));
+        klein.textContent = teile.join(" · ");
+        txt.appendChild(code); txt.appendChild(klein);
+
+        var weg = document.createElement("button");
+        weg.className = "still"; weg.textContent = "Entfernen";
+        weg.addEventListener("click", function(){ i2ScanWeg(s); });
+        li.appendChild(txt); li.appendChild(weg);
+        ul.appendChild(li);
+      });
+    }
+
+    $("i2-zaehler").textContent = i2PlatzScans.length
+      ? i2PlatzScans.length + (i2PlatzScans.length === 1 ? " Scan · " : " Scans · ") + menge + " Stück"
+      : "Noch nichts gescannt.";
+  }
+
+  // Entfernen heißt auch hier: in den Papierkorb, nicht weg
+  function i2ScanWeg(s){
+    i2PlatzScans = i2PlatzScans.filter(function(x){ return x.id !== s.id; });
+    i2ZaehlenZeichnen();
+    i2Meldung("Entfernt: " + s.menge + "*" + s.nr + " — liegt im Papierkorb.", "gut");
+    if(sb){
+      sb.from("scans").update({ geloescht_am:new Date().toISOString(), geloescht_von:angemeldet || "" })
+        .eq("id", s.id).then(function(res){
+          if(res.error){
+            i2PlatzScans.push(s); i2ZaehlenZeichnen();
+            i2Meldung("Nicht entfernt: " + res.error.message, "fehler");
+          }
+        }).catch(function(){
+          i2PlatzScans.push(s); i2ZaehlenZeichnen();
+          i2Meldung("Nicht entfernt — Verbindung prüfen.", "fehler");
+        });
+    }
+    i2FeldScharf();
+  }
+
+  /* Aus einem Code Menge und Artikelnummer lesen — dieselben Regeln wie in der
+     alten Inventur: „50*EDC" zählt 50, ein Artikelbarcode zählt eine VPE. */
+  function i2CodeLesen(roh){
+    var wert = String(roh || "").trim().toUpperCase();
+    if(!wert) return { fehler:"Nichts eingegeben." };
+    var menge, nr, gefunden;
+
+    if(wert.indexOf("*") !== -1){
+      var teile = wert.split("*");
+      menge = teile.length === 2 ? parseInt(teile[0].replace(/[^0-9]/g, ""), 10) : NaN;
+      nr = teile.length === 2 ? teile[1].trim() : "";
+      if(teile.length !== 2 || !isFinite(menge) || menge <= 0 || !nr)
+        return { fehler:"„" + wert + "“ passt nicht — erwartet wird Menge*Artikelnummer, z. B. 50*EDC." };
+      gefunden = artikelZuCode(nr);
+      if(gefunden && gefunden.nr) nr = gefunden.nr.toUpperCase();
+    }else{
+      if(wert.length < 3) return { fehler:"„" + wert + "“ ist zu kurz für einen Barcode." };
+      gefunden = artikelZuCode(wert);
+      var vpe = (gefunden && gefunden.vpe_vk != null && isFinite(gefunden.vpe_vk) && gefunden.vpe_vk > 0)
+                ? gefunden.vpe_vk : 1;
+      menge = vpe;
+      nr = (gefunden && gefunden.nr) ? gefunden.nr.toUpperCase() : wert;
+    }
+    if(!gefunden) return { fehler:"„" + wert + "“ steht nicht im Artikelstamm — nicht gezählt." };
+    return { menge:menge, nr:nr, artikel:gefunden, stern:wert.indexOf("*") !== -1 };
+  }
+
+  function i2ZuletztZeigen(nr){
+    var menge = 0, anzahl = 0;
+    i2PlatzScans.forEach(function(s){ if(s.nr === nr){ menge += (s.menge || 0); anzahl++; } });
+    var el = $("i2-zuletzt");
+    el.hidden = true; void el.offsetWidth; el.hidden = false;
+    $("i2-zcode").textContent = menge + "*" + nr;
+    var a = artikelZuCode(nr);
+    $("i2-zname").textContent = (darf("artikelname") && a) ? a.bezeichnung : nr;
+    $("i2-zzusatz").textContent = anzahl + "× auf diesem Platz";
+    $("i2-zabgleich").hidden = true;
+  }
+
+  function i2Scan(roh){
+    if(!i2Platz || !i2Aktiv){ i2Meldung("Kein Zählplatz offen.", "fehler"); return false; }
+    var g = i2CodeLesen(roh);
+    if(g.fehler){ i2Meldung(g.fehler, "fehler"); i2Blitz(false); piep(false); return false; }
+
+    var eintrag = { id:neueId("s"), menge:g.menge, nr:g.nr, wer:angemeldet || "" };
+    i2PlatzScans.push(eintrag);
+    i2ZaehlenZeichnen();
+
+    var text = g.menge + " × " + g.nr;
+    if(darf("artikelname")) text += " · " + g.artikel.bezeichnung;
+    if(g.menge > 1 && !g.stern) text += " (1 Einheit = " + g.menge + ")";
+    i2Meldung(text, "gut");
+    i2Blitz(true); piep(true);
+    i2ZuletztZeigen(g.nr);
+
+    if(sb){
+      var verloren = function(titel){
+        i2PlatzScans = i2PlatzScans.filter(function(s){ return s.id !== eintrag.id; });
+        i2ZaehlenZeichnen();
+        i2Meldung("Nicht gespeichert — bitte nochmal scannen.", "fehler");
+        notBlitz(titel, g.menge + " × " + g.nr + " zählt nicht. Verbindung prüfen und nochmal scannen.");
+      };
+      sb.from("scans").insert({ menge:g.menge, nr:g.nr, wer:angemeldet || "",
+                                bereich:i2Platz.bereich, inventur_id:i2Aktiv.id, platz_id:i2Platz.id })
+        .select("id,menge,nr,wer,erstellt_am")
+        .then(function(res){
+          if(res.error || !res.data || !res.data[0]){ verloren("Nicht gespeichert"); return; }
+          eintrag.id = res.data[0].id;
+          eintrag.erstellt_am = res.data[0].erstellt_am;
+        })
+        .catch(function(){ verloren("Keine Verbindung"); });
+    }
+    return true;
+  }
+
+  function i2FeldFertig(){
+    var feld = $("i2-feld");
+    feld.value = "";
+    i2LetzteLaenge = 0;
+    feld.focus();
+    i2Bereit(true);
+  }
+
+  var i2Uhr = null, i2LetzteTaste = 0, i2LetzteLaenge = 0, i2VomScanner = false;
+
+  $("i2-feld").addEventListener("input", function(){
+    var feld = $("i2-feld");
+    window.clearTimeout(i2Uhr);
+    var w = feld.value.trim();
+
+    // Scanner erkennen: mehrere Zeichen auf einmal, oder schneller als 35 ms je Zeichen
+    var jetzt = Date.now();
+    if(w.length - i2LetzteLaenge > 2) i2VomScanner = true;
+    if(jetzt - i2LetzteTaste < 35) i2VomScanner = true;
+    i2LetzteTaste = jetzt;
+    i2LetzteLaenge = w.length;
+    var warten = i2VomScanner ? 60 : 650;
+
+    // Zwei Palettencodes ineinander: das Feld wird geleert, sonst klebt der Rest am nächsten Scan
+    if(w.indexOf("*", w.indexOf("*") + 1) > 0){
+      i2Meldung("Zwei Codes sind zusammengelaufen („" + w + "“) — einzeln scannen.", "fehler");
+      i2Blitz(false); piep(false);
+      i2FeldFertig();
+      i2VomScanner = false;
+      return;
+    }
+
+    i2Bereit(false);
+    i2Uhr = window.setTimeout(function(){
+      var code = feld.value.trim();
+
+      // Ineinandergelaufene Artikelbarcodes sauber trennen, wenn es eindeutig geht
+      if(code.indexOf("*") === -1 && code.length > 14){
+        var teile = codeZerlegen(code);
+        if(teile){
+          var gezaehlt = 0;
+          teile.forEach(function(t){ if(i2Scan(t)) gezaehlt++; });
+          i2FeldFertig();
+          if(gezaehlt > 1) i2Meldung(gezaehlt + " Codes waren zusammengelaufen und wurden einzeln gezählt.", "gut");
+          i2VomScanner = false;
+          return;
+        }
+        i2Meldung("„" + code + "“ ist zu lang und lässt sich nicht eindeutig trennen — einzeln scannen.", "fehler");
+        i2Blitz(false); piep(false);
+        i2FeldFertig();
+        i2VomScanner = false;
+        return;
+      }
+
+      if(!i2VomScanner && !darf("handeingabe")){
+        i2Meldung("Von Hand eintragen ist für dich nicht freigegeben — bitte scannen.", "fehler");
+        i2Blitz(false); piep(false);
+        i2FeldFertig();
+        return;
+      }
+
+      /* Vom Scanner kommt der Code vollständig in einem Stück — dann sofort prüfen,
+         auch bei kurzen Nummern wie „G99". Nur bei Handeingabe wird gewartet. */
+      var reif = i2VomScanner
+        ? code.length >= 2
+        : (code.indexOf("*") > 0 ? code.length >= 3 : (code.length >= 6 || !!artikelZuCode(code)));
+      if(reif){
+        i2Scan(code);
+        i2FeldFertig();      // angenommen oder abgelehnt: das Feld ist danach leer
+      }else{
+        i2Bereit(true);
+      }
+      i2VomScanner = false;
+    }, warten);
+  });
+
+  $("i2-feld").addEventListener("keydown", function(e){
+    if(e.key !== "Enter") return;
+    e.preventDefault();
+    window.clearTimeout(i2Uhr);
+    i2Scan($("i2-feld").value);
+    i2FeldFertig();
+  });
+
+  $("i2-feld").addEventListener("blur", function(){
+    window.setTimeout(function(){
+      var a = document.activeElement;
+      if(!a || a === document.body) i2FeldScharf();
+    }, 60);
+  });
+
+  $("i2-knopf-hand").addEventListener("click", function(){
+    if(!darf("handeingabe")){ i2Meldung("Von Hand eintragen ist für dich nicht freigegeben.", "fehler"); return; }
+    window.clearTimeout(i2Uhr);
+    i2Scan($("i2-feld").value);
+    i2FeldFertig();
+  });
+
+  $("i2-knopf-fertig").addEventListener("click", function(){
+    if(!i2Platz) return;
+    if(i2PlatzScans.length === 0
+      && !window.confirm("Auf „" + i2Platz.name + "“ ist nichts gezählt.\n\nTrotzdem als fertig markieren?")) return;
+    var p = i2Platz;
+    i2PlatzStatus(p, "fertig").then(function(){ i2TafelLaden(); });
+  });
+
+  $("i2-knopf-zurueck").addEventListener("click", function(){ i2TafelLaden(); });
+
+  // Anderswo im Bereich getippt: zurück ins Scanfeld
+  $("ansicht-inv2").addEventListener("click", function(e){
+    var t = e.target;
+    if(t && (t.tagName === "BUTTON" || t.tagName === "INPUT" || t.tagName === "LABEL"
+      || t.tagName === "TEXTAREA")) return;
+    i2FeldScharf();
+  });
+
+  /* Die Tafel lebt: vier Leute zählen gleichzeitig, jeder soll sehen, wo die
+     anderen stehen. Nur wenn die Tafel offen und das Fenster sichtbar ist. */
+  window.setInterval(function(){
+    if(sb && i2Aktiv && !$("ansicht-inv2").hidden && !$("i2-tafel").hidden
+      && document.visibilityState === "visible") i2TafelLaden();
+  }, 15000);
 
   // ---------- Anmeldung ----------
   function appEinrichten(){
@@ -3507,6 +4385,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("app").hidden = false;
     $("knopf-abmelden").hidden = true;
     $("reiter-rechte").hidden = true;
+    // Inventur 2.0 lebt von der gemeinsamen Datenbank — ohne die hat sie keinen Sinn
+    $("reiter-inv2").hidden = true;
     statusSetzen(grund, "lokal");
     lokalLaden();
     mengenfelderBauen();
