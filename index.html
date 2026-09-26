@@ -225,6 +225,27 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
   #app.p-eintritt{animation:none}
 }
 
+/* Ein verlorener Scan darf im Lager nicht übersehen werden: der ganze
+   Bildschirm blitzt rot, dazu der Fehlerton. */
+.notblitz{position:fixed; inset:0; z-index:90; display:grid; place-items:center;
+  background:rgba(176,32,24,.92); color:#fff; pointer-events:none;
+  animation:notblitzen 1.5s ease-out forwards}
+.notinhalt{display:grid; justify-items:center; gap:12px; padding:24px; text-align:center}
+.notinhalt svg{width:74px; height:74px; animation:notpochen .5s ease-out 2}
+.notinhalt b{font-family:Archivo,"IBM Plex Sans",sans-serif; font-size:27px; letter-spacing:-.01em}
+.notinhalt span{font-size:15px; opacity:.92; max-width:320px; line-height:1.45}
+@keyframes notblitzen{0%{opacity:0} 8%{opacity:1} 62%{opacity:1} 100%{opacity:0}}
+@keyframes notpochen{0%,100%{transform:scale(1)} 50%{transform:scale(1.14)}}
+@media (max-width:560px){
+  .notinhalt svg{width:58px; height:58px}
+  .notinhalt b{font-size:22px}
+  .notinhalt span{font-size:13.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  .notblitz{animation:none; opacity:1}
+  .notinhalt svg{animation:none}
+}
+
 /* ---------- Kopfzeile ---------- */
 .kopf{
   position:sticky; top:0; z-index:5;
@@ -706,6 +727,18 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </footer>
 </div>
 
+<div class="notblitz" id="notblitz" hidden aria-hidden="true">
+  <div class="notinhalt">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+      <path d="M12 9v4"/><path d="M12 17h.01"/>
+    </svg>
+    <b id="nottext">Nicht gespeichert</b>
+    <span id="notzusatz">Dieser Scan zählt nicht — bitte nochmal scannen.</span>
+  </div>
+</div>
+
 <div id="app" hidden>
 <header class="kopf">
   <div class="kopfmarke">
@@ -725,7 +758,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v20</span>
+    <span class="version">v21</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1054,6 +1087,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     { schluessel:"etikett",         name:"Etiketten drucken" },
     { schluessel:"inventur",        name:"Inventur zählen" },
     { schluessel:"inventur_gesamt", name:"Zählung aller sehen" },
+    { schluessel:"artikelname",     name:"Artikelbezeichnung sehen" },
+    { schluessel:"scanliste",       name:"Einzelne Scans sehen" },
+    { schluessel:"handeingabe",     name:"Von Hand eintragen" },
     { schluessel:"bestand",         name:"Lagerbestand sehen" },
     { schluessel:"inventur_leeren", name:"Zählliste leeren",   wichtig:true },
     { schluessel:"artikel",         name:"Artikel ansehen" },
@@ -1062,10 +1098,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     { schluessel:"verwaltung",      name:"Rechte vergeben",    wichtig:true }
   ];
   // Wer nicht eingetragen ist, darf das Nötigste: drucken und zählen.
-  var GRUNDRECHTE = { etikett:true, inventur:true, inventur_gesamt:false, bestand:false,
+  var GRUNDRECHTE = { etikett:true, inventur:true, inventur_gesamt:false, artikelname:true,
+                      scanliste:true, handeingabe:true, bestand:false,
                       inventur_leeren:false, artikel:false, artikel_aendern:false,
                       mitarbeiter:false, verwaltung:false };
-  var ALLES = { etikett:true, inventur:true, inventur_gesamt:true, bestand:true,
+  var ALLES = { etikett:true, inventur:true, inventur_gesamt:true, artikelname:true,
+                scanliste:true, handeingabe:true, bestand:true,
                 inventur_leeren:true, artikel:true, artikel_aendern:true,
                 mitarbeiter:true, verwaltung:true };
 
@@ -1095,7 +1133,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       })[0];
       rechte = {};
       Object.keys(ALLES).forEach(function(k){
-        rechte[k] = meiner ? !!meiner.bereiche[k] : !!GRUNDRECHTE[k];
+        // Ein Häkchen, das es zur Zeit des Eintrags noch nicht gab, gilt als Grundrecht —
+        // sonst nimmt eine neue Programmversion stillschweigend Rechte weg.
+        if(meiner && meiner.bereiche[k] !== undefined) rechte[k] = !!meiner.bereiche[k];
+        else rechte[k] = !!GRUNDRECHTE[k];
       });
     }).catch(function(){ rechte = GRUNDRECHTE; });
   }
@@ -1108,6 +1149,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("reiter-leute").hidden = !darf("mitarbeiter");
     $("reiter-rechte").hidden = !darf("verwaltung");
     $("knopf-scan-leeren").dataset.gesperrt = darf("inventur_leeren") ? "" : "ja";
+    $("scanliste").hidden = !darf("scanliste");
+    $("knopf-scan-hinzu").hidden = !darf("handeingabe");
 
     // Artikel nur ansehen: alles zum Ändern verschwindet
     var aendern = darf("artikel_aendern");
@@ -1166,7 +1209,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         if(b.wichtig) label.className = "wichtig";
         var box2 = document.createElement("input");
         box2.type = "checkbox";
-        box2.checked = !!r.bereiche[b.schluessel];
+        box2.checked = r.bereiche[b.schluessel] !== undefined
+          ? !!r.bereiche[b.schluessel] : !!GRUNDRECHTE[b.schluessel];
         box2.addEventListener("change", function(){
           var selbst = r.email === String(angemeldet || "").toLowerCase();
           if(selbst && b.schluessel === "verwaltung" && !box2.checked){
@@ -2227,7 +2271,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
     var text = menge + " × " + nr;
     if(gefunden){
-      text += " · " + gefunden.bezeichnung;
+      if(darf("artikelname")) text += " · " + gefunden.bezeichnung;
       if(menge > 1 && wert.indexOf("*") === -1) text += " (1 Einheit = " + menge + ")";
     }else{
       text += " · nicht im Artikelstamm";
@@ -2236,15 +2280,18 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     scanBlitz(true); piep(true);
 
     if(sb){
-      sb.from("scans").insert({ menge:menge, nr:nr, wer:angemeldet || "" }).select().then(function(res){
-        if(res.error || !res.data || !res.data[0]){
-          scanMeldung("Nicht gespeichert — bitte nochmal scannen.", "fehler");
-          scans = scans.filter(function(s){ return s.id !== eintrag.id; });
-          scansZeichnen();
-          return;
-        }
-        eintrag.id = res.data[0].id;
-      });
+      var verloren = function(titel){
+        scanMeldung("Nicht gespeichert — bitte nochmal scannen.", "fehler");
+        scans = scans.filter(function(s){ return s.id !== eintrag.id; });
+        scansZeichnen();
+        notBlitz(titel, menge + " × " + nr + " zählt nicht. Verbindung prüfen und nochmal scannen.");
+      };
+      sb.from("scans").insert({ menge:menge, nr:nr, wer:angemeldet || "" }).select()
+        .then(function(res){
+          if(res.error || !res.data || !res.data[0]){ verloren("Nicht gespeichert"); return; }
+          eintrag.id = res.data[0].id;
+        })
+        .catch(function(){ verloren("Keine Verbindung"); });
     }else{
       lokalScans();
     }
@@ -2272,6 +2319,20 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       if(alleBekannt) return teile;
     }
     return null;
+  }
+
+  var notUhr = null;
+  function notBlitz(text, zusatz){
+    var el = $("notblitz");
+    window.clearTimeout(notUhr);
+    $("nottext").textContent = text || "Nicht gespeichert";
+    $("notzusatz").textContent = zusatz || "Dieser Scan zählt nicht — bitte nochmal scannen.";
+    el.hidden = true;
+    void el.offsetWidth;          // damit zwei Fehler hintereinander beide blitzen
+    el.hidden = false;
+    piep(false);
+    if(navigator.vibrate){ try{ navigator.vibrate([90, 70, 90]); }catch(e){} }
+    notUhr = window.setTimeout(function(){ el.hidden = true; }, 1600);
   }
 
   function scanFertig(){
@@ -2317,8 +2378,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
       var a = artikelZuCode(g.nr);
       var was = document.createElement("span"); was.className = "was";
-      was.textContent = (a ? a.bezeichnung : "nicht im Artikelstamm")
-        + " · " + g.paletten + "\u00d7 gescannt";
+      var name = darf("artikelname") ? (a ? a.bezeichnung : "nicht im Artikelstamm") : "";
+      was.textContent = (name ? name + " · " : "") + g.paletten + "\u00d7 gescannt";
       li.appendChild(was);
 
       // Wer alles sieht, sieht auch, wer wie viel gezählt hat
@@ -2354,9 +2415,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       var txt = document.createElement("div"); txt.className = "txt";
       var b = document.createElement("b"); b.className = "code"; b.textContent = s.menge + "*" + s.nr;
       var kl = document.createElement("small");
-      var bez = bezeichnungZu(s.nr);
-      kl.textContent = (bez || "nicht im Artikelstamm") + (s.wer ? " · " + s.wer : "");
-      if(!bez) kl.className = "fehlt";
+      var bez = darf("artikelname") ? bezeichnungZu(s.nr) : "";
+      var teile2 = [];
+      if(darf("artikelname")) teile2.push(bez || "nicht im Artikelstamm");
+      if(darf("inventur_gesamt") && s.wer) teile2.push(s.wer);
+      kl.textContent = teile2.join(" · ");
+      if(darf("artikelname") && !bez) kl.className = "fehlt";
       txt.appendChild(b); txt.appendChild(kl);
 
       var weg = document.createElement("button");
@@ -2494,7 +2558,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("modus-scanner").setAttribute("aria-pressed", kameraAn ? "false" : "true");
     $("scanfeld").hidden = kameraAn;
     $("bereit").hidden = kameraAn;
-    $("knopf-scan-hinzu").hidden = kameraAn;
+    $("knopf-scan-hinzu").hidden = kameraAn || !darf("handeingabe");
     schreib("pal-scanmodus", kameraAn ? "kamera" : "scanner");
     if(kameraAn){ kameraStarten(); }
     else { kameraStoppen(); scanfeldScharf(); }
@@ -2554,6 +2618,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         return;
       }
 
+      if(!kamScanner && !darf("handeingabe")){
+        scanMeldung("Von Hand eintragen ist für dich nicht freigegeben — bitte scannen.", "fehler");
+        scanBlitz(false); piep(false);
+        feld.value = ""; letzteLaenge = 0;
+        bereitZeigen(true);
+        return;
+      }
       var reif = code.indexOf("*") > 0 ? code.length >= 3 : code.length >= 6;
       if(reif){
         if(scanUebernehmen(code)) scanFertig(); else bereitZeigen(true);
@@ -2584,6 +2655,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   });
 
   $("knopf-scan-hinzu").addEventListener("click", function(){
+    if(!darf("handeingabe")){
+      scanMeldung("Von Hand eintragen ist für dich nicht freigegeben.", "fehler");
+      return;
+    }
     window.clearTimeout(scanUhr);
     if(scanUebernehmen($("scanfeld").value)) scanFertig();
     else $("scanfeld").focus();
