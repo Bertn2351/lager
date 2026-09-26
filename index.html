@@ -477,6 +477,31 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
 .tonschalter{display:flex; align-items:center; gap:7px; font-size:13px; color:var(--gedaempft); cursor:pointer}
 .tonschalter input{width:auto; margin:0; accent-color:var(--akzent)}
 
+/* Direkt im Blickfeld: was gerade gescannt wurde und wie viel davon schon zusammen ist */
+.zuletzt{display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:12px 14px; border-radius:11px; border:1px solid var(--kante-hell);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--gut) 11%, var(--flaeche-2)), var(--flaeche-2));
+  animation:zuletztAn .45s ease-out}
+@keyframes zuletztAn{from{transform:translateY(-4px); opacity:.4} to{transform:none; opacity:1}}
+.zuletzt .zcode{font-family:"IBM Plex Mono",monospace; font-weight:600;
+  font-size:var(--code-groesse, 21px); color:var(--code-farbe, var(--tinte));
+  background:var(--grund); border:1px solid var(--kante-hell); border-radius:9px;
+  padding:6px 13px; font-variant-numeric:tabular-nums; line-height:1.15}
+.zuletzt .ztext{display:grid; gap:2px; min-width:0}
+.zuletzt .ztext b{font-size:14px; font-weight:500; overflow-wrap:anywhere}
+.zuletzt .ztext small{font-size:12px; color:var(--leise)}
+.zuletzt .zabgleich{margin-left:auto; font-size:12.5px; font-weight:600; white-space:nowrap;
+  padding:3px 10px; border-radius:999px; border:1px solid currentColor}
+.zuletzt .zabgleich.passt{color:var(--gut)}
+.zuletzt .zabgleich.mehr{color:var(--akzent-weich)}
+.zuletzt .zabgleich.weniger{color:var(--kritisch)}
+@media (max-width:700px){
+  .zuletzt{padding:9px 11px; gap:10px}
+  .zuletzt .ztext b{font-size:12.5px}
+  .zuletzt .ztext small{font-size:10.5px}
+  .zuletzt .zabgleich{font-size:11px; padding:2px 8px}
+}
+
 .summenblock{border-top:1px solid var(--kante); background:var(--flaeche-2);
   position:relative}
 .summenblock::before{content:""; position:absolute; left:0; right:0; top:-1px; height:1px;
@@ -764,7 +789,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v23</span>
+    <span class="version">v25</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -936,6 +961,14 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
             <label class="tonschalter"><input type="checkbox" id="ton" checked> Ton</label>
             <button type="button" class="still" id="knopf-scan-hinzu" style="margin-left:auto">Von Hand hinzufügen</button>
           </div>
+          <div class="zuletzt" id="zuletzt" hidden>
+            <span class="zcode" id="zuletzt-code"></span>
+            <span class="ztext">
+              <b id="zuletzt-name"></b>
+              <small id="zuletzt-zusatz"></small>
+            </span>
+            <span class="zabgleich" id="zuletzt-abgleich" hidden></span>
+          </div>
           <p class="meldung" id="scan-meldung"></p>
           <p class="hinweis">Palettenetikett scannen — oder den Barcode auf der Ware selbst, dann zählt jeder Scan ein Stück. Das Feld leert sich von selbst und ist sofort wieder bereit.</p>
         </div>
@@ -1087,6 +1120,26 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   function lokalArtikel(){ if(!sb) schreib("pal-artikel", JSON.stringify(artikel)); }
   function lokalLeute(){ if(!sb) schreib("pal-leute-stamm", JSON.stringify(leute)); }
   function lokalScans(){ if(!sb) schreib("pal-scans", JSON.stringify(scans.slice(-2000))); }
+
+  /* Supabase gibt pro Abfrage höchstens 1000 Zeilen zurück. Bei mehr Artikeln
+     oder Scans fehlt der Rest stillschweigend — deshalb blockweise laden. */
+  function alleZeilen(tabelle, spalten, sortieren){
+    if(!sb) return Promise.resolve([]);
+    var gesammelt = [];
+    var BLOCK = 1000, OBERGRENZE = 50000;
+
+    function block(von){
+      var abfrage = sb.from(tabelle).select(spalten);
+      if(sortieren) abfrage = abfrage.order(sortieren, { ascending:true });
+      return abfrage.range(von, von + BLOCK - 1).then(function(res){
+        if(res.error) throw res.error;
+        var teil = res.data || [];
+        gesammelt = gesammelt.concat(teil);
+        if(teil.length === BLOCK && gesammelt.length < OBERGRENZE) return block(von + BLOCK);
+      });
+    }
+    return block(0).then(function(){ return gesammelt; });
+  }
 
   // ---------- Rechte ----------
   var BEREICHE = [
@@ -1408,7 +1461,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   $("reiter-rechte").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("rechte"); rechteZeichnen(); });
   $("reiter-inventur").addEventListener("click", function(){
     reiterWechseln("inventur");
-    scansHolen().then(function(){
+    scansHolen(true).then(function(){
       if(lies("pal-scanmodus") === "kamera") modusSetzen(true);
       else $("scanfeld").focus();
     });
@@ -1890,9 +1943,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   function artikelHolen(){
     if(!sb) return Promise.resolve();
-    return sb.from("artikel").select("id,nr,bezeichnung,bestand,ean,vpe_vk,vpe_ek").limit(5000).then(function(res){
-      if(res.error) return;
-      artikel = (res.data || []).map(function(a){
+    return alleZeilen("artikel", "id,nr,bezeichnung,bestand,ean,vpe_vk,vpe_ek").then(function(daten){
+      artikel = daten.map(function(a){
         return { id:a.id, nr:a.nr || "", bezeichnung:a.bezeichnung || "(ohne Bezeichnung)",
                  bestand:(a.bestand == null ? null : Number(a.bestand)), ean:a.ean || "",
                  vpe_vk:(a.vpe_vk == null ? null : Number(a.vpe_vk)),
@@ -1903,7 +1955,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         var neu = artikel.filter(function(a){ return a.id === gewaehlt.id; })[0];
         if(neu){ gewaehlt = neu; gewaehltAnzeigen(); }
       }
-      stammZeichnen(); trefferZeichnen(); etikettenZeichnen();
+      stammZeichnen(); trefferZeichnen(); etikettenZeichnen(); scansZeichnen();
+    }).catch(function(){
+      $("status").className = "status lokal";
+      $("status-text").textContent = "Artikelliste wird gerade nicht aktualisiert";
     });
   }
 
@@ -2281,14 +2336,39 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     el.lastChild.nodeValue = bereit ? "Bereit für die nächste Palette" : "Ins Feld tippen, dann geht es weiter";
   }
 
-  function scansHolen(){
-    if(!sb) { scansZeichnen(); return Promise.resolve(); }
-    return sb.from("scans").select("id,menge,nr,wer").order("erstellt_am", { ascending:true })
-      .limit(3000).then(function(res){
-        if(res.error) return;
-        scans = res.data || [];
+  var scansStand = null;   // Zeitstempel des jüngsten geladenen Scans
+
+  function standMerken(){
+    scansStand = scans.reduce(function(hoechster, s){
+      return (s.erstellt_am && s.erstellt_am > hoechster) ? s.erstellt_am : hoechster;
+    }, scansStand || "");
+  }
+
+  /* Beim Öffnen einmal alles laden, danach nur noch das Neue. Bei zehntausend
+     Scans wäre ein Vollabruf alle 20 Sekunden sonst reine Verschwendung. */
+  function scansHolen(vollstaendig){
+    if(!sb){ scansZeichnen(); return Promise.resolve(); }
+
+    if(vollstaendig || !scansStand){
+      return alleZeilen("scans", "id,menge,nr,wer,erstellt_am", "erstellt_am").then(function(daten){
+        scans = daten;
+        standMerken();
         scansZeichnen();
-      });
+      }).catch(function(){});
+    }
+
+    return sb.from("scans").select("id,menge,nr,wer,erstellt_am")
+      .gt("erstellt_am", scansStand)
+      .order("erstellt_am", { ascending:true })
+      .limit(1000)
+      .then(function(res){
+        if(res.error || !res.data || !res.data.length) return;
+        var bekannt = {};
+        scans.forEach(function(s){ bekannt[s.id] = true; });
+        res.data.forEach(function(s){ if(!bekannt[s.id]) scans.push(s); });
+        standMerken();
+        scansZeichnen();
+      }).catch(function(){});
   }
 
   /* Zwei Sorten Code landen hier:
@@ -2342,6 +2422,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(menge > 1 && wert.indexOf("*") === -1) text += " (1 Einheit = " + menge + ")";
     scanMeldung(text, "gut");
     scanBlitz(true); piep(true);
+    zuletztZeigen(nr);
 
     if(sb){
       var verloren = function(titel){
@@ -2350,10 +2431,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         scansZeichnen();
         notBlitz(titel, menge + " × " + nr + " zählt nicht. Verbindung prüfen und nochmal scannen.");
       };
-      sb.from("scans").insert({ menge:menge, nr:nr, wer:angemeldet || "" }).select()
+      sb.from("scans").insert({ menge:menge, nr:nr, wer:angemeldet || "" }).select("id,menge,nr,wer,erstellt_am")
         .then(function(res){
           if(res.error || !res.data || !res.data[0]){ verloren("Nicht gespeichert"); return; }
           eintrag.id = res.data[0].id;
+          eintrag.erstellt_am = res.data[0].erstellt_am || eintrag.erstellt_am;
+          standMerken();
         })
         .catch(function(){ verloren("Keine Verbindung"); });
     }else{
@@ -2397,6 +2480,32 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     piep(false);
     if(navigator.vibrate){ try{ navigator.vibrate([90, 70, 90]); }catch(e){} }
     notUhr = window.setTimeout(function(){ el.hidden = true; }, 1600);
+  }
+
+  /* Zeigt den gerade gescannten Artikel mit seiner laufenden Gesamtmenge —
+     damit niemand für die Kontrolle nach unten scrollen muss. */
+  function zuletztZeigen(nr){
+    var gruppe = summenRechnen().filter(function(g){ return g.nr === nr; })[0];
+    if(!gruppe){ $("zuletzt").hidden = true; return; }
+
+    var el = $("zuletzt");
+    el.hidden = true; void el.offsetWidth; el.hidden = false;   // Animation neu auslösen
+
+    $("zuletzt-code").textContent = gruppe.menge + "*" + gruppe.nr;
+    var a = artikelZuCode(nr);
+    $("zuletzt-name").textContent = (darf("artikelname") && a) ? a.bezeichnung : gruppe.nr;
+    $("zuletzt-zusatz").textContent = gruppe.paletten + "\u00d7 gescannt";
+
+    var ab = $("zuletzt-abgleich");
+    if(darf("bestand") && a && a.bestand != null && isFinite(a.bestand)){
+      var diff = gruppe.menge - a.bestand;
+      ab.className = "zabgleich " + (diff === 0 ? "passt" : (diff > 0 ? "mehr" : "weniger"));
+      ab.textContent = diff === 0 ? "passt (" + a.bestand + ")"
+        : (diff > 0 ? "+" : "") + diff + " von " + a.bestand;
+      ab.hidden = false;
+    }else{
+      ab.hidden = true;
+    }
   }
 
   function scanFertig(){
@@ -2493,6 +2602,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         scans = scans.filter(function(x){ return x.id !== s.id; });
         scansZeichnen();
         scanMeldung("Entfernt: " + s.menge + "*" + s.nr, "gut");
+        zuletztZeigen(s.nr);
         if(sb) sb.from("scans").delete().eq("id", s.id).then(function(){});
         else lokalScans();
         scanfeldScharf();
@@ -2748,12 +2858,14 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     scans = scans.filter(function(s){ return !wegIds[s.id]; });
     scansZeichnen();
     scanMeldung("Liste geleert.", "gut");
+    $("zuletzt").hidden = true;
     if(sb){
       var kette = Promise.resolve();
       alte.forEach(function(s){
         kette = kette.then(function(){ return sb.from("scans").delete().eq("id", s.id); });
       });
-      kette.then(function(){ return scansHolen(); });
+      scansStand = null;
+      kette.then(function(){ return scansHolen(true); });
     }else{ lokalScans(); }
     scanFertig();
   });
@@ -2772,7 +2884,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   // Solange die Inventur offen ist, alle 20 Sekunden nachsehen, was die anderen gezählt haben.
   window.setInterval(function(){
-    if(sb && !$("ansicht-inventur").hidden && document.visibilityState === "visible") scansHolen();
+    if(sb && !$("ansicht-inventur").hidden && document.visibilityState === "visible") scansHolen(false);
   }, 20000);
 
   // ---------- Anmeldung ----------
@@ -2946,6 +3058,23 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       anmeldungZeigen("Abgemeldet.", "");
     });
   });
+
+  /* Ohne erreichbare Datenbank läuft die Seite weiter — mit den Daten auf dem
+     Gerät. Besser als ein Totalausfall, wenn im Lager das Netz wegbricht. */
+  function geraetemodus(grund){
+    sb = null;
+    angemeldet = null;
+    rechte = ALLES;
+    $("anmelden").hidden = true;
+    $("app").hidden = false;
+    $("knopf-abmelden").hidden = true;
+    $("reiter-rechte").hidden = true;
+    statusSetzen(grund, "lokal");
+    lokalLaden();
+    mengenfelderBauen();
+    stammZeichnen(); leuteZeichnen(); leuteWahlFuellen();
+    trefferZeichnen(); scansZeichnen(); etikettenZeichnen();
+  }
 
   // ---------- Start ----------
   mengenfelderBauen();
