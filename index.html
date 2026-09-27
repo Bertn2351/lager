@@ -1000,7 +1000,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v33</span>
+    <span class="version">v35</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1180,6 +1180,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         <!-- B) Tafel: Bereiche und ihre Zählplätze -->
         <div id="i2-tafel" hidden>
 
+          <div class="i2warnung" id="i2-zu" hidden>
+            <span>🔒</span>
+            <span>Diese Inventur ist <b>abgeschlossen</b>. Es wird nichts mehr gezählt.
+              <span id="i2-zu-wann"></span></span>
+          </div>
+
+
           <!-- Einrichten: Name ändern, löschen, Sichtbarkeit -->
           <div class="i2editor" id="i2-editor" hidden>
             <div class="kopf">
@@ -1233,6 +1240,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
             <button type="button" class="still" id="i2-knopf-summe">Summe für CAO</button>
             <button type="button" class="still" id="i2-knopf-auffrischen">Auffrischen</button>
             <button type="button" class="still" id="i2-knopf-bearbeiten" aria-pressed="false" hidden>Einrichten</button>
+            <button type="button" class="still" id="i2-knopf-abschliessen" hidden>Inventur abschließen</button>
             <span class="meldung" id="i2-tafelmeldung" style="margin-left:auto"></span>
           </div>
 
@@ -1264,6 +1272,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           <div class="modus" role="group" aria-label="Wie wird gescannt">
             <button type="button" id="modus-scanner" aria-pressed="true">Keyence</button>
             <button type="button" id="modus-kamera" aria-pressed="false">Handy-Kamera</button>
+            <button type="button" id="i2-knopf-tastatur" aria-pressed="false">Tastatur sperren</button>
           </div>
 
           <div class="kamerabox" id="kamerabox" hidden>
@@ -1625,7 +1634,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       return;
     }
     $("keinzugang").hidden = true;
-    if(!offen || !erlaubt[offen]) reiterWechseln(ziel);
+    if(!offen || !erlaubt[offen]) reiterOeffnen(ziel);
     stammZeichnen();
   }
 
@@ -1857,11 +1866,23 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("vorschauspalte").hidden = name !== "etikett";
   }
   function inventurVerlassen(){ if(typeof kameraAn !== "undefined" && kameraAn) kameraStoppen(); }
-  $("reiter-etikett").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("etikett"); });
-  $("reiter-artikel").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("artikel"); stammZeichnen(); });
-  $("reiter-leute").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("leute"); leuteZeichnen(); });
-  $("reiter-rechte").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("rechte"); rechteZeichnen(); });
-  $("reiter-inv2").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("inv2"); i2Oeffnen(); });
+
+  /* Umschalten UND füllen. Früher hingen die Ladeaufrufe nur an den Klicks auf
+     die Reiter. Wer aber bloß einen einzigen Bereich freigeschaltet hat, landet
+     nach der Anmeldung automatisch dort, ohne je geklickt zu haben — und sah
+     eine leere Seite. Deshalb geht ab jetzt jeder Wechsel hier durch. */
+  function reiterOeffnen(name){
+    inventurVerlassen();
+    reiterWechseln(name);
+    if(name === "artikel") stammZeichnen();
+    else if(name === "leute") leuteZeichnen();
+    else if(name === "rechte") rechteZeichnen();
+    else if(name === "inv2") i2Oeffnen();
+  }
+
+  ["etikett","artikel","leute","rechte","inv2"].forEach(function(r){
+    $("reiter-" + r).addEventListener("click", function(){ reiterOeffnen(r); });
+  });
 
   // ---------- MHD ----------
   function mhdFormat(roh){
@@ -2845,7 +2866,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("modus-scanner").setAttribute("aria-pressed", kameraAn ? "false" : "true");
     $("i2-feld").hidden = kameraAn;
     $("i2-bereit").hidden = kameraAn;
-    $("i2-knopf-hand").hidden = kameraAn || !darf("handeingabe");
+    i2TastaturAnwenden();
     schreib("pal-scanmodus", kameraAn ? "kamera" : "scanner");
     if(kameraAn){ kameraStarten(); }
     else { kameraStoppen(); i2FeldScharf(); }
@@ -2944,8 +2965,39 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     el.className = "bereit" + (bereit ? "" : " schlaeft");
     el.lastChild.nodeValue = bereit ? "Bereit für die nächste Palette" : "Ins Feld tippen, dann geht es weiter";
   }
+  /* Tastatursperre: Am Handgerät schiebt sich bei jedem Fokus die
+     Bildschirmtastatur über den halben Bildschirm, obwohl getippt gar nicht
+     wird. Gesperrt bekommt das Feld gar keinen Fokus mehr — die Zeichen des
+     Scanners fängt der Zuhörer auf der ganzen Seite ab und schreibt sie
+     hinein. Gescannt wird also genau wie vorher, nur ohne Tastatur. */
+  var i2TastaturAus = lies("pal-i2-tastatur") === "zu";
+
+  function i2TastaturAnwenden(){
+    var feld = $("i2-feld");
+    feld.readOnly = i2TastaturAus;                 // verhindert die Bildschirmtastatur
+    feld.placeholder = i2TastaturAus ? "Scannen — Tastatur ist gesperrt" : "Hier scannen …";
+    var k = $("i2-knopf-tastatur");
+    k.setAttribute("aria-pressed", i2TastaturAus ? "true" : "false");
+    k.textContent = i2TastaturAus ? "Tastatur frei" : "Tastatur sperren";
+    // Von Hand eintragen braucht die Tastatur
+    $("i2-knopf-hand").hidden = !darf("handeingabe") || i2TastaturAus
+      || (typeof kameraAn !== "undefined" && kameraAn);
+    if(i2TastaturAus){ try{ feld.blur(); }catch(e){} }
+    schreib("pal-i2-tastatur", i2TastaturAus ? "zu" : "auf");
+  }
+
+  $("i2-knopf-tastatur").addEventListener("click", function(){
+    i2TastaturAus = !i2TastaturAus;
+    i2TastaturAnwenden();
+    if(!i2TastaturAus) i2FeldScharf();
+    i2Meldung(i2TastaturAus
+      ? "Tastatur gesperrt — Scannen geht weiter, nur von Hand tippen nicht."
+      : "Tastatur frei.", "gut");
+  });
+
   function i2FeldScharf(){
     if($("ansicht-inv2").hidden || $("i2-zaehlen").hidden) return;
+    if(i2TastaturAus) return;
     if(typeof kameraAn !== "undefined" && kameraAn) return;
     if(!$("i2-sicherung").hidden) return;
     var feld = $("i2-feld");
@@ -3008,11 +3060,23 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   }
 
   // ----- A) Inventuren -----
+  var i2InvStand = {};     // inventur_id -> {gesamt, fertig}
+
   function i2InvHolen(){
     if(!sb) return Promise.resolve();
-    return alleZeilen("inventuren", "id,name,status,erstellt_am,erstellt_von,abgeschlossen_am", "erstellt_am")
-      .then(function(daten){
-        i2Inv = daten.slice().reverse();          // neueste oben
+    return Promise.all([
+      alleZeilen("inventuren", "id,name,status,erstellt_am,erstellt_von,abgeschlossen_am", "erstellt_am"),
+      // Ein Zug für alle: damit in der Liste steht, wie weit jede Inventur ist
+      alleZeilen("zaehlplaetze", "inventur_id,status", "")
+    ])
+      .then(function(beides){
+        i2Inv = (beides[0] || []).slice().reverse();          // neueste oben
+        i2InvStand = {};
+        (beides[1] || []).forEach(function(p){
+          if(!i2InvStand[p.inventur_id]) i2InvStand[p.inventur_id] = { gesamt:0, fertig:0 };
+          i2InvStand[p.inventur_id].gesamt++;
+          if(p.status === "fertig") i2InvStand[p.inventur_id].fertig++;
+        });
         i2InvZeichnen();
         i2AnsichtZeigen("start");
         i2Sage("i2-startmeldung", "");
@@ -3034,15 +3098,22 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
       var txt = document.createElement("span"); txt.className = "txt";
       var name = document.createElement("b"); name.textContent = inv.name;
+      var stand = i2InvStand[inv.id] || { gesamt:0, fertig:0 };
       var klein = document.createElement("small");
       klein.textContent = (inv.erstellt_am ? "angelegt " + i2Datum(inv.erstellt_am) : "")
-        + (inv.erstellt_von ? " · " + i2Kurz(inv.erstellt_von) : "");
+        + (inv.erstellt_von ? " · " + i2Kurz(inv.erstellt_von) : "")
+        + (stand.gesamt ? " · " + stand.fertig + " von " + stand.gesamt
+            + (stand.gesamt === 1 ? " Platz fertig" : " Plätzen fertig") : " · noch kein Zählplatz");
       txt.appendChild(name); txt.appendChild(klein);
 
+      /* Drei Zustände, nicht zwei: „offen", „alle Plätze fertig" (da kann man
+         abschließen) und „abgeschlossen". Vorher stand immer nur „offen" da,
+         auch wenn längst alles gezählt war. */
       var fahne = document.createElement("span");
-      var fertig = inv.status === "fertig";
-      fahne.className = "i2fahne " + (fertig ? "fertig" : "offen");
-      fahne.textContent = fertig ? "abgeschlossen" : "offen";
+      var zu = inv.status === "fertig";
+      var durch = stand.gesamt > 0 && stand.fertig === stand.gesamt;
+      fahne.className = "i2fahne " + (zu || durch ? "fertig" : "offen");
+      fahne.textContent = zu ? "abgeschlossen" : (durch ? "alle Plätze fertig" : "offen");
 
       b.appendChild(txt); b.appendChild(fahne);
       b.addEventListener("click", function(){ i2Aktiv = inv; i2TafelLaden(); });
@@ -3107,6 +3178,16 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     box.textContent = "";
     $("i2-knopf-bearbeiten").hidden = !darf("inventur2_bauen");
     $("i2-knopf-summe").hidden = !darf("inventur2_summe");
+
+    // Abgeschlossene Inventur: Schloss zeigen, Zählen sperren
+    var zu = i2Aktiv && i2Aktiv.status === "fertig";
+    $("i2-zu").hidden = !zu;
+    $("i2-zu-wann").textContent = (zu && i2Aktiv.abgeschlossen_am)
+      ? "Abgeschlossen am " + i2Datum(i2Aktiv.abgeschlossen_am) + "."
+      : "";
+    var knopfZu = $("i2-knopf-abschliessen");
+    knopfZu.hidden = !darf("inventur2_bauen");
+    knopfZu.textContent = zu ? "Wieder öffnen" : "Inventur abschließen";
     $("i2-knopf-bearbeiten").setAttribute("aria-pressed", i2Einrichten ? "true" : "false");
     $("i2-knopf-bearbeiten").textContent = i2Einrichten ? "Einrichten beenden" : "Einrichten";
 
@@ -3156,7 +3237,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       box.appendChild(karte);
     });
 
+    // Ohne das Recht zum Einrichten nützt „trag den ersten ein“ nichts — dann
+    // muss dastehen, an wen sich die Person wenden soll.
     $("i2-tafelleer").hidden = i2Plaetze.length > 0;
+    $("i2-tafelleer").textContent = darf("inventur2_bauen")
+      ? "Noch kein Bereich angelegt. Trag unten den ersten ein, zum Beispiel „Tiefkühl“."
+      : "In dieser Inventur ist noch kein Zählplatz angelegt. Das macht, wer die Inventur einrichtet.";
+
     if(versteckt > 0 && !i2Allmacht()){
       var satz = document.createElement("p");
       satz.className = "hinweis";
@@ -3278,8 +3365,20 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       i2EditorRechte[mail] = stand;
 
       var zeile = document.createElement("div"); zeile.className = "i2werzeile";
-      var wer = document.createElement("span"); wer.className = "mail"; wer.textContent = mail;
+      var wer = document.createElement("span"); wer.className = "mail";
+      wer.textContent = nameVon(mail); wer.title = mail;
       zeile.appendChild(wer);
+
+      /* Der Oberchef bekommt keine Häkchen: Angekreuzte Häkchen, die nirgends
+         gespeichert werden, sähen nur so aus, als täten sie etwas. */
+      if(istOberchef(mail)){
+        var immer = document.createElement("span");
+        immer.className = "i2fahne fertig";
+        immer.textContent = "darf immer alles";
+        zeile.appendChild(immer);
+        box.appendChild(zeile);
+        return;
+      }
 
       var kaesten = {};
       [["sehen","sehen"],["bearbeiten","zählen"],["loeschen","löschen"],["aendern","Menge ändern"]]
@@ -3459,6 +3558,43 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   }
 
   $("i2-knopf-auffrischen").addEventListener("click", function(){ i2TafelLaden(); });
+
+  /* Abschließen ist das, was in der Liste „offen" zu „abgeschlossen" macht.
+     Von allein passiert das nicht, auch wenn alle Plätze grün sind — wann eine
+     Inventur zu Ende ist, entscheidet ein Mensch, nicht ein Zähler. */
+  $("i2-knopf-abschliessen").addEventListener("click", function(){
+    if(!sb || !i2Aktiv || !darf("inventur2_bauen")) return;
+    var zu = i2Aktiv.status === "fertig";
+
+    if(zu){
+      if(!window.confirm("„" + i2Aktiv.name + "“ wieder öffnen?\n\nDanach kann wieder gezählt werden.")) return;
+      i2InvStatus("offen", null);
+      return;
+    }
+
+    var offen = i2Plaetze.filter(function(p){ return p.status !== "fertig"; });
+    var frage = "„" + i2Aktiv.name + "“ abschließen?\n\n";
+    frage += offen.length
+      ? offen.length + (offen.length === 1 ? " Zählplatz ist" : " Zählplätze sind")
+        + " noch nicht fertig gemeldet:\n" + offen.slice(0, 8).map(function(p){
+            return "   · " + p.bereich + " · " + p.name;
+          }).join("\n") + (offen.length > 8 ? "\n   · …" : "") + "\n\n"
+      : "Alle Zählplätze sind fertig.\n\n";
+    frage += "Danach wird nicht mehr gezählt. Gelöscht wird nichts, und du kannst sie jederzeit wieder öffnen.";
+    if(!window.confirm(frage)) return;
+    i2InvStatus("fertig", new Date().toISOString());
+  });
+
+  function i2InvStatus(status, wann){
+    var daten = { status:status, abgeschlossen_am:wann };
+    sb.from("inventuren").update(daten).eq("id", i2Aktiv.id).then(function(res){
+      if(res.error){ i2Sage("i2-tafelmeldung", "Nicht gespeichert: " + res.error.message, "fehler"); return; }
+      i2Aktiv.status = status;
+      i2Aktiv.abgeschlossen_am = wann;
+      i2Sage("i2-tafelmeldung", status === "fertig" ? "Inventur abgeschlossen." : "Inventur wieder offen.", "gut");
+      i2TafelLaden();
+    }).catch(function(){ i2Sage("i2-tafelmeldung", "Nicht gespeichert — Verbindung prüfen.", "fehler"); });
+  }
 
   // Summe über die ganze Inventur — eine Zeile je Artikel, fertig für CAO
   $("i2-knopf-summe").addEventListener("click", function(){
@@ -3809,6 +3945,11 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   }
 
   function i2PlatzOeffnen(p){
+    if(i2Aktiv && i2Aktiv.status === "fertig"){
+      i2Sage("i2-tafelmeldung", "„" + i2Aktiv.name + "“ ist abgeschlossen — hier wird nicht mehr gezählt."
+        + (darf("inventur2_bauen") ? " Mit „Wieder öffnen“ kannst du sie freigeben." : ""), "fehler");
+      return;
+    }
     if(!i2DarfZaehlen(p)){
       i2Sage("i2-tafelmeldung", "„" + p.name + "“ ist für dich nicht zum Zählen freigegeben.", "fehler");
       return;
@@ -3845,7 +3986,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("i2-wozusatz").textContent = (i2Aktiv ? i2Aktiv.name + " · " : "") + i2Platz.bereich;
     var menge = i2Mengensumme(i2PlatzScans);
     $("i2-stand").textContent = menge;
-    $("i2-knopf-hand").hidden = !darf("handeingabe") || (typeof kameraAn !== "undefined" && kameraAn);
+    i2TastaturAnwenden();
 
     i2SummenZeichnen();
     i2KorbZeichnen();
@@ -4026,7 +4167,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var feld = $("i2-feld");
     feld.value = "";
     i2LetzteLaenge = 0;
-    feld.focus();
+    if(!i2TastaturAus) feld.focus();
     i2Bereit(true);
   }
 
@@ -4109,6 +4250,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     i2FeldFertig();
   });
 
+  $("i2-feld").addEventListener("focus", function(){
+    if(i2TastaturAus){ try{ $("i2-feld").blur(); }catch(e){} }
+  });
+
   $("i2-feld").addEventListener("blur", function(){
     window.setTimeout(function(){
       var a = document.activeElement;
@@ -4171,7 +4316,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     }
     if(e.key.length !== 1) return;
     e.preventDefault();
-    feld.focus();
+    if(!i2TastaturAus) feld.focus();       // gesperrt: kein Fokus, keine Tastatur
     feld.value += e.key;
     i2VomScanner = true;
     feld.dispatchEvent(new Event("input", { bubbles:true }));
