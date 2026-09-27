@@ -638,6 +638,42 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
 .i2pfad .schieb{margin-left:auto}
 
 .i2liste{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+.i2liste li{display:flex; gap:7px; align-items:stretch}
+.i2liste li > .weg{flex:none; color:var(--kritisch); border-color:color-mix(in srgb, var(--kritisch) 40%, var(--kante))}
+
+/* Differenzliste — der eigentliche Zweck einer Inventur: wo stimmt es nicht */
+.i2diff{border:1px solid var(--kante-hell); border-radius:11px; background:var(--flaeche-2);
+  overflow:hidden; margin-top:4px}
+.diffkopf{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 13px;
+  background:var(--flaeche-3); border-bottom:1px solid var(--kante)}
+.diffkopf > span:first-child{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--leise)}
+.diffkopf .diffzahl{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--gedaempft)}
+.diffkopf button{margin-left:0}
+.diffkopf button:nth-of-type(1){margin-left:auto}
+.i2diffliste{list-style:none; margin:0; padding:0; max-height:420px; overflow:auto}
+.i2diffliste li{display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:9px 13px; border-bottom:1px solid var(--kante)}
+.i2diffliste li:last-child{border-bottom:0}
+.i2diffliste .dcode{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:13px;
+  background:var(--grund); border:1px solid var(--kante-hell); border-radius:7px;
+  padding:4px 9px; font-variant-numeric:tabular-nums; white-space:nowrap}
+.i2diffliste .dname{flex:1; min-width:120px; font-size:12.5px; color:var(--gedaempft); overflow-wrap:anywhere}
+.i2diffliste .dzahlen{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--leise);
+  font-variant-numeric:tabular-nums; white-space:nowrap}
+.i2diffliste .ddiff{font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:14px;
+  font-variant-numeric:tabular-nums; white-space:nowrap; min-width:64px; text-align:right;
+  margin-left:auto}
+.i2diffliste .ddiff.mehr{color:var(--akzent-weich)}
+.i2diffliste .ddiff.weniger{color:var(--kritisch)}
+.i2diffliste li.fehlt .dcode{border-color:color-mix(in srgb, var(--kritisch) 55%, var(--kante))}
+@media (max-width:700px){
+  .diffkopf{padding:8px 10px; gap:7px}
+  .i2diffliste li{padding:7px 10px; gap:8px}
+  .i2diffliste .dcode{font-size:11.5px; padding:3px 7px}
+  .i2diffliste .dname{font-size:11px; min-width:90px}
+  .i2diffliste .dzahlen{font-size:10px}
+  .i2diffliste .ddiff{font-size:12.5px; min-width:52px}
+}
 .i2zeile{display:flex; align-items:center; gap:11px; background:var(--flaeche-2);
   border:1px solid var(--kante); border-radius:10px; padding:11px 13px; text-align:left;
   color:var(--tinte); font:inherit; cursor:pointer; width:100%}
@@ -1000,7 +1036,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v35</span>
+    <span class="version">v36</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1161,6 +1197,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
             <div class="titel"><span class="nr">1</span><span>Inventur wählen</span></div>
             <ul class="i2liste" id="i2-invliste"></ul>
             <p class="hinweis" id="i2-invleer" hidden>Noch keine Inventur angelegt.</p>
+            <button type="button" class="still" id="i2-inv-alte" hidden>Abgeschlossene zeigen</button>
           </div>
           <div class="schritt" id="i2-invneu" hidden>
             <div class="titel"><span class="nr">2</span><span>Neue Inventur</span></div>
@@ -1234,6 +1271,17 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
             <p class="hinweis">Statt einer Liste geht auch eine Spanne: <b>1-8</b> wird zu
               Ebene 1 … Ebene 8, <b>Regal 1-8</b> zu Regal 1 … Regal 8.
               Lässt du das Feld leer, bekommt der Bereich einen einzigen Platz.</p>
+
+            <div class="i2neu" style="margin-top:4px">
+              <div>
+                <label for="i2-vorlage">Oder alles aus einer früheren Inventur übernehmen</label>
+                <select id="i2-vorlage"></select>
+              </div>
+              <button type="button" class="still" id="i2-knopf-vorlage">Struktur übernehmen</button>
+            </div>
+            <p class="hinweis">Kopiert alle Bereiche und Zählplätze <b>samt Rechten</b> —
+              alles steht wieder auf „offen“, gezählt ist nichts. Was hier schon angelegt ist,
+              bleibt stehen; doppelte Namen werden übersprungen.</p>
           </div>
 
           <div style="display:flex; gap:9px; flex-wrap:wrap; align-items:center">
@@ -1241,7 +1289,19 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
             <button type="button" class="still" id="i2-knopf-auffrischen">Auffrischen</button>
             <button type="button" class="still" id="i2-knopf-bearbeiten" aria-pressed="false" hidden>Einrichten</button>
             <button type="button" class="still" id="i2-knopf-abschliessen" hidden>Inventur abschließen</button>
+            <button type="button" class="still" id="i2-knopf-differenz" hidden>Differenzen</button>
             <span class="meldung" id="i2-tafelmeldung" style="margin-left:auto"></span>
+          </div>
+
+          <div class="i2diff" id="i2-differenz" hidden>
+            <div class="diffkopf">
+              <span>Differenzen zum Sollbestand</span>
+              <span class="diffzahl" id="i2-diff-zahl"></span>
+              <button type="button" class="still" id="i2-diff-kopieren">Kopieren</button>
+              <button type="button" class="still" id="i2-diff-zu">Schließen</button>
+            </div>
+            <ul class="i2diffliste" id="i2-diffliste"></ul>
+            <p class="hinweis" id="i2-diff-hinweis"></p>
           </div>
 
           <div class="sicherung" id="i2-sicherung" hidden>
@@ -3088,10 +3148,24 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       });
   }
 
+  var i2AlteZeigen = false;    // abgeschlossene Inventuren einklappen
+
   function i2InvZeichnen(){
     var ul = $("i2-invliste");
     ul.textContent = "";
-    i2Inv.forEach(function(inv){
+
+    /* Abgeschlossene stapeln sich sonst für immer in der Liste. Sie bleiben
+       aber da — weggeklappt ist nicht gelöscht. */
+    var alte = i2Inv.filter(function(inv){ return inv.status === "fertig"; });
+    var zeigen = i2AlteZeigen ? i2Inv : i2Inv.filter(function(inv){ return inv.status !== "fertig"; });
+
+    var knopfAlt = $("i2-inv-alte");
+    knopfAlt.hidden = alte.length === 0;
+    knopfAlt.textContent = i2AlteZeigen
+      ? "Abgeschlossene ausblenden"
+      : alte.length + (alte.length === 1 ? " abgeschlossene Inventur zeigen" : " abgeschlossene Inventuren zeigen");
+
+    zeigen.forEach(function(inv){
       var li = document.createElement("li");
       var b = document.createElement("button");
       b.type = "button"; b.className = "i2zeile";
@@ -3118,10 +3192,137 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       b.appendChild(txt); b.appendChild(fahne);
       b.addEventListener("click", function(){ i2Aktiv = inv; i2TafelLaden(); });
       li.appendChild(b);
+
+      if(darf("inventur2_bauen")){
+        var weg = document.createElement("button");
+        weg.type = "button"; weg.className = "still weg"; weg.textContent = "Löschen";
+        weg.addEventListener("click", function(){ i2InvLoeschen(inv); });
+        li.appendChild(weg);
+      }
       ul.appendChild(li);
     });
     $("i2-invleer").hidden = i2Inv.length > 0;
+    i2VorlagenFuellen();
   }
+
+  $("i2-inv-alte").addEventListener("click", function(){
+    i2AlteZeigen = !i2AlteZeigen;
+    i2InvZeichnen();
+  });
+
+  /* Eine ganze Inventur zu löschen nimmt alles mit: Zählplätze, Notizen und
+     jeden Scan, der daran hängt. Das kann nicht aus Versehen passieren dürfen —
+     darum erst die genaue Zahl zeigen und dann den Namen abtippen lassen. */
+  function i2InvLoeschen(inv){
+    if(!sb || !darf("inventur2_bauen")) return;
+    i2Sage("i2-startmeldung", "Wird nachgezählt …");
+
+    alleZeilen("scans", "id", "", function(q){ return q.eq("inventur_id", inv.id); })
+      .then(function(scans){
+        var wie = scans.length;
+        var stand = i2InvStand[inv.id] || { gesamt:0 };
+        var frage = "„" + inv.name + "“ endgültig löschen?\n\n"
+          + "Das entfernt unwiderruflich:\n"
+          + "   · " + stand.gesamt + (stand.gesamt === 1 ? " Zählplatz" : " Zählplätze") + "\n"
+          + "   · " + wie + (wie === 1 ? " Scan" : " Scans") + " samt Papierkorb\n"
+          + "   · alle Notizen dieser Inventur\n\n";
+        frage += wie > 0
+          ? "Sichere vorher die Zahlen über „Summe für CAO“ — danach sind sie weg.\n\n"
+          : "Es ist nichts darauf gezählt.\n\n";
+        frage += "Tipp zum Bestätigen den Namen ab:";
+
+        var antwort = window.prompt(frage, "");
+        if(antwort === null){ i2Sage("i2-startmeldung", ""); return; }
+        if(String(antwort).trim() !== inv.name){
+          i2Sage("i2-startmeldung", "Name stimmt nicht — es wurde nichts gelöscht.", "fehler");
+          return;
+        }
+
+        i2Sage("i2-startmeldung", "Wird gelöscht …");
+        // Reihenfolge: erst die Kinder, zuletzt die Inventur selbst
+        return sb.from("scans").delete().eq("inventur_id", inv.id)
+          .then(function(r1){
+            if(r1.error) throw r1.error;
+            return sb.from("notizen").delete().eq("inventur_id", inv.id).then(function(){});
+          })
+          .then(function(){ return sb.from("zaehlplaetze").delete().eq("inventur_id", inv.id); })
+          .then(function(r3){
+            if(r3 && r3.error) throw r3.error;
+            return sb.from("inventuren").delete().eq("id", inv.id);
+          })
+          .then(function(r4){
+            if(r4 && r4.error) throw r4.error;
+            if(i2Aktiv && i2Aktiv.id === inv.id){ i2Aktiv = null; i2Platz = null; }
+            i2Sage("i2-startmeldung", "„" + inv.name + "“ gelöscht.", "gut");
+            return i2InvHolen();
+          });
+      })
+      .catch(function(e){
+        i2Sage("i2-startmeldung", "Nicht gelöscht: " + ((e && e.message) || e), "fehler");
+      });
+  }
+
+  // ----- Struktur aus einer früheren Inventur übernehmen -----
+  function i2VorlagenFuellen(){
+    var sel = $("i2-vorlage");
+    if(!sel) return;
+    var vorher = sel.value;
+    sel.textContent = "";
+    var leer = document.createElement("option");
+    leer.value = ""; leer.textContent = "— auswählen —";
+    sel.appendChild(leer);
+    i2Inv.forEach(function(inv){
+      if(i2Aktiv && inv.id === i2Aktiv.id) return;        // nicht aus sich selbst
+      var stand = i2InvStand[inv.id] || { gesamt:0 };
+      if(!stand.gesamt) return;                            // ohne Plätze nichts zu holen
+      var o = document.createElement("option");
+      o.value = inv.id;
+      o.textContent = inv.name + " (" + stand.gesamt + (stand.gesamt === 1 ? " Platz)" : " Plätze)");
+      sel.appendChild(o);
+    });
+    if(vorher) sel.value = vorher;
+  }
+
+  $("i2-knopf-vorlage").addEventListener("click", function(){
+    if(!sb || !i2Aktiv || !darf("inventur2_bauen")) return;
+    var quelleId = $("i2-vorlage").value;
+    if(!quelleId){ i2Sage("i2-tafelmeldung", "Bitte erst eine Inventur auswählen.", "fehler"); return; }
+    var quelle = i2Inv.filter(function(x){ return x.id === quelleId; })[0];
+
+    i2Sage("i2-tafelmeldung", "Struktur wird geholt …");
+    alleZeilen("zaehlplaetze", "bereich,name,sortierung,sehen,bearbeiten,loeschen,aendern", "sortierung",
+      function(q){ return q.eq("inventur_id", quelleId); })
+      .then(function(vorlage){
+        if(!vorlage.length){ i2Sage("i2-tafelmeldung", "Dort ist kein Zählplatz angelegt.", "fehler"); return; }
+
+        // Was es hier schon gibt, wird nicht doppelt angelegt
+        var da = {};
+        i2Plaetze.forEach(function(p){ da[p.bereich + " " + p.name] = true; });
+        var neu = vorlage.filter(function(p){ return !da[p.bereich + " " + p.name]; });
+        if(!neu.length){ i2Sage("i2-tafelmeldung", "Diese Struktur steht hier schon.", "fehler"); return; }
+
+        if(!window.confirm(neu.length + (neu.length === 1 ? " Zählplatz" : " Zählplätze") + " aus „"
+          + (quelle ? quelle.name : "der Vorlage") + "“ übernehmen?\n\n"
+          + "Mit allen Rechten, alles auf „offen“. Gezählt wird nichts mitkopiert.")) {
+          i2Sage("i2-tafelmeldung", "");
+          return;
+        }
+
+        var basis = i2Plaetze.length;
+        var zeilen = neu.map(function(p, i){
+          return { inventur_id:i2Aktiv.id, bereich:p.bereich, name:p.name, status:"offen",
+                   sortierung: basis + i,
+                   sehen:p.sehen || null, bearbeiten:p.bearbeiten || null,
+                   loeschen:p.loeschen || null, aendern:p.aendern || null };
+        });
+        return sb.from("zaehlplaetze").insert(zeilen).then(function(res){
+          if(res.error){ i2Sage("i2-tafelmeldung", "Nicht übernommen: " + res.error.message, "fehler"); return; }
+          i2Sage("i2-tafelmeldung", neu.length + (neu.length === 1 ? " Platz" : " Plätze") + " übernommen.", "gut");
+          i2TafelLaden();
+        });
+      })
+      .catch(function(e){ i2Sage("i2-tafelmeldung", "Nicht übernommen: " + ((e && e.message) || e), "fehler"); });
+  });
 
   $("i2-knopf-invneu").addEventListener("click", function(){
     if(!darf("inventur2_bauen") || !sb) return;
@@ -3188,6 +3389,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var knopfZu = $("i2-knopf-abschliessen");
     knopfZu.hidden = !darf("inventur2_bauen");
     knopfZu.textContent = zu ? "Wieder öffnen" : "Inventur abschließen";
+    $("i2-knopf-differenz").hidden = !darf("bestand");
+    i2VorlagenFuellen();
     $("i2-knopf-bearbeiten").setAttribute("aria-pressed", i2Einrichten ? "true" : "false");
     $("i2-knopf-bearbeiten").textContent = i2Einrichten ? "Einrichten beenden" : "Einrichten";
 
@@ -3643,6 +3846,116 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   });
 
   $("i2-sicherung-zu").addEventListener("click", function(){ $("i2-sicherung").hidden = true; });
+
+  /* ---------- Differenzen ----------
+     Das Ergebnis einer Inventur ist nicht die gezählte Menge, sondern die
+     Abweichung: wo steht zu wenig, wo zu viel, und was wurde gar nicht
+     gefunden. Sortiert nach der größten Abweichung, damit die Suche dort
+     beginnt, wo am meisten fehlt. */
+  var i2DiffText = "";
+
+  $("i2-knopf-differenz").addEventListener("click", function(){
+    if(!sb || !i2Aktiv) return;
+    if(!darf("bestand")){
+      i2Sage("i2-tafelmeldung", "Der Sollbestand ist für dich nicht freigegeben.", "fehler");
+      return;
+    }
+    i2Sage("i2-tafelmeldung", "Differenzen werden gerechnet …");
+
+    alleZeilen("scans", "menge,nr", "",
+      function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
+      .then(function(daten){
+        var gezaehlt = {};
+        daten.forEach(function(s){ gezaehlt[s.nr] = (gezaehlt[s.nr] || 0) + (s.menge || 0); });
+
+        var zeilen = [];
+        // 1. Alles Gezählte gegen den Sollbestand
+        Object.keys(gezaehlt).forEach(function(nr){
+          var a = artikelZuCode(nr);
+          var soll = (a && a.bestand != null && isFinite(a.bestand)) ? Number(a.bestand) : null;
+          zeilen.push({ nr:nr, ist:gezaehlt[nr], soll:soll,
+                        diff: soll === null ? null : gezaehlt[nr] - soll,
+                        name: a ? a.bezeichnung : "", fehlt:false });
+        });
+        // 2. Artikel mit Sollbestand, die gar nicht gezählt wurden
+        artikel.forEach(function(a){
+          if(!a.nr || gezaehlt[a.nr.toUpperCase()] != null) return;
+          if(a.bestand == null || !isFinite(a.bestand) || Number(a.bestand) === 0) return;
+          zeilen.push({ nr:a.nr.toUpperCase(), ist:0, soll:Number(a.bestand),
+                        diff: -Number(a.bestand), name:a.bezeichnung, fehlt:true });
+        });
+
+        // Nur was abweicht, größte Abweichung zuerst
+        var abweichend = zeilen.filter(function(z){ return z.diff !== null && z.diff !== 0; });
+        abweichend.sort(function(x, y){ return Math.abs(y.diff) - Math.abs(x.diff); });
+
+        var ohneSoll = zeilen.filter(function(z){ return z.soll === null; }).length;
+        var passt = zeilen.filter(function(z){ return z.diff === 0; }).length;
+
+        var ul = $("i2-diffliste");
+        ul.textContent = "";
+        abweichend.slice(0, 500).forEach(function(z){
+          var li = document.createElement("li");
+          if(z.fehlt) li.className = "fehlt";
+
+          var code = document.createElement("span"); code.className = "dcode"; code.textContent = z.nr;
+          li.appendChild(code);
+
+          var name = document.createElement("span"); name.className = "dname";
+          name.textContent = darf("artikelname") ? (z.name || "nicht im Artikelstamm") : "";
+          li.appendChild(name);
+
+          var zahlen = document.createElement("span"); zahlen.className = "dzahlen";
+          zahlen.textContent = z.fehlt ? "nicht gezählt · Soll " + z.soll
+                                       : "gezählt " + z.ist + " · Soll " + z.soll;
+          li.appendChild(zahlen);
+
+          var d = document.createElement("span");
+          d.className = "ddiff " + (z.diff > 0 ? "mehr" : "weniger");
+          d.textContent = (z.diff > 0 ? "+" : "") + z.diff;
+          li.appendChild(d);
+
+          ul.appendChild(li);
+        });
+
+        $("i2-diff-zahl").textContent = abweichend.length
+          ? abweichend.length + (abweichend.length === 1 ? " Abweichung" : " Abweichungen")
+          : "keine Abweichung";
+        $("i2-diff-hinweis").textContent =
+          (passt ? passt + (passt === 1 ? " Artikel stimmt genau. " : " Artikel stimmen genau. ") : "")
+          + (ohneSoll ? ohneSoll + (ohneSoll === 1 ? " gezählter Artikel hat" : " gezählte Artikel haben")
+              + " keinen Sollbestand hinterlegt und fehlt hier. " : "")
+          + (abweichend.length > 500 ? "Nur die 500 größten Abweichungen sind aufgelistet." : "");
+
+        i2DiffText = abweichend.map(function(z){
+          return z.nr + "\t" + z.ist + "\t" + z.soll + "\t" + (z.diff > 0 ? "+" : "") + z.diff;
+        }).join("\n");
+
+        $("i2-differenz").hidden = false;
+        i2Sage("i2-tafelmeldung", "");
+      })
+      .catch(function(e){ i2Sage("i2-tafelmeldung", "Nicht gerechnet: " + ((e && e.message) || e), "fehler"); });
+  });
+
+  $("i2-diff-zu").addEventListener("click", function(){ $("i2-differenz").hidden = true; });
+
+  $("i2-diff-kopieren").addEventListener("click", function(){
+    if(!i2DiffText){ i2Sage("i2-tafelmeldung", "Es gibt keine Abweichung zum Kopieren.", "gut"); return; }
+    var text = "Artikel\tGezählt\tSoll\tDifferenz\n" + i2DiffText;
+    try{
+      navigator.clipboard.writeText(text).then(
+        function(){ i2Sage("i2-tafelmeldung", "Differenzliste kopiert.", "gut"); },
+        function(){ i2DiffAlsText(text); });
+    }catch(e){ i2DiffAlsText(text); }
+  });
+
+  // Klappt das Kopieren nicht, kommt der Text ins Textfeld zum Markieren
+  function i2DiffAlsText(text){
+    $("i2-sicherungstext").value = text;
+    $("i2-sicherung").hidden = false;
+    $("i2-notizliste").hidden = true;
+    i2Sage("i2-tafelmeldung", "Kopieren ging nicht — Text unten von Hand markieren.", "gut");
+  }
 
   // Auf- oder zugeklappt bleibt so, wie es zuletzt war
   $("i2-uebersicht").addEventListener("toggle", function(){
