@@ -243,6 +243,28 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
   .notinhalt svg{animation:none}
 }
 
+/* Quittung nach jedem Scan: der ganze Bildschirm blitzt ganz kurz grün oder
+   rot. Im Lager schaut niemand auf eine Textzeile — ein Haken über den halben
+   Bildschirm sieht man auch im Vorbeigehen. */
+.quittung{position:fixed; inset:0; z-index:88; display:grid; place-items:center;
+  pointer-events:none; color:#fff; animation:quittungAn .5s ease-out forwards}
+.quittung.gut{background:rgba(20,138,96,.9)}
+.quittung.fehler{background:rgba(176,32,24,.92)}
+.quittinhalt{display:grid; justify-items:center; gap:10px; padding:22px; text-align:center}
+.quittinhalt svg{width:112px; height:112px; animation:quittungZoom .5s cubic-bezier(.2,.9,.3,1)}
+.quittinhalt b{font-family:Archivo,"IBM Plex Sans",sans-serif; font-size:24px;
+  letter-spacing:-.01em; overflow-wrap:anywhere; max-width:80vw}
+@keyframes quittungAn{0%{opacity:0} 14%{opacity:1} 52%{opacity:1} 100%{opacity:0}}
+@keyframes quittungZoom{0%{transform:scale(.55)} 48%{transform:scale(1.1)} 100%{transform:scale(1)}}
+@media (max-width:560px){
+  .quittinhalt svg{width:84px; height:84px}
+  .quittinhalt b{font-size:19px}
+}
+@media (prefers-reduced-motion:reduce){
+  .quittung{animation:none; opacity:1}
+  .quittinhalt svg{animation:none}
+}
+
 /* ---------- Kopfzeile ---------- */
 .kopf{
   position:sticky; top:0; z-index:5;
@@ -657,6 +679,27 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   background:color-mix(in srgb, var(--gut) 7%, var(--flaeche-2))}
 .i2platz.fertig .pzustand{color:var(--gut)}
 .i2platz.ich{box-shadow:0 0 0 2px color-mix(in srgb, var(--akzent) 32%, transparent)}
+.i2platz.pause{border-color:var(--kante-hell); border-style:dashed}
+.i2platz.pause .pzustand{color:var(--akzent-weich)}
+.i2platz.gesperrt{opacity:.5; cursor:not-allowed}
+.i2platz.aendern{border-style:dashed; border-color:var(--akzent-weich)}
+.i2platz .pstift{font-size:9.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--akzent-weich)}
+
+/* Einrichten: Name ändern, löschen, und wer darf sehen bzw. zählen */
+.i2editor{border:1px solid var(--akzent); border-radius:11px; padding:12px 13px;
+  background:color-mix(in srgb, var(--akzent) 7%, var(--flaeche-2)); display:grid; gap:11px}
+.i2editor > .kopf{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.i2editor > .kopf b{font-size:14px; flex:1; min-width:0; overflow-wrap:anywhere}
+.i2editor .wer{display:grid; gap:5px; max-height:230px; overflow:auto;
+  border:1px solid var(--kante); border-radius:9px; padding:8px 9px; background:var(--grund)}
+.i2werzeile{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12.5px}
+.i2werzeile .mail{flex:1; min-width:110px; overflow-wrap:anywhere; font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px; color:var(--gedaempft)}
+.i2werzeile label{display:flex; align-items:center; gap:5px; font-size:11px; text-transform:none;
+  letter-spacing:0; color:var(--tinte); cursor:pointer; margin:0}
+.i2werzeile input{width:auto; margin:0; accent-color:var(--akzent)}
+.i2editor .knoepfe{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.i2editor .knoepfe .weg{margin-left:auto; color:var(--kritisch); border-color:currentColor}
 
 .i2neu{display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end}
 .i2neu > div{flex:1 1 150px; min-width:0}
@@ -896,6 +939,16 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </footer>
 </div>
 
+<div class="quittung" id="quittung" hidden aria-hidden="true">
+  <div class="quittinhalt">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path id="quitt-zeichen" d="M4 12.6 9.2 18 20 6.6"/>
+    </svg>
+    <b id="quitt-text"></b>
+  </div>
+</div>
+
 <div class="notblitz" id="notblitz" hidden aria-hidden="true">
   <div class="notinhalt">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
@@ -928,7 +981,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v30</span>
+    <span class="version">v31</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1195,6 +1248,32 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
         <!-- B) Tafel: Bereiche und ihre Zählplätze -->
         <div id="i2-tafel" hidden>
+
+          <!-- Einrichten: Name ändern, löschen, Sichtbarkeit -->
+          <div class="i2editor" id="i2-editor" hidden>
+            <div class="kopf">
+              <b id="i2-editor-titel">Bearbeiten</b>
+              <span class="i2fahne" id="i2-editor-art"></span>
+            </div>
+            <div>
+              <label for="i2-editor-name">Name</label>
+              <input id="i2-editor-name" autocomplete="off">
+            </div>
+            <div>
+              <label>Wer darf das sehen und zählen</label>
+              <div class="wer" id="i2-editor-wer"></div>
+              <p class="hinweis" id="i2-editor-werhinweis">Kein Haken gesetzt heißt:
+                alle dürfen. Sobald du bei „sehen“ jemanden ankreuzt, sehen nur noch
+                die Angekreuzten diesen Platz.</p>
+            </div>
+            <div class="knoepfe">
+              <button type="button" class="tat" id="i2-editor-speichern">Speichern</button>
+              <button type="button" class="still" id="i2-editor-abbrechen">Abbrechen</button>
+              <button type="button" class="still weg" id="i2-editor-loeschen">Löschen</button>
+            </div>
+            <p class="meldung" id="i2-editor-meldung"></p>
+          </div>
+
           <div id="i2-bereiche"></div>
           <p class="hinweis" id="i2-tafelleer" hidden>Noch kein Bereich angelegt.
             Trag unten den ersten ein, zum Beispiel „Tiefkühl“.</p>
@@ -1220,6 +1299,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           <div style="display:flex; gap:9px; flex-wrap:wrap; align-items:center">
             <button type="button" class="still" id="i2-knopf-summe">Summe für CAO</button>
             <button type="button" class="still" id="i2-knopf-auffrischen">Auffrischen</button>
+            <button type="button" class="still" id="i2-knopf-bearbeiten" aria-pressed="false" hidden>Einrichten</button>
             <span class="meldung" id="i2-tafelmeldung" style="margin-left:auto"></span>
           </div>
 
@@ -1269,11 +1349,14 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
           <div style="display:flex; gap:9px; flex-wrap:wrap; align-items:center">
             <button type="button" class="tat" id="i2-knopf-fertig">Platz fertig</button>
+            <button type="button" class="still" id="i2-knopf-pause">Pause machen</button>
             <button type="button" class="still" id="i2-knopf-zurueck">Zurück zur Tafel</button>
             <span class="hinweis" id="i2-zaehler" style="margin-left:auto">Noch nichts gescannt.</span>
           </div>
           <p class="hinweis">Jeder Scan gehört zu diesem Platz. „Platz fertig“ macht ihn auf
-            der Tafel grün — dann weiß jeder, dass hier gezählt ist.</p>
+            der Tafel grün — dann weiß jeder, dass hier gezählt ist.
+            „Pause machen“ legt ihn zurück auf die Tafel, ohne ihn fertig zu melden:
+            gezählt bleibt gezählt, jeder sieht, dass hier noch etwas offen ist.</p>
         </div>
 
       </div>
@@ -1482,6 +1565,14 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
                 inventur_leeren:true, gruppe_loeschen:true, artikel:true,
                 artikel_aendern:true, mitarbeiter:true, verwaltung:true };
 
+  /* Ein Zugang, der immer alles darf und den niemand entfernen kann — damit
+     sich niemand aus dem eigenen System aussperrt. Häkchen bringen bei ihm
+     nichts, er bekommt ohnehin ALLES. */
+  var OBERCHEF = "admin@gmail.com";
+  function istOberchef(mail){
+    return String(mail === undefined ? angemeldet : mail || "").toLowerCase() === OBERCHEF;
+  }
+
   var rechte = {};               // was ICH darf
   var rechteListe = [];          // {email, bereiche}
   var rechteLeer = true;         // noch niemand eingetragen -> Ersteinrichtung
@@ -1491,7 +1582,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   function rechteHolen(){
     if(!sb){ rechte = ALLES; rechteLeer = true; return Promise.resolve(); }
     return sb.from("rechte").select("email,bereiche").limit(200).then(function(res){
-      if(res.error){ rechte = GRUNDRECHTE; return; }
+      if(res.error){ rechte = istOberchef() ? ALLES : GRUNDRECHTE; return; }
       rechteListe = (res.data || []).map(function(r){
         return { email:(r.email || "").toLowerCase(), bereiche:r.bereiche || {} };
       });
@@ -1515,7 +1606,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       });
       anzeige.groesse = (meiner && meiner.bereiche.codegroesse) || "normal";
       anzeige.farbe   = (meiner && meiner.bereiche.codefarbe)   || "hell";
-    }).catch(function(){ rechte = GRUNDRECHTE; });
+      if(istOberchef()) rechte = ALLES;     // dieser Zugang kann nicht beschnitten werden
+    }).catch(function(){ rechte = istOberchef() ? ALLES : GRUNDRECHTE; });
   }
 
   // Bereiche ein- und ausblenden, je nachdem was erlaubt ist
@@ -1577,6 +1669,21 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       if(r.email === String(angemeldet || "").toLowerCase()){
         var ich = document.createElement("span"); ich.className = "ichselbst"; ich.textContent = "das bist du";
         kopf.appendChild(ich);
+      }
+      // Der Oberchef-Zugang bleibt unangetastet: kein Entfernen, keine Häkchen
+      if(istOberchef(r.email)){
+        var fest = document.createElement("span");
+        fest.className = "ichselbst"; fest.textContent = "darf immer alles";
+        kopf.appendChild(fest);
+        karte.appendChild(kopf);
+        var satz = document.createElement("p");
+        satz.className = "hinweis";
+        satz.style.padding = "0 2px 2px";
+        satz.textContent = "Dieser Zugang hat alle Rechte und lässt sich nicht entfernen — "
+          + "damit sich niemand aussperren kann.";
+        karte.appendChild(satz);
+        box.appendChild(karte);
+        return;
       }
       var weg = document.createElement("button");
       weg.className = "still weg"; weg.textContent = "Entfernen";
@@ -3575,6 +3682,40 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     return liste.reduce(function(s, x){ return s + (x.menge || 0); }, 0);
   }
 
+  /* Der ganze Bildschirm blitzt ganz kurz — grün mit Haken, rot mit Kreuz.
+     Ein Rahmen um das Eingabefeld übersieht man beim Zählen, das hier nicht. */
+  var quittUhr = null;
+  var HAKEN = "M4 12.8 9.3 18.2 20 6.8", KREUZ = "M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5";
+  function quittung(gut, text){
+    var el = $("quittung");
+    window.clearTimeout(quittUhr);
+    $("quitt-zeichen").setAttribute("d", gut ? HAKEN : KREUZ);
+    $("quitt-text").textContent = text || "";
+    el.className = "quittung " + (gut ? "gut" : "fehler");
+    el.hidden = true;
+    void el.offsetWidth;          // damit zwei Scans hintereinander beide blitzen
+    el.hidden = false;
+    quittUhr = window.setTimeout(function(){ el.hidden = true; }, 500);
+  }
+
+  // Wer alles einrichten darf, sieht auch alles — sonst könnte er nichts verwalten
+  function i2Allmacht(){ return darf("inventur2_bauen") || istOberchef(); }
+  function i2InListe(liste){
+    return !!liste && liste.length > 0 && liste.indexOf(String(angemeldet || "").toLowerCase()) !== -1;
+  }
+  // Keine Auswahl getroffen heißt: alle dürfen. Erst ein Haken schränkt ein.
+  function i2DarfSehen(p){
+    if(i2Allmacht()) return true;
+    if(!p.sehen || !p.sehen.length) return true;
+    return i2InListe(p.sehen);
+  }
+  function i2DarfZaehlen(p){
+    if(i2Allmacht()) return true;
+    if(!i2DarfSehen(p)) return false;
+    if(!p.bearbeiten || !p.bearbeiten.length) return true;
+    return i2InListe(p.bearbeiten);
+  }
+
   var i2BlitzUhr = null;
   function i2Blitz(treffer){
     var feld = $("i2-feld");
@@ -3719,7 +3860,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(!sb || !i2Aktiv) return Promise.resolve();
     i2Platz = null;
     return Promise.all([
-      alleZeilen("zaehlplaetze", "id,inventur_id,bereich,name,status,zaehler,begonnen_am,fertig_am,sortierung",
+      alleZeilen("zaehlplaetze",
+        "id,inventur_id,bereich,name,status,zaehler,begonnen_am,fertig_am,sortierung,sehen,bearbeiten",
         "sortierung", function(q){ return q.eq("inventur_id", i2Aktiv.id); }),
       alleZeilen("scans", "menge,platz_id", "",
         function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
@@ -3741,13 +3883,19 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     });
   }
 
+  var i2Einrichten = false;      // Tafel im Einrichten-Modus: umbenennen, Rechte, löschen
+
   function i2TafelZeichnen(){
     var box = $("i2-bereiche");
     box.textContent = "";
+    $("i2-knopf-bearbeiten").hidden = !darf("inventur2_bauen");
+    $("i2-knopf-bearbeiten").setAttribute("aria-pressed", i2Einrichten ? "true" : "false");
+    $("i2-knopf-bearbeiten").textContent = i2Einrichten ? "Einrichten beenden" : "Einrichten";
 
-    // Nach Bereich gruppieren, Reihenfolge wie angelegt
-    var folge = [], nach = {};
+    // Nach Bereich gruppieren, Reihenfolge wie angelegt; verborgene Plätze fallen raus
+    var folge = [], nach = {}, versteckt = 0;
     i2Plaetze.forEach(function(p){
+      if(!i2DarfSehen(p)){ versteckt++; return; }
       if(!nach[p.bereich]){ nach[p.bereich] = []; folge.push(p.bereich); }
       nach[p.bereich].push(p);
     });
@@ -3768,7 +3916,14 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       fuellung.style.width = (liste.length ? Math.round(fertig / liste.length * 100) : 0) + "%";
       balken.appendChild(fuellung);
       kopf.appendChild(titel); kopf.appendChild(zahl); kopf.appendChild(balken);
+
       if(darf("inventur2_bauen")){
+        if(i2Einrichten){
+          var stift = document.createElement("button");
+          stift.type = "button"; stift.className = "still"; stift.textContent = "Bereich ändern";
+          stift.addEventListener("click", function(){ i2EditorOeffnen("bereich", bname); });
+          kopf.appendChild(stift);
+        }
         var plus = document.createElement("button");
         plus.type = "button"; plus.className = "still"; plus.textContent = "+ Platz";
         plus.addEventListener("click", function(){ i2PlatzNachtragen(bname); });
@@ -3784,15 +3939,25 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     });
 
     $("i2-tafelleer").hidden = i2Plaetze.length > 0;
+    if(versteckt > 0 && !i2Allmacht()){
+      var satz = document.createElement("p");
+      satz.className = "hinweis";
+      satz.textContent = versteckt + (versteckt === 1 ? " Zählplatz ist" : " Zählplätze sind")
+        + " für dich nicht freigegeben.";
+      box.appendChild(satz);
+    }
   }
 
   function i2Kachel(p){
     var k = document.createElement("button");
     k.type = "button";
     var meiner = p.zaehler && p.zaehler === (angemeldet || "");
+    var zaehlbar = i2DarfZaehlen(p);
     k.className = "i2platz"
       + (p.status === "fertig" ? " fertig" : (p.status === "laeuft" ? " laeuft" : ""))
-      + (meiner && p.status === "laeuft" ? " ich" : "");
+      + (p.status === "pause" ? " pause" : "")
+      + (meiner && p.status === "laeuft" ? " ich" : "")
+      + (i2Einrichten ? " aendern" : (zaehlbar ? "" : " gesperrt"));
 
     var name = document.createElement("span"); name.className = "pname"; name.textContent = p.name;
     var s = i2Summen[p.id] || { anzahl:0, menge:0 };
@@ -3801,14 +3966,198 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var zustand = document.createElement("span"); zustand.className = "pzustand";
     zustand.textContent = p.status === "fertig"
       ? ("fertig" + (p.zaehler ? " · " + i2Kurz(p.zaehler) : ""))
-      : p.status === "laeuft"
-        ? (meiner ? "du zählst hier" : i2Kurz(p.zaehler) + " zählt")
-        : "offen";
+      : p.status === "pause"
+        ? ("Pause" + (p.zaehler ? " · " + i2Kurz(p.zaehler) : ""))
+        : p.status === "laeuft"
+          ? (meiner ? "du zählst hier" : i2Kurz(p.zaehler) + " zählt")
+          : "offen";
 
     k.appendChild(name); k.appendChild(zahl); k.appendChild(zustand);
+
+    if(i2Einrichten){
+      var stift = document.createElement("span");
+      stift.className = "pstift"; stift.textContent = "ändern";
+      k.appendChild(stift);
+      k.addEventListener("click", function(){ i2EditorOeffnen("platz", p); });
+      return k;
+    }
+    if(!zaehlbar){
+      var gesperrt = document.createElement("span");
+      gesperrt.className = "pstift"; gesperrt.style.color = "var(--leise)";
+      gesperrt.textContent = "nur ansehen";
+      k.appendChild(gesperrt);
+      k.addEventListener("click", function(){
+        i2Sage("i2-tafelmeldung", "„" + p.name + "“ ist für dich nicht zum Zählen freigegeben.", "fehler");
+      });
+      return k;
+    }
     k.addEventListener("click", function(){ i2PlatzOeffnen(p); });
     return k;
   }
+
+  $("i2-knopf-bearbeiten").addEventListener("click", function(){
+    if(!darf("inventur2_bauen")) return;
+    i2Einrichten = !i2Einrichten;
+    if(!i2Einrichten) i2EditorSchliessen();
+    i2TafelZeichnen();
+    i2Sage("i2-tafelmeldung", i2Einrichten
+      ? "Einrichten: tipp auf einen Platz oder auf „Bereich ändern“."
+      : "", i2Einrichten ? "gut" : "");
+  });
+
+  /* ---------- Editor: Name, Sichtbarkeit, Löschen ----------
+     Ein Bereich ist keine eigene Tabelle, sondern die Textspalte `bereich` an
+     jedem Platz. Was am Bereich geändert wird, wird darum auf alle seine
+     Plätze geschrieben. */
+  var i2EditorArt = null, i2EditorZiel = null, i2EditorRechte = {};
+
+  function i2EditorLeute(){
+    // Alle bekannten Zugänge, plus wer in dieser Inventur schon gezählt hat
+    var mails = {};
+    rechteListe.forEach(function(r){ if(r.email) mails[r.email] = true; });
+    i2Plaetze.forEach(function(p){ if(p.zaehler) mails[String(p.zaehler).toLowerCase()] = true; });
+    if(angemeldet) mails[String(angemeldet).toLowerCase()] = true;
+    return Object.keys(mails).sort();
+  }
+
+  function i2EditorOeffnen(art, ziel){
+    i2EditorArt = art;
+    i2EditorZiel = ziel;
+    i2Sage("i2-editor-meldung", "");
+
+    var plaetze = art === "bereich"
+      ? i2Plaetze.filter(function(p){ return p.bereich === ziel; })
+      : [ziel];
+    var muster = plaetze[0] || {};
+
+    $("i2-editor-titel").textContent = art === "bereich"
+      ? "Bereich „" + ziel + "“"
+      : "Platz „" + ziel.name + "“";
+    $("i2-editor-art").className = "i2fahne offen";
+    $("i2-editor-art").textContent = art === "bereich"
+      ? plaetze.length + (plaetze.length === 1 ? " Platz" : " Plätze")
+      : ziel.bereich;
+    $("i2-editor-name").value = art === "bereich" ? ziel : ziel.name;
+
+    // Häkchenstand aus dem ersten Platz; beim Bereich gilt er für alle
+    i2EditorRechte = {};
+    var box = $("i2-editor-wer");
+    box.textContent = "";
+    var leute = i2EditorLeute();
+    if(!leute.length){
+      var leer = document.createElement("p");
+      leer.className = "hinweis";
+      leer.textContent = "Noch niemand unter „Rechte“ eingetragen — solange dürfen alle.";
+      box.appendChild(leer);
+    }
+    leute.forEach(function(mail){
+      var stand = {
+        sehen: (muster.sehen || []).indexOf(mail) !== -1,
+        bearbeiten: (muster.bearbeiten || []).indexOf(mail) !== -1
+      };
+      i2EditorRechte[mail] = stand;
+
+      var zeile = document.createElement("div"); zeile.className = "i2werzeile";
+      var wer = document.createElement("span"); wer.className = "mail"; wer.textContent = mail;
+      zeile.appendChild(wer);
+
+      [["sehen","sehen"],["bearbeiten","zählen"]].forEach(function(paar){
+        var schluessel = paar[0];
+        var label = document.createElement("label");
+        var haken = document.createElement("input");
+        haken.type = "checkbox";
+        haken.checked = stand[schluessel];
+        if(istOberchef(mail)){ haken.checked = true; haken.disabled = true; }
+        haken.addEventListener("change", function(){
+          stand[schluessel] = haken.checked;
+          // Zählen ohne Sehen ergibt keinen Sinn — dann wird Sehen mitgesetzt
+          if(schluessel === "bearbeiten" && haken.checked && !stand.sehen){
+            stand.sehen = true;
+            var erster = zeile.querySelector("input");
+            if(erster) erster.checked = true;
+          }
+        });
+        var text = document.createElement("span"); text.textContent = paar[1];
+        label.appendChild(haken); label.appendChild(text);
+        zeile.appendChild(label);
+      });
+      box.appendChild(zeile);
+    });
+
+    $("i2-editor").hidden = false;
+    // Der Editor sitzt oben — bei vielen Bereichen sähe man ihn sonst gar nicht
+    try{ $("i2-editor").scrollIntoView({ block:"nearest", behavior:"smooth" }); }catch(e){}
+    $("i2-editor-name").focus();
+  }
+
+  function i2EditorSchliessen(){
+    $("i2-editor").hidden = true;
+    i2EditorArt = null; i2EditorZiel = null; i2EditorRechte = {};
+  }
+  $("i2-editor-abbrechen").addEventListener("click", i2EditorSchliessen);
+
+  $("i2-editor-speichern").addEventListener("click", function(){
+    if(!i2EditorArt || !sb) return;
+    var name = $("i2-editor-name").value.trim();
+    if(!name){ i2Sage("i2-editor-meldung", "Der Name darf nicht leer sein.", "fehler"); return; }
+
+    var sehen = [], bearbeiten = [];
+    Object.keys(i2EditorRechte).forEach(function(mail){
+      if(i2EditorRechte[mail].sehen) sehen.push(mail);
+      if(i2EditorRechte[mail].bearbeiten) bearbeiten.push(mail);
+    });
+
+    var daten = { sehen: sehen.length ? sehen : null, bearbeiten: bearbeiten.length ? bearbeiten : null };
+    var abfrage;
+    if(i2EditorArt === "bereich"){
+      daten.bereich = name;
+      abfrage = sb.from("zaehlplaetze").update(daten)
+        .eq("inventur_id", i2Aktiv.id).eq("bereich", i2EditorZiel);
+    }else{
+      daten.name = name;
+      abfrage = sb.from("zaehlplaetze").update(daten).eq("id", i2EditorZiel.id);
+    }
+
+    i2Sage("i2-editor-meldung", "Wird gespeichert …");
+    abfrage.then(function(res){
+      if(res.error){ i2Sage("i2-editor-meldung", "Nicht gespeichert: " + res.error.message, "fehler"); return; }
+      i2EditorSchliessen();
+      i2Sage("i2-tafelmeldung", "Gespeichert.", "gut");
+      i2TafelLaden();
+    }).catch(function(){
+      i2Sage("i2-editor-meldung", "Nicht gespeichert — Verbindung prüfen.", "fehler");
+    });
+  });
+
+  /* Gelöscht wird nur, was leer ist. Ein Platz mit Scans bleibt stehen — sonst
+     wären gezählte Paletten plötzlich nirgends mehr zugeordnet. */
+  $("i2-editor-loeschen").addEventListener("click", function(){
+    if(!i2EditorArt || !sb) return;
+    var plaetze = i2EditorArt === "bereich"
+      ? i2Plaetze.filter(function(p){ return p.bereich === i2EditorZiel; })
+      : [i2EditorZiel];
+
+    var scans = plaetze.reduce(function(s, p){ return s + ((i2Summen[p.id] || {}).anzahl || 0); }, 0);
+    if(scans > 0){
+      i2Sage("i2-editor-meldung", "Hier " + (scans === 1 ? "liegt 1 Scan" : "liegen " + scans + " Scans")
+        + " — erst die Scans entfernen, dann lässt sich das löschen. So geht nichts verloren.", "fehler");
+      return;
+    }
+    var was = i2EditorArt === "bereich"
+      ? "Bereich „" + i2EditorZiel + "“ mit " + plaetze.length + (plaetze.length === 1 ? " Platz" : " Plätzen")
+      : "Zählplatz „" + i2EditorZiel.name + "“";
+    if(!window.confirm(was + " löschen?\n\nEs ist nichts darauf gezählt.")) return;
+
+    var ids = plaetze.map(function(p){ return p.id; });
+    sb.from("zaehlplaetze").delete().in("id", ids).then(function(res){
+      if(res.error){ i2Sage("i2-editor-meldung", "Nicht gelöscht: " + res.error.message, "fehler"); return; }
+      i2EditorSchliessen();
+      i2Sage("i2-tafelmeldung", "Gelöscht.", "gut");
+      i2TafelLaden();
+    }).catch(function(){
+      i2Sage("i2-editor-meldung", "Nicht gelöscht — Verbindung prüfen.", "fehler");
+    });
+  });
 
   /* „Ebene 1, Ebene 2" → zwei Plätze. „1-8" → Ebene 1 … Ebene 8.
      „Regal 1-8" → Regal 1 … Regal 8. Leer → ein einziger Platz. */
@@ -3836,12 +4185,16 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var neu = namen.filter(function(n){ return !da[bereich + " " + n]; });
     if(!neu.length){ i2Sage("i2-tafelmeldung", "Diese Plätze gibt es schon.", "fehler"); return; }
 
+    // Neue Plätze erben die Sichtbarkeit ihres Bereichs
+    var vorbild = i2Plaetze.filter(function(p){ return p.bereich === bereich; })[0] || {};
     var basis = i2Plaetze.length;
     var zeilen = neu.map(function(n, i){
-      return { inventur_id:i2Aktiv.id, bereich:bereich, name:n, status:"offen", sortierung: basis + i };
+      return { inventur_id:i2Aktiv.id, bereich:bereich, name:n, status:"offen",
+               sortierung: basis + i,
+               sehen: vorbild.sehen || null, bearbeiten: vorbild.bearbeiten || null };
     });
     sb.from("zaehlplaetze").insert(zeilen)
-      .select("id,inventur_id,bereich,name,status,zaehler,sortierung")
+      .select("id,inventur_id,bereich,name,status,zaehler,sortierung,sehen,bearbeiten")
       .then(function(res){
         if(res.error){ i2Sage("i2-tafelmeldung", "Nicht angelegt: " + res.error.message, "fehler"); return; }
         $("i2-bname").value = ""; $("i2-bplaetze").value = "";
@@ -3922,6 +4275,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   }
 
   function i2PlatzOeffnen(p){
+    if(!i2DarfZaehlen(p)){
+      i2Sage("i2-tafelmeldung", "„" + p.name + "“ ist für dich nicht zum Zählen freigegeben.", "fehler");
+      return;
+    }
     if(p.status === "fertig"){
       if(!window.confirm("„" + p.name + "“ ist als fertig gezählt"
         + (p.zaehler ? " von " + i2Kurz(p.zaehler) : "") + ".\n\n"
@@ -4047,7 +4404,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   function i2Scan(roh){
     if(!i2Platz || !i2Aktiv){ i2Meldung("Kein Zählplatz offen.", "fehler"); return false; }
     var g = i2CodeLesen(roh);
-    if(g.fehler){ i2Meldung(g.fehler, "fehler"); i2Blitz(false); piep(false); return false; }
+    if(g.fehler){
+      i2Meldung(g.fehler, "fehler");
+      i2Blitz(false); piep(false);
+      quittung(false, String(roh || "").trim().toUpperCase() || "Fehler");
+      if(navigator.vibrate){ try{ navigator.vibrate([70, 60, 70]); }catch(e){} }
+      return false;
+    }
 
     var eintrag = { id:neueId("s"), menge:g.menge, nr:g.nr, wer:angemeldet || "" };
     i2PlatzScans.push(eintrag);
@@ -4058,6 +4421,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(g.menge > 1 && !g.stern) text += " (1 Einheit = " + g.menge + ")";
     i2Meldung(text, "gut");
     i2Blitz(true); piep(true);
+    quittung(true, g.menge + " × " + g.nr);
     i2ZuletztZeigen(g.nr);
 
     if(sb){
@@ -4107,6 +4471,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(w.indexOf("*", w.indexOf("*") + 1) > 0){
       i2Meldung("Zwei Codes sind zusammengelaufen („" + w + "“) — einzeln scannen.", "fehler");
       i2Blitz(false); piep(false);
+      quittung(false, "Zwei Codes zusammen");
       i2FeldFertig();
       i2VomScanner = false;
       return;
@@ -4129,6 +4494,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         }
         i2Meldung("„" + code + "“ ist zu lang und lässt sich nicht eindeutig trennen — einzeln scannen.", "fehler");
         i2Blitz(false); piep(false);
+        quittung(false, "Code zu lang");
         i2FeldFertig();
         i2VomScanner = false;
         return;
@@ -4137,6 +4503,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       if(!i2VomScanner && !darf("handeingabe")){
         i2Meldung("Von Hand eintragen ist für dich nicht freigegeben — bitte scannen.", "fehler");
         i2Blitz(false); piep(false);
+        quittung(false, "Nur scannen");
         i2FeldFertig();
         return;
       }
@@ -4186,6 +4553,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     i2PlatzStatus(p, "fertig").then(function(){ i2TafelLaden(); });
   });
 
+  /* Pause: der Platz geht zurück auf die Tafel, ohne fertig zu sein. Gezähltes
+     bleibt stehen, und jeder sieht, dass hier noch etwas offen ist. */
+  $("i2-knopf-pause").addEventListener("click", function(){
+    if(!i2Platz) return;
+    i2PlatzStatus(i2Platz, "pause").then(function(){ i2TafelLaden(); });
+  });
+
   $("i2-knopf-zurueck").addEventListener("click", function(){ i2TafelLaden(); });
 
   // Anderswo im Bereich getippt: zurück ins Scanfeld
@@ -4194,6 +4568,35 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(t && (t.tagName === "BUTTON" || t.tagName === "INPUT" || t.tagName === "LABEL"
       || t.tagName === "TEXTAREA")) return;
     i2FeldScharf();
+  });
+
+  /* Am Handgerät verliert das Scanfeld leicht den Fokus — dann tippt der Scanner
+     ins Leere und man muss erst ins Feld drücken. Darum hört die ganze Seite mit:
+     Zeichen, die ankommen während das Feld nicht scharf ist, wandern hinein.
+     Ein Mensch tippt nicht in ein Feld, das er nicht angeklickt hat — was so
+     ankommt, ist der Scanner. */
+  document.addEventListener("keydown", function(e){
+    if($("ansicht-inv2").hidden || $("i2-zaehlen").hidden) return;
+    if(e.ctrlKey || e.metaKey || e.altKey) return;
+    var feld = $("i2-feld");
+    if(document.activeElement === feld) return;
+    var ziel = e.target;
+    if(ziel && (ziel.tagName === "INPUT" || ziel.tagName === "TEXTAREA" || ziel.tagName === "SELECT")) return;
+
+    if(e.key === "Enter"){
+      if(!feld.value) return;
+      e.preventDefault();
+      window.clearTimeout(i2Uhr);
+      i2Scan(feld.value);
+      i2FeldFertig();
+      return;
+    }
+    if(e.key.length !== 1) return;
+    e.preventDefault();
+    feld.focus();
+    feld.value += e.key;
+    i2VomScanner = true;
+    feld.dispatchEvent(new Event("input", { bubbles:true }));
   });
 
   /* Die Tafel lebt: vier Leute zählen gleichzeitig, jeder soll sehen, wo die
