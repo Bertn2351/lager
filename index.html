@@ -34,7 +34,43 @@
   --kritisch:#f0655c;
   --etikett-gruen:#e8eee9;
   --tief:0 1px 0 rgba(255,255,255,.03) inset, 0 18px 40px -28px rgba(0,0,0,.9);
+  --kopf-grund:rgba(15,18,20,.86);
 }
+
+/* Heller Modus. Es werden nur die Farbwerte getauscht — jede Regel weiter unten
+   rechnet mit denselben Variablen, auch die color-mix-Abstufungen. Orange und
+   Grün sind bewusst etwas dunkler als im Nachtmodus, sonst verschwinden sie auf
+   Weiß. Die Anmeldung bleibt dunkel: sie ist ein eigener Entwurf mit den
+   leuchtenden Ringen, hell ergäbe das keinen Sinn. */
+html[data-thema="hell"]{
+  --grund:#eef1f4;
+  --flaeche:#ffffff;
+  --flaeche-2:#f5f7f9;
+  --flaeche-3:#e8ecf0;
+  --kante:#d5dbe1;
+  --kante-hell:#b3bdc7;
+  --tinte:#131a20;
+  --gedaempft:#55626e;
+  --leise:#78848f;
+  --akzent:#c96a05;
+  --akzent-weich:#a55600;
+  --gut:#12805c;
+  --kritisch:#c22f26;
+  --tief:0 1px 0 rgba(255,255,255,.7) inset, 0 12px 28px -22px rgba(16,24,32,.45);
+  --kopf-grund:rgba(255,255,255,.88);
+}
+html[data-thema="hell"] body{ background:var(--grund); color:var(--tinte) }
+/* Auf Weiß braucht der aktive Reiter etwas mehr Kontrast als eine Tönung */
+html[data-thema="hell"] .reiter button[aria-selected="true"]{ background:var(--tinte); color:#fff }
+html[data-thema="hell"] .kamerabox .kamerastatus{ color:#fff }
+/* Das Logo ist die weiße Fassung — auf Weiß bliebe vom Schriftzug nur das
+   orange „Ö" übrig. Statt die Farben zu verbiegen bekommt es eine dunkle
+   Platte, dann stimmen Orange und Weiß weiterhin. */
+html[data-thema="hell"] .kopfmarke .logo{
+  background-color:#0f1214; border-radius:7px;
+  padding:5px 9px; box-sizing:content-box;
+}
+html[data-thema="hell"] .kopfmarke .strich{ background:var(--kante-hell) }
 
 *{box-sizing:border-box}
 html{background:var(--grund)}
@@ -269,7 +305,7 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 .kopf{
   position:sticky; top:0; z-index:5;
   display:flex; align-items:center; gap:16px; flex-wrap:wrap;
-  padding:12px 20px; background:rgba(15,18,20,.86);
+  padding:12px 20px; background:var(--kopf-grund);
   backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   border-bottom:1px solid var(--kante);
 }
@@ -1038,7 +1074,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v37</span>
+    <span class="version">v38</span>
+    <button type="button" id="knopf-thema" title="Zwischen hell und dunkel wechseln">Hell</button>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1534,6 +1571,26 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   function statusNameSetzen(){
     statusSetzen("Angemeldet als " + nameVon(angemeldet), "aktiv");
   }
+
+  /* ---------- Hell oder dunkel ----------
+     Die Halle ist dunkel, das Büro hell — beides soll lesbar sein. Umgeschaltet
+     wird nur das Farbset auf <html>; die Anmeldung behält ihre eigene Welt. */
+  function themaSetzen(hell){
+    document.documentElement.setAttribute("data-thema", hell ? "hell" : "dunkel");
+    var k = $("knopf-thema");
+    if(k){
+      k.textContent = hell ? "Dunkel" : "Hell";
+      k.setAttribute("aria-pressed", hell ? "true" : "false");
+    }
+    // Die Browserleiste am Handy mitfärben
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if(meta) meta.setAttribute("content", hell ? "#eef1f4" : "#080b0e");
+    schreib("pal-thema", hell ? "hell" : "dunkel");
+  }
+  themaSetzen(lies("pal-thema") === "hell");
+  $("knopf-thema").addEventListener("click", function(){
+    themaSetzen(document.documentElement.getAttribute("data-thema") !== "hell");
+  });
 
   // ---------- Gerätespeicher (wenn keine Datenbank erreichbar ist) ----------
   function lokalLaden(){
@@ -3048,7 +3105,11 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     // Von Hand eintragen braucht die Tastatur
     $("i2-knopf-hand").hidden = !darf("handeingabe") || i2TastaturAus
       || (typeof kameraAn !== "undefined" && kameraAn);
-    if(i2TastaturAus){ try{ feld.blur(); }catch(e){} }
+    if(i2TastaturAus){
+      try{ feld.blur(); }catch(e){}
+      // Auch ein Knopf darf den Fokus nicht behalten, sonst trifft ihn der Scanner
+      try{ if(document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); }catch(e){}
+    }
     schreib("pal-i2-tastatur", i2TastaturAus ? "zu" : "auf");
   }
 
@@ -4664,8 +4725,15 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   // Anderswo im Bereich getippt: zurück ins Scanfeld
   $("ansicht-inv2").addEventListener("click", function(e){
     var t = e.target;
-    if(t && (t.tagName === "BUTTON" || t.tagName === "INPUT" || t.tagName === "LABEL"
-      || t.tagName === "TEXTAREA")) return;
+    if(t && t.tagName === "BUTTON"){
+      /* Ein angeklickter Knopf behält den Fokus. Bei gesperrter Tastatur würde
+         das Enter des Scanners ihn dann erneut auslösen — „Platz fertig" beim
+         nächsten Scan. Also den Fokus gleich wieder abgeben. */
+      if(i2TastaturAus){ try{ t.blur(); }catch(err){} }
+      return;
+    }
+    if(t && (t.tagName === "INPUT" || t.tagName === "LABEL" || t.tagName === "TEXTAREA"
+      || t.tagName === "SELECT")) return;
     i2FeldScharf();
   });
 
@@ -4682,14 +4750,22 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var ziel = e.target;
     if(ziel && (ziel.tagName === "INPUT" || ziel.tagName === "TEXTAREA" || ziel.tagName === "SELECT")) return;
 
+    /* Enter wird hier IMMER geschluckt, auch bei leerem Feld. Sonst landet das
+       Enter, das der Scanner hinter jeden Code hängt, auf dem zuletzt
+       angeklickten Knopf und löst ihn aus. Genau das passierte bei gesperrter
+       Tastatur: scannen und plötzlich war „Platz fertig" gedrückt. */
     if(e.key === "Enter"){
-      if(!feld.value) return;
       e.preventDefault();
+      if(!feld.value) return;
       window.clearTimeout(i2Uhr);
       i2Scan(feld.value);
       i2FeldFertig();
       return;
     }
+    // Manche Scanner hängen ein Tabulatorzeichen an — das würde den Fokus
+    // auf den nächsten Knopf schieben. Gesperrt bleibt der Fokus, wo er ist.
+    if(e.key === "Tab" && i2TastaturAus){ e.preventDefault(); return; }
+
     if(e.key.length !== 1) return;
     e.preventDefault();
     if(!i2TastaturAus) feld.focus();       // gesperrt: kein Fokus, keine Tastatur
