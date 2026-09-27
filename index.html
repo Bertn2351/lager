@@ -529,11 +529,11 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   font-size:12px; color:#fff; background:linear-gradient(0deg, rgba(0,0,0,.8), transparent)}
 .kamerabox.getroffen{border-color:var(--gut); box-shadow:0 0 0 3px color-mix(in srgb, var(--gut) 22%, transparent)}
 
-#scanfeld,#i2-feld{font-family:"IBM Plex Mono",monospace; letter-spacing:.04em;
+#i2-feld{font-family:"IBM Plex Mono",monospace; letter-spacing:.04em;
   transition:border-color .12s, background-color .12s, box-shadow .12s}
-#scanfeld.getroffen,#i2-feld.getroffen{border-color:var(--gut); background:color-mix(in srgb, var(--gut) 14%, var(--flaeche-2));
+#i2-feld.getroffen{border-color:var(--gut); background:color-mix(in srgb, var(--gut) 14%, var(--flaeche-2));
   box-shadow:0 0 0 3px color-mix(in srgb, var(--gut) 18%, transparent)}
-#scanfeld.daneben,#i2-feld.daneben{border-color:var(--kritisch); background:color-mix(in srgb, var(--kritisch) 13%, var(--flaeche-2));
+#i2-feld.daneben{border-color:var(--kritisch); background:color-mix(in srgb, var(--kritisch) 13%, var(--flaeche-2));
   box-shadow:0 0 0 3px color-mix(in srgb, var(--kritisch) 16%, transparent)}
 .bereit{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--gut)}
 .bereit .punkt{width:8px; height:8px; border-radius:50%; background:var(--gut); flex:none;
@@ -808,7 +808,6 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   /* Die Eingabekarten sind das, was im Lager Platz frisst: Erklärtexte und
      Schrittnummern helfen beim ersten Mal, danach stehen sie nur im Weg. */
   #ansicht-etikett .schritt > .hinweis,
-  #ansicht-inventur .schritt > .hinweis,
   #ansicht-etikett > .inhalt > .hinweis{display:none}
   .schritt .nr{display:none}
   .schritt > .titel{gap:0; margin-bottom:-1px}
@@ -819,9 +818,6 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   #ansicht-etikett label{font-size:9.5px; letter-spacing:.06em; text-transform:uppercase}
   #ansicht-etikett input.gross,#ansicht-etikett select.gross{font-size:15px; padding:6px 8px}
   #ansicht-etikett .treffer{max-height:132px}
-  #ansicht-inventur .karte > .inhalt,
-  #ansicht-inventur .inhalt{padding:8px; gap:8px}
-  #scanfeld{font-size:15px; padding:7px 9px}
   .modus button{font-size:11.5px; padding:5px 12px}
   .kamerabox{max-height:210px}
   .summe{gap:8px}
@@ -998,14 +994,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   <div class="reiter" role="tablist">
     <button type="button" id="reiter-etikett" role="tab" aria-selected="true">Etikett</button>
     <button type="button" id="reiter-artikel" role="tab" aria-selected="false">Artikel</button>
-    <button type="button" id="reiter-inventur" role="tab" aria-selected="false">Inventur</button>
     <button type="button" id="reiter-inv2" role="tab" aria-selected="false" hidden>Inventur 2.0</button>
     <button type="button" id="reiter-leute" role="tab" aria-selected="false">Mitarbeiter</button>
     <button type="button" id="reiter-rechte" role="tab" aria-selected="false" hidden>Rechte</button>
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v32</span>
+    <span class="version">v33</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1153,94 +1148,6 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       <p class="hinweis" style="padding:12px 16px" id="stamm-leer">Noch keine Artikel angelegt.</p>
     </section>
 
-    <!-- ===== Inventur ===== -->
-    <section class="karte" id="ansicht-inventur" hidden>
-      <h2>Inventur — Paletten scannen</h2>
-      <div class="inhalt">
-        <div class="schritt">
-          <div class="titel"><span class="nr">1</span><span>Etiketten scannen</span></div>
-          <div class="bereichszeile">
-            <label for="bereich">Bereich</label>
-            <input id="bereich" placeholder="z. B. Ebene 1" autocomplete="off" list="bereiche-liste">
-            <datalist id="bereiche-liste"></datalist>
-            <div class="modus klein" role="group" aria-label="Welche Zählung anzeigen">
-              <button type="button" id="sicht-bereich" aria-pressed="true">Nur dieser Bereich</button>
-              <button type="button" id="sicht-alles" aria-pressed="false">Alles</button>
-            </div>
-          </div>
-
-          <div class="bereiche-tafel" id="bereiche-tafel" hidden>
-            <span class="tafel-titel">Bereiche</span>
-            <div class="tafel-chips" id="tafel-chips"></div>
-            <button type="button" class="still" id="knopf-sichern">Zählung sichern</button>
-          </div>
-
-          <div class="modus" role="group" aria-label="Wie wird gescannt">
-            <button type="button" id="modus-scanner" aria-pressed="true">Keyence</button>
-            <button type="button" id="modus-kamera" aria-pressed="false">Handy-Kamera</button>
-          </div>
-
-          <div class="kamerabox" id="kamerabox" hidden>
-            <video id="kamerabild" playsinline muted></video>
-            <span class="zielbalken"></span>
-            <span class="kamerastatus" id="kamerastatus">Kamera wird gestartet …</span>
-          </div>
-
-          <input id="scanfeld" class="gross" placeholder="Hier scannen …" autocomplete="off"
-                 autocapitalize="characters" spellcheck="false">
-          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center">
-            <span class="bereit" id="bereit"><span class="punkt"></span>Bereit für die nächste Palette</span>
-            <label class="tonschalter"><input type="checkbox" id="ton" checked> Ton</label>
-            <button type="button" class="still" id="knopf-scan-hinzu" style="margin-left:auto">Von Hand hinzufügen</button>
-          </div>
-          <div class="zuletzt" id="zuletzt" hidden>
-            <span class="zcode" id="zuletzt-code"></span>
-            <span class="ztext">
-              <b id="zuletzt-name"></b>
-              <small id="zuletzt-zusatz"></small>
-            </span>
-            <span class="zabgleich" id="zuletzt-abgleich" hidden></span>
-          </div>
-          <div class="sicherung" id="sicherung" hidden>
-            <p class="hinweis">Kopieren hat nicht geklappt. Markier den Text unten von Hand
-              (langes Antippen → Alles auswählen) und sichere ihn, wo du ihn wiederfindest.</p>
-            <textarea id="sicherungstext" readonly spellcheck="false"></textarea>
-            <button type="button" class="still" id="sicherung-zu">Schließen</button>
-          </div>
-          <p class="meldung" id="scan-meldung"></p>
-          <p class="hinweis">Palettenetikett scannen — oder den Barcode auf der Ware selbst, dann zählt jeder Scan ein Stück. Das Feld leert sich von selbst und ist sofort wieder bereit.</p>
-        </div>
-      </div>
-
-      <div class="summenblock" id="summenblock" hidden>
-        <div class="summenkopf">
-          <span>Das fügst du in dein Warenwirtschaftsprogramm ein</span>
-          <button type="button" class="still" id="knopf-summe-kopieren">Kopieren</button>
-        </div>
-        <ul class="summen" id="summen"></ul>
-      </div>
-
-      <ul class="stammliste" id="scanliste"></ul>
-
-      <details class="klapp papierkorb" id="papierkorb" hidden>
-        <summary><span id="papierkorb-titel">Papierkorb</span></summary>
-        <div class="innen">
-          <p class="hinweis">Gelöschtes bleibt hier liegen und lässt sich zurückholen.
-            Erst „Endgültig leeren“ entfernt es wirklich.</p>
-          <ul class="stammliste" id="papierkorbliste"></ul>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
-            <button type="button" class="still" id="knopf-alles-zurueck">Alles zurückholen</button>
-            <button type="button" class="still" id="knopf-korb-leeren">Endgültig leeren</button>
-            <span class="meldung" id="korb-meldung"></span>
-          </div>
-        </div>
-      </details>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:12px 16px">
-        <span class="hinweis" id="scan-zaehler">Noch nichts gescannt.</span>
-        <button type="button" class="still" id="knopf-scan-leeren" style="margin-left:auto" hidden>Liste leeren</button>
-      </div>
-    </section>
-
     <!-- ===== Inventur 2.0 ===== -->
     <section class="karte" id="ansicht-inv2" hidden>
       <h2 id="inv2-titel">Inventur 2.0</h2>
@@ -1354,10 +1261,22 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
               Sprich dich ab, bevor du weiterzählst — sonst zählt ihr doppelt.</span>
           </div>
 
+          <div class="modus" role="group" aria-label="Wie wird gescannt">
+            <button type="button" id="modus-scanner" aria-pressed="true">Keyence</button>
+            <button type="button" id="modus-kamera" aria-pressed="false">Handy-Kamera</button>
+          </div>
+
+          <div class="kamerabox" id="kamerabox" hidden>
+            <video id="kamerabild" playsinline muted></video>
+            <span class="zielbalken"></span>
+            <span class="kamerastatus" id="kamerastatus">Kamera wird gestartet …</span>
+          </div>
+
           <input id="i2-feld" class="gross" placeholder="Hier scannen …" autocomplete="off"
                  autocapitalize="characters" spellcheck="false">
           <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center">
             <span class="bereit" id="i2-bereit"><span class="punkt"></span>Bereit für die nächste Palette</span>
+            <label class="tonschalter"><input type="checkbox" id="ton" checked> Ton</label>
             <button type="button" class="still" id="i2-knopf-hand" style="margin-left:auto">Von Hand hinzufügen</button>
           </div>
 
@@ -1388,6 +1307,20 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           </details>
 
           <ul class="stammliste" id="i2-scanliste"></ul>
+
+          <details class="klapp papierkorb" id="i2-papierkorb" hidden>
+            <summary><span id="i2-papierkorb-titel">Papierkorb</span></summary>
+            <div class="innen">
+              <p class="hinweis">Gelöschtes und Berichtigtes von diesem Zählplatz liegt hier
+                und lässt sich zurückholen. Erst „Endgültig leeren“ entfernt es wirklich.</p>
+              <ul class="stammliste" id="i2-korbliste"></ul>
+              <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+                <button type="button" class="still" id="i2-korb-alles">Alles zurückholen</button>
+                <button type="button" class="still" id="i2-korb-leeren">Endgültig leeren</button>
+                <span class="meldung" id="i2-korb-meldung"></span>
+              </div>
+            </div>
+          </details>
 
           <div style="display:flex; gap:9px; flex-wrap:wrap; align-items:center">
             <button type="button" class="tat" id="i2-knopf-fertig">Platz fertig</button>
@@ -1500,7 +1433,6 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   var angemeldet = null;      // E-Mail des angemeldeten Kontos
   var artikel = [];           // {id, nr, bezeichnung}
   var leute = [];             // {id, nr, name}
-  var scans = [];             // {id, menge, nr, wer}
   var mengen = [""];
   var gewaehlt = null;
   var sichtbareTreffer = [];
@@ -1523,25 +1455,20 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("status-text").textContent = text;
     $("status").className = "status" + (art ? " " + art : "");
   }
+  // Kopfzeile: Name statt E-Mail-Adresse
+  function statusNameSetzen(){
+    statusSetzen("Angemeldet als " + nameVon(angemeldet), "aktiv");
+  }
 
   // ---------- Gerätespeicher (wenn keine Datenbank erreichbar ist) ----------
   function lokalLaden(){
     try{
       var a = lies("pal-artikel"); if(a) artikel = JSON.parse(a) || [];
       var l = lies("pal-leute-stamm"); if(l) leute = JSON.parse(l) || [];
-      var s = lies("pal-scans");
-      if(s){
-        var alle = JSON.parse(s) || [];
-        scans = alle.filter(function(x){ return !x.geloescht_am; });
-        papierkorb = alle.filter(function(x){ return !!x.geloescht_am; });
-      }
     }catch(e){}
   }
   function lokalArtikel(){ if(!sb) schreib("pal-artikel", JSON.stringify(artikel)); }
   function lokalLeute(){ if(!sb) schreib("pal-leute-stamm", JSON.stringify(leute)); }
-  function lokalScans(){
-    if(!sb) schreib("pal-scans", JSON.stringify(scans.concat(papierkorb).slice(-4000)));
-  }
 
   /* Supabase gibt pro Abfrage höchstens 1000 Zeilen zurück. Bei mehr Artikeln
      oder Scans fehlt der Rest stillschweigend — deshalb blockweise laden. */
@@ -1566,20 +1493,18 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   // ---------- Rechte ----------
   var BEREICHE = [
-    { schluessel:"etikett",         name:"Etiketten drucken" },
-    { schluessel:"inventur",        name:"Inventur zählen" },
-    { schluessel:"inventur2",           name:"Inventur 2.0 benutzen" },
-    { schluessel:"inventur2_uebersicht", name:"Inventur 2.0: Übersicht sehen" },
-    { schluessel:"inventur2_summe",     name:"Inventur 2.0: Summe für CAO" },
-    { schluessel:"inventur2_bauen",     name:"Inventur 2.0 einrichten", wichtig:true },
-    { schluessel:"inventur_gesamt", name:"Zählung aller sehen" },
-    { schluessel:"artikelname",     name:"Artikelbezeichnung sehen" },
-    { schluessel:"scanliste",       name:"Einzelne Scans sehen" },
-    { schluessel:"handeingabe",     name:"Von Hand eintragen" },
-    { schluessel:"bestand",         name:"Lagerbestand sehen" },
-    { schluessel:"inventur_leeren", name:"Zählliste leeren",   wichtig:true },
-    { schluessel:"gruppe_loeschen", name:"Ganzen Artikel löschen", wichtig:true },
-    { schluessel:"artikel",         name:"Artikel ansehen" },
+    { schluessel:"etikett",              name:"Etiketten drucken" },
+    { schluessel:"inventur2",            name:"Inventur benutzen" },
+    { schluessel:"inventur2_uebersicht", name:"Übersicht sehen" },
+    { schluessel:"inventur2_summe",      name:"Summe für CAO" },
+    { schluessel:"inventur2_bauen",      name:"Inventur einrichten", wichtig:true },
+    { schluessel:"inventur_gesamt",      name:"Zählung aller sehen" },
+    { schluessel:"artikelname",          name:"Artikelbezeichnung sehen" },
+    { schluessel:"scanliste",            name:"Einzelne Scans sehen" },
+    { schluessel:"handeingabe",          name:"Von Hand eintragen" },
+    { schluessel:"bestand",              name:"Lagerbestand sehen" },
+    { schluessel:"papierkorb",           name:"Papierkorb sehen" },
+    { schluessel:"artikel",              name:"Artikel ansehen" },
     { schluessel:"artikel_aendern", name:"Artikel ändern",     wichtig:true },
     { schluessel:"mitarbeiter",     name:"Mitarbeiter pflegen" },
     { schluessel:"verwaltung",      name:"Rechte vergeben",    wichtig:true }
@@ -1598,17 +1523,17 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   var anzeige = { groesse:"normal", farbe:"hell" };
 
   // Wer nicht eingetragen ist, darf das Nötigste: drucken und zählen.
-  var GRUNDRECHTE = { etikett:true, inventur:true, inventur2:false, inventur2_bauen:false,
+  var GRUNDRECHTE = { etikett:true, inventur2:false, inventur2_bauen:false,
                       inventur2_uebersicht:true, inventur2_summe:false,
                       inventur_gesamt:false, artikelname:true,
                       scanliste:true, handeingabe:true, bestand:false,
-                      inventur_leeren:false, gruppe_loeschen:false, artikel:false,
+                      papierkorb:false, artikel:false,
                       artikel_aendern:false, mitarbeiter:false, verwaltung:false };
-  var ALLES = { etikett:true, inventur:true, inventur2:true, inventur2_bauen:true,
+  var ALLES = { etikett:true, inventur2:true, inventur2_bauen:true,
                 inventur2_uebersicht:true, inventur2_summe:true,
                 inventur_gesamt:true, artikelname:true,
                 scanliste:true, handeingabe:true, bestand:true,
-                inventur_leeren:true, gruppe_loeschen:true, artikel:true,
+                papierkorb:true, artikel:true,
                 artikel_aendern:true, mitarbeiter:true, verwaltung:true };
 
   /* Ein Zugang, der immer alles darf und den niemand entfernen kann — damit
@@ -1621,6 +1546,19 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   var rechte = {};               // was ICH darf
   var rechteListe = [];          // {email, bereiche}
+
+  /* Im Lager soll ein Name stehen, keine E-Mail-Adresse — vor Kunden und
+     Mitarbeitern sieht „mitarbeiter@gmail.com" nicht gut aus. Der Spitzname
+     liegt in der Rechtezeile unter bereiche.spitzname; fehlt er, bleibt der
+     Teil vor dem @, damit nie ein leeres Feld dasteht. */
+  function nameVon(mail){
+    var m = String(mail || "").trim().toLowerCase();
+    if(!m) return "jemand";
+    var zeile = rechteListe.filter(function(r){ return r.email === m; })[0];
+    var spitz = zeile && zeile.bereiche && zeile.bereiche.spitzname;
+    if(spitz && String(spitz).trim()) return String(spitz).trim();
+    return m.split("@")[0] || m;
+  }
   var rechteLeer = true;         // noch niemand eingetragen -> Ersteinrichtung
 
   function darf(was){ return !!rechte[was]; }
@@ -1659,15 +1597,11 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   // Bereiche ein- und ausblenden, je nachdem was erlaubt ist
   function rechteAnwenden(){
     $("reiter-etikett").hidden = !darf("etikett");
-    $("reiter-inventur").hidden = !darf("inventur");
     $("reiter-inv2").hidden = !darf("inventur2");
     $("reiter-artikel").hidden = !darf("artikel");
     $("reiter-leute").hidden = !darf("mitarbeiter");
     $("reiter-rechte").hidden = !darf("verwaltung");
-    $("knopf-scan-leeren").dataset.gesperrt = darf("inventur_leeren") ? "" : "ja";
-    $("scanliste").hidden = !darf("scanliste");
     anzeigeAnwenden();
-    $("knopf-scan-hinzu").hidden = !darf("handeingabe");
 
     // Artikel nur ansehen: alles zum Ändern verschwindet
     var aendern = darf("artikel_aendern");
@@ -1678,22 +1612,21 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(klapp) klapp.hidden = !aendern;
 
     // Auf einen erlaubten Reiter springen, falls der aktuelle weg ist
-    var offen = ["etikett","artikel","inventur","inv2","leute","rechte"].filter(function(r){
+    var offen = ["etikett","artikel","inv2","leute","rechte"].filter(function(r){
       return !$("ansicht-" + r).hidden;
     })[0];
-    var erlaubt = { etikett:darf("etikett"), artikel:darf("artikel"), inventur:darf("inventur"),
-                    inv2:darf("inventur2"), leute:darf("mitarbeiter"), rechte:darf("verwaltung") };
-    var ziel = ["etikett","inventur","inv2","artikel","leute","rechte"].filter(function(r){ return erlaubt[r]; })[0];
+    var erlaubt = { etikett:darf("etikett"), artikel:darf("artikel"), inv2:darf("inventur2"), leute:darf("mitarbeiter"), rechte:darf("verwaltung") };
+    var ziel = ["etikett","inv2","artikel","leute","rechte"].filter(function(r){ return erlaubt[r]; })[0];
     if(!ziel){
       // Niemandem etwas erlaubt: alles zu, sonst bliebe ein Bereich offen stehen
-      ["etikett","artikel","inventur","inv2","leute","rechte"].forEach(function(r){ $("ansicht-" + r).hidden = true; });
+      ["etikett","artikel","inv2","leute","rechte"].forEach(function(r){ $("ansicht-" + r).hidden = true; });
       $("vorschauspalte").hidden = true;
       $("keinzugang").hidden = false;
       return;
     }
     $("keinzugang").hidden = true;
     if(!offen || !erlaubt[offen]) reiterWechseln(ziel);
-    stammZeichnen(); scansZeichnen();
+    stammZeichnen();
   }
 
   function anzeigeAnwenden(){
@@ -1777,6 +1710,18 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       var titel = document.createElement("span");
       titel.textContent = "Anzeige des Codes";
       darstellung.appendChild(titel);
+
+      var spitz = document.createElement("input");
+      spitz.type = "text";
+      spitz.placeholder = "Spitzname, z. B. Bulut";
+      spitz.autocomplete = "off";
+      spitz.value = r.bereiche.spitzname || "";
+      spitz.addEventListener("change", function(){
+        r.bereiche.spitzname = spitz.value.trim();
+        rechteSpeichern(r);
+        if(r.email === String(angemeldet || "").toLowerCase()) statusNameSetzen();
+      });
+      darstellung.appendChild(spitz);
 
       function auswahl(liste, feld, standard){
         var sel = document.createElement("select");
@@ -1903,11 +1848,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   function reiterWechseln(name){
     $("ansicht-etikett").hidden  = name !== "etikett";
     $("ansicht-artikel").hidden  = name !== "artikel";
-    $("ansicht-inventur").hidden = name !== "inventur";
     $("ansicht-inv2").hidden     = name !== "inv2";
     $("ansicht-leute").hidden    = name !== "leute";
     $("ansicht-rechte").hidden   = name !== "rechte";
-    ["etikett","artikel","inventur","inv2","leute","rechte"].forEach(function(r){
+    ["etikett","artikel","inv2","leute","rechte"].forEach(function(r){
       $("reiter-" + r).setAttribute("aria-selected", name === r ? "true" : "false");
     });
     $("vorschauspalte").hidden = name !== "etikett";
@@ -1918,13 +1862,6 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   $("reiter-leute").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("leute"); leuteZeichnen(); });
   $("reiter-rechte").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("rechte"); rechteZeichnen(); });
   $("reiter-inv2").addEventListener("click", function(){ inventurVerlassen(); reiterWechseln("inv2"); i2Oeffnen(); });
-  $("reiter-inventur").addEventListener("click", function(){
-    reiterWechseln("inventur");
-    scansHolen(true).then(function(){
-      if(lies("pal-scanmodus") === "kamera") modusSetzen(true);
-      else $("scanfeld").focus();
-    });
-  });
 
   // ---------- MHD ----------
   function mhdFormat(roh){
@@ -2414,7 +2351,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         var neu = artikel.filter(function(a){ return a.id === gewaehlt.id; })[0];
         if(neu){ gewaehlt = neu; gewaehltAnzeigen(); }
       }
-      stammZeichnen(); trefferZeichnen(); etikettenZeichnen(); scansZeichnen();
+      stammZeichnen(); trefferZeichnen(); etikettenZeichnen();
     }).catch(function(){
       $("status").className = "status lokal";
       $("status-text").textContent = "Artikelliste wird gerade nicht aktualisiert";
@@ -2577,7 +2514,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
     function fertig(){
       artikelSortieren(); lokalArtikel();
-      stammZeichnen(); trefferZeichnen(); scansZeichnen();
+      stammZeichnen(); trefferZeichnen();
       if(gewaehlt) gewaehltAnzeigen();
       $("import").value = "";
       $("import-ersetzen").checked = false;
@@ -2727,11 +2664,6 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var a = artikelZuCode(nr);
     return a ? a.bezeichnung : "";
   }
-  function scanMeldung(t, art){
-    var m = $("scan-meldung");
-    m.textContent = t; m.className = "meldung" + (art ? " " + art : "");
-  }
-
   var tonWerk = null;
   /* Treffer: drei schnelle aufsteigende Töne wie beim Münzeinwurf — hört man
      auch durch Hallenlärm und Gehörschutz. Fehler: tiefes Brummen. */
@@ -2773,264 +2705,6 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     }catch(e){}
   }
 
-  var blitzUhr = null;
-  function scanBlitz(treffer){
-    var feld = $("scanfeld");
-    window.clearTimeout(blitzUhr);
-    feld.classList.remove("getroffen","daneben");
-    void feld.offsetWidth;
-    feld.classList.add(treffer ? "getroffen" : "daneben");
-    blitzUhr = window.setTimeout(function(){ feld.classList.remove("getroffen","daneben"); }, 400);
-  }
-
-  function scanfeldScharf(){
-    if($("ansicht-inventur").hidden) return;
-    if(typeof kameraAn !== "undefined" && kameraAn) return;
-    if(!$("sicherung").hidden) return;
-    var feld = $("scanfeld");
-    if(document.activeElement !== feld) feld.focus();
-  }
-  function bereitZeigen(bereit){
-    var el = $("bereit");
-    el.className = "bereit" + (bereit ? "" : " schlaeft");
-    el.lastChild.nodeValue = bereit ? "Bereit für die nächste Palette" : "Ins Feld tippen, dann geht es weiter";
-  }
-
-  var papierkorb = [];     // gelöschte Scans, rückholbar
-  var scansStand = null;   // Zeitstempel des jüngsten geladenen Scans
-
-  /* Löschen heißt hier: beiseitelegen. Erst „Endgültig leeren" entfernt wirklich —
-     eine Fehlbedienung mitten in der Inventur darf nicht unwiederbringlich sein. */
-  function inDenKorb(liste, grund){
-    if(liste.length === 0) return;
-    var wegIds = {};
-    var zeitpunkt = new Date().toISOString();
-    liste.forEach(function(s){
-      wegIds[s.id] = true;
-      s.geloescht_am = zeitpunkt;
-      s.geloescht_von = angemeldet || "";
-      papierkorb.push(s);
-    });
-    scans = scans.filter(function(s){ return !wegIds[s.id]; });
-    scansZeichnen();
-
-    if(sb){
-      var kette = Promise.resolve();
-      liste.forEach(function(s){
-        kette = kette.then(function(){
-          return sb.from("scans").update({ geloescht_am: zeitpunkt, geloescht_von: angemeldet || "" })
-            .eq("id", s.id);
-        });
-      });
-      kette.catch(function(){
-        scanMeldung("Nicht überall gespeichert — bitte neu laden.", "fehler");
-      });
-    }else{ lokalScans(); }
-  }
-
-  function ausDemKorb(liste){
-    if(liste.length === 0) return;
-    var zurueckIds = {};
-    liste.forEach(function(s){
-      zurueckIds[s.id] = true;
-      delete s.geloescht_am;
-      delete s.geloescht_von;
-      scans.push(s);
-    });
-    papierkorb = papierkorb.filter(function(s){ return !zurueckIds[s.id]; });
-    scansZeichnen();
-
-    if(sb){
-      var kette = Promise.resolve();
-      liste.forEach(function(s){
-        kette = kette.then(function(){
-          return sb.from("scans").update({ geloescht_am:null, geloescht_von:null }).eq("id", s.id);
-        });
-      });
-      kette.catch(function(){});
-    }else{ lokalScans(); }
-  }
-
-  function meinKorb(){
-    if(darf("inventur_gesamt")) return papierkorb;
-    var ich = String(angemeldet || "").toLowerCase();
-    return papierkorb.filter(function(s){ return String(s.wer || "").toLowerCase() === ich; });
-  }
-
-  function papierkorbZeichnen(){
-    var meine = meinKorb();
-    var kasten = $("papierkorb");
-    kasten.hidden = meine.length === 0;
-    if(meine.length === 0) return;
-
-    $("papierkorb-titel").textContent = "Papierkorb · " + meine.length
-      + (meine.length === 1 ? " Eintrag" : " Einträge");
-
-    var ul = $("papierkorbliste");
-    ul.textContent = "";
-    meine.slice().reverse().slice(0, 200).forEach(function(s){
-      var li = document.createElement("li");
-      var txt = document.createElement("div"); txt.className = "txt";
-      var b = document.createElement("b"); b.className = "code"; b.textContent = s.menge + "*" + s.nr;
-      var kl = document.createElement("small");
-      var teile = [];
-      if(darf("artikelname")){ var bez = bezeichnungZu(s.nr); if(bez) teile.push(bez); }
-      if(s.bereich) teile.push("Bereich " + s.bereich);
-      if(darf("inventur_gesamt") && s.geloescht_von) teile.push("gelöscht von " + s.geloescht_von);
-      kl.textContent = teile.join(" · ");
-      txt.appendChild(b); txt.appendChild(kl);
-
-      var zurueck = document.createElement("button");
-      zurueck.type = "button"; zurueck.className = "still"; zurueck.textContent = "Zurückholen";
-      zurueck.addEventListener("click", function(){
-        ausDemKorb([s]);
-        scanMeldung(s.menge + "*" + s.nr + " ist wieder in der Zählung.", "gut");
-      });
-      li.appendChild(txt); li.appendChild(zurueck);
-      ul.appendChild(li);
-    });
-  }
-
-  $("knopf-alles-zurueck").addEventListener("click", function(){
-    var meine = meinKorb();
-    if(meine.length === 0) return;
-    ausDemKorb(meine.slice());
-    scanMeldung(meine.length + " Einträge sind wieder in der Zählung.", "gut");
-  });
-
-  $("knopf-korb-leeren").addEventListener("click", function(){
-    var meine = meinKorb();
-    if(meine.length === 0) return;
-    if(!window.confirm("Die " + meine.length + " Einträge im Papierkorb endgültig entfernen?\n\nDanach sind sie wirklich weg.")) return;
-    var wegIds = {};
-    meine.forEach(function(s){ wegIds[s.id] = true; });
-    papierkorb = papierkorb.filter(function(s){ return !wegIds[s.id]; });
-    scansZeichnen();
-    $("korb-meldung").textContent = meine.length + " endgültig entfernt.";
-    $("korb-meldung").className = "meldung gut";
-
-    if(sb){
-      var kette = Promise.resolve();
-      meine.forEach(function(s){
-        kette = kette.then(function(){ return sb.from("scans").delete().eq("id", s.id); });
-      });
-      kette.catch(function(){});
-    }else{ lokalScans(); }
-  });
-
-
-  function standMerken(){
-    scansStand = scans.reduce(function(hoechster, s){
-      return (s.erstellt_am && s.erstellt_am > hoechster) ? s.erstellt_am : hoechster;
-    }, scansStand || "");
-  }
-
-  /* Beim Öffnen einmal alles laden, danach nur noch das Neue. Bei zehntausend
-     Scans wäre ein Vollabruf alle 20 Sekunden sonst reine Verschwendung. */
-  function scansHolen(vollstaendig){
-    if(!sb){ scansZeichnen(); return Promise.resolve(); }
-
-    if(vollstaendig || !scansStand){
-      return alleZeilen("scans", "id,menge,nr,wer,bereich,erstellt_am,geloescht_am,geloescht_von", "erstellt_am")
-        .then(function(daten){
-          scans = daten.filter(function(s){ return !s.geloescht_am; });
-          papierkorb = daten.filter(function(s){ return !!s.geloescht_am; });
-          standMerken();
-          scansZeichnen();
-        }).catch(function(){});
-    }
-
-    return sb.from("scans").select("id,menge,nr,wer,bereich,erstellt_am,geloescht_am")
-      .is("geloescht_am", null)
-      .gt("erstellt_am", scansStand)
-      .order("erstellt_am", { ascending:true })
-      .limit(1000)
-      .then(function(res){
-        if(res.error || !res.data || !res.data.length) return;
-        var bekannt = {};
-        scans.forEach(function(s){ bekannt[s.id] = true; });
-        res.data.forEach(function(s){ if(!bekannt[s.id]) scans.push(s); });
-        standMerken();
-        scansZeichnen();
-      }).catch(function(){});
-  }
-
-  /* Zwei Sorten Code landen hier:
-     - Palettenetikett „50*EDC" → 50 Stück dieses Artikels
-     - Artikelbarcode (EAN) → 1 Stück, der Artikel wird über den Barcode gesucht */
-  function scanUebernehmen(roh){
-    var wert = String(roh || "").trim().toUpperCase();
-    if(!wert) return false;
-
-    var menge, nr, gefunden = null;
-
-    if(wert.indexOf("*") !== -1){
-      var teile = wert.split("*");
-      menge = teile.length === 2 ? parseInt(teile[0].replace(/[^0-9]/g, ""), 10) : NaN;
-      nr = teile.length === 2 ? teile[1].trim() : "";
-      if(teile.length !== 2 || !isFinite(menge) || menge <= 0 || !nr){
-        scanMeldung("„" + wert + "“ passt nicht — erwartet wird Menge*Artikelnummer, z. B. 50*EDC.", "fehler");
-        scanBlitz(false); piep(false);
-        return false;
-      }
-      gefunden = artikelZuCode(nr);
-      if(gefunden && gefunden.nr) nr = gefunden.nr.toUpperCase();
-    }else{
-      if(wert.length < 3){
-        scanMeldung("„" + wert + "“ ist zu kurz für einen Barcode.", "fehler");
-        scanBlitz(false); piep(false);
-        return false;
-      }
-      gefunden = artikelZuCode(wert);
-      // Ein Scan ist eine Verkaufseinheit: A10 hat VPE 10, also zählt ein Scan 10.
-      var vpe = (gefunden && gefunden.vpe_vk != null && isFinite(gefunden.vpe_vk) && gefunden.vpe_vk > 0)
-                ? gefunden.vpe_vk : 1;
-      menge = vpe;
-      nr = (gefunden && gefunden.nr) ? gefunden.nr.toUpperCase() : wert;
-    }
-
-    // Was nicht im Artikelstamm steht, wird nicht gezählt — sonst stehen später
-    // Zahlen in der Inventur, zu denen es keinen Artikel gibt.
-    if(!gefunden){
-      scanMeldung("„" + wert + "“ steht nicht im Artikelstamm — nicht gezählt.", "fehler");
-      scanBlitz(false); piep(false);
-      return false;
-    }
-
-    var eintrag = { id:neueId("s"), menge:menge, nr:nr, wer:angemeldet || "",
-                    bereich:aktuellerBereich() };
-    scans.push(eintrag);
-    scansZeichnen();
-
-    var text = menge + " × " + nr;
-    if(darf("artikelname")) text += " · " + gefunden.bezeichnung;
-    if(menge > 1 && wert.indexOf("*") === -1) text += " (1 Einheit = " + menge + ")";
-    scanMeldung(text, "gut");
-    scanBlitz(true); piep(true);
-    zuletztZeigen(nr);
-
-    if(sb){
-      var verloren = function(titel){
-        scanMeldung("Nicht gespeichert — bitte nochmal scannen.", "fehler");
-        scans = scans.filter(function(s){ return s.id !== eintrag.id; });
-        scansZeichnen();
-        notBlitz(titel, menge + " × " + nr + " zählt nicht. Verbindung prüfen und nochmal scannen.");
-      };
-      sb.from("scans").insert({ menge:menge, nr:nr, wer:angemeldet || "", bereich:aktuellerBereich() })
-        .select("id,menge,nr,wer,bereich,erstellt_am")
-        .then(function(res){
-          if(res.error || !res.data || !res.data[0]){ verloren("Nicht gespeichert"); return; }
-          eintrag.id = res.data[0].id;
-          eintrag.erstellt_am = res.data[0].erstellt_am || eintrag.erstellt_am;
-          standMerken();
-        })
-        .catch(function(){ verloren("Keine Verbindung"); });
-    }else{
-      lokalScans();
-    }
-    return true;
-  }
-
   /* Laufen mehrere Artikelbarcodes ineinander, lässt sich das retten: Ein Code
      aus lauter Ziffern, dessen Länge ein glattes Vielfaches ist und dessen Teile
      ALLE im Artikelstamm stehen, ist eindeutig zerlegbar. Nur dann wird geteilt. */
@@ -3067,376 +2741,6 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(navigator.vibrate){ try{ navigator.vibrate([90, 70, 90]); }catch(e){} }
     notUhr = window.setTimeout(function(){ el.hidden = true; }, 1600);
   }
-
-  /* Zeigt den gerade gescannten Artikel mit seiner laufenden Gesamtmenge —
-     damit niemand für die Kontrolle nach unten scrollen muss. */
-  function zuletztZeigen(nr){
-    var gruppe = summenRechnen().filter(function(g){ return g.nr === nr; })[0];
-    if(!gruppe){ $("zuletzt").hidden = true; return; }
-
-    var el = $("zuletzt");
-    el.hidden = true; void el.offsetWidth; el.hidden = false;   // Animation neu auslösen
-
-    $("zuletzt-code").textContent = gruppe.menge + "*" + gruppe.nr;
-    var a = artikelZuCode(nr);
-    $("zuletzt-name").textContent = (darf("artikelname") && a) ? a.bezeichnung : gruppe.nr;
-    $("zuletzt-zusatz").textContent = gruppe.paletten + "\u00d7 gescannt";
-
-    var ab = $("zuletzt-abgleich");
-    if(darf("bestand") && a && a.bestand != null && isFinite(a.bestand)){
-      var diff = gruppe.menge - a.bestand;
-      ab.className = "zabgleich " + (diff === 0 ? "passt" : (diff > 0 ? "mehr" : "weniger"));
-      ab.textContent = diff === 0 ? "passt (" + a.bestand + ")"
-        : (diff > 0 ? "+" : "") + diff + " von " + a.bestand;
-      ab.hidden = false;
-    }else{
-      ab.hidden = true;
-    }
-  }
-
-  function scanFertig(){
-    var feld = $("scanfeld");
-    feld.value = "";
-    if(!kameraAn) feld.focus();
-    bereitZeigen(true);
-    letzteTaste = 0; letzteLaenge = 0;
-  }
-
-  /* Der Bereich trennt die Zählung in Abschnitte — etwa Ebene 1, Ebene 2.
-     Jeder Scan merkt sich seinen Bereich, damit man einen Abschnitt später
-     allein ansehen, nachzählen oder verwerfen kann. */
-  var nurBereich = true;
-
-  function aktuellerBereich(){ return $("bereich").value.trim(); }
-
-  function bereicheSammeln(){
-    var gesehen = {}, liste = [];
-    scans.forEach(function(s){
-      var b = (s.bereich || "").trim();
-      if(b && !gesehen[b]){ gesehen[b] = true; liste.push(b); }
-    });
-    return liste.sort();
-  }
-
-  /* Übersicht über alle Bereiche samt Anzahl — und vor allem: die Scans OHNE
-     Bereich bleiben sichtbar und lassen sich nachträglich zuordnen. */
-  function tafelZeichnen(){
-    var grundmenge = darf("inventur_gesamt")
-      ? scans
-      : scans.filter(function(s){ return String(s.wer || "").toLowerCase() === String(angemeldet || "").toLowerCase(); });
-
-    var zaehler = {}, ohne = 0;
-    grundmenge.forEach(function(s){
-      var b = (s.bereich || "").trim();
-      if(b) zaehler[b] = (zaehler[b] || 0) + 1;
-      else ohne++;
-    });
-
-    var namen = Object.keys(zaehler).sort();
-    var tafel = $("bereiche-tafel"), chips = $("tafel-chips");
-    chips.textContent = "";
-
-    if(namen.length === 0 && ohne === 0){ tafel.hidden = true; return; }
-    tafel.hidden = false;
-
-    var jetzt = aktuellerBereich();
-    namen.forEach(function(name){
-      var b = document.createElement("button");
-      b.type = "button";
-      if(name === jetzt) b.setAttribute("aria-current", "true");
-      b.appendChild(document.createTextNode(name));
-      var z = document.createElement("b"); z.textContent = zaehler[name];
-      b.appendChild(z);
-      b.addEventListener("click", function(){
-        $("bereich").value = name;
-        schreib("pal-bereich", name);
-        sichtSetzen(true);
-        scanfeldScharf();
-      });
-      chips.appendChild(b);
-    });
-
-    if(ohne > 0){
-      var o = document.createElement("button");
-      o.type = "button"; o.className = "ohne";
-      if(jetzt === "") o.setAttribute("aria-current", "true");
-      o.appendChild(document.createTextNode("ohne Bereich"));
-      var z2 = document.createElement("b"); z2.textContent = ohne;
-      o.appendChild(z2);
-      o.title = "Diese Scans wurden gezählt, bevor es Bereiche gab";
-      o.addEventListener("click", function(){
-        $("bereich").value = "";
-        schreib("pal-bereich", "");
-        sichtSetzen(true);
-        scanfeldScharf();
-      });
-      chips.appendChild(o);
-
-      var zu = document.createElement("button");
-      zu.type = "button"; zu.className = "tafel-zuordnen";
-      zu.textContent = "diese " + ohne + " zuordnen";
-      zu.addEventListener("click", function(){ ohneBereichZuordnen(ohne); });
-      chips.appendChild(zu);
-    }
-  }
-
-  /* Trägt den bisher bereichslosen Scans nachträglich einen Namen ein.
-     Nichts wird gelöscht — nur beschriftet. */
-  function ohneBereichZuordnen(anzahl){
-    var ziel = aktuellerBereich();
-    if(!ziel){
-      ziel = window.prompt("Wie soll dieser Abschnitt heißen?\n\nDie " + anzahl
-        + " bisher unbenannten Scans bekommen diesen Namen. Gezählt bleibt alles.",
-        "Vor den Bereichen");
-      if(ziel === null) return;
-      ziel = String(ziel).trim();
-      if(!ziel) return;
-    }else{
-      if(!window.confirm("Die " + anzahl + " Scans ohne Bereich dem Bereich „" + ziel
-        + "“ zuordnen?\n\nEs geht nichts verloren — sie bekommen nur einen Namen.")) return;
-    }
-
-    var betroffen = scans.filter(function(s){ return !(s.bereich || "").trim(); });
-    betroffen.forEach(function(s){ s.bereich = ziel; });
-    $("bereich").value = ziel;
-    schreib("pal-bereich", ziel);
-    scansZeichnen();
-    scanMeldung(betroffen.length + " Scans gehören jetzt zu „" + ziel + "“.", "gut");
-
-    if(sb){
-      var kette = Promise.resolve();
-      betroffen.forEach(function(s){
-        kette = kette.then(function(){
-          return sb.from("scans").update({ bereich: ziel }).eq("id", s.id);
-        });
-      });
-      kette.catch(function(){
-        scanMeldung("Zuordnung konnte nicht überall gespeichert werden — bitte neu laden.", "fehler");
-      });
-    }else{ lokalScans(); }
-  }
-
-  /* Sicherungskopie zum Aufheben — die ganze Zählung als Text. */
-  $("knopf-sichern").addEventListener("click", function(){
-    var quelle = darf("inventur_gesamt")
-      ? scans
-      : scans.filter(function(s){ return String(s.wer || "").toLowerCase() === String(angemeldet || "").toLowerCase(); });
-    if(quelle.length === 0){ scanMeldung("Es gibt noch nichts zu sichern.", "fehler"); return; }
-
-    var zeilen = ["Bereich\tMenge\tArtikel\tPerson\tZeitpunkt"];
-    quelle.forEach(function(s){
-      zeilen.push([(s.bereich || "ohne Bereich"), s.menge, s.nr, (s.wer || ""),
-                   (s.erstellt_am || "")].join("\t"));
-    });
-    zeilen.push("");
-    zeilen.push("Summen:");
-    summenRechnenRoh(quelle).forEach(function(g){ zeilen.push(g.menge + "*" + g.nr); });
-
-    var text = zeilen.join("\n");
-
-    function zumAbschreiben(){
-      $("sicherungstext").value = text;
-      $("sicherung").hidden = false;
-      $("sicherungstext").focus();
-      $("sicherungstext").select();
-      scanMeldung("Kopieren ging nicht — der Text steht unten zum Sichern bereit.", "fehler");
-    }
-
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(function(){
-        $("sicherung").hidden = true;
-        scanMeldung(quelle.length + " Scans kopiert — in Excel oder eine Notiz einfügen.", "gut");
-      }).catch(zumAbschreiben);
-    }else{
-      zumAbschreiben();
-    }
-  });
-
-  $("sicherung-zu").addEventListener("click", function(){
-    $("sicherung").hidden = true;
-    $("sicherungstext").value = "";
-    scanfeldScharf();
-  });
-
-  function bereichslisteFuellen(){
-    var dl = $("bereiche-liste");
-    dl.textContent = "";
-    bereicheSammeln().forEach(function(b){
-      var o = document.createElement("option"); o.value = b; dl.appendChild(o);
-    });
-  }
-
-  function sichtSetzen(nur){
-    nurBereich = !!nur;
-    $("sicht-bereich").setAttribute("aria-pressed", nurBereich ? "true" : "false");
-    $("sicht-alles").setAttribute("aria-pressed", nurBereich ? "false" : "true");
-    schreib("pal-sicht", nurBereich ? "bereich" : "alles");
-    scansZeichnen();
-  }
-  $("sicht-bereich").addEventListener("click", function(){ sichtSetzen(true); });
-  $("sicht-alles").addEventListener("click", function(){ sichtSetzen(false); });
-
-  $("bereich").addEventListener("change", function(){
-    schreib("pal-bereich", aktuellerBereich());
-    scansZeichnen();
-    scanfeldScharf();
-  });
-  $("bereich").value = lies("pal-bereich");
-  if(lies("pal-sicht") === "alles") nurBereich = false;
-
-  // Wer die Gesamtzählung nicht sehen darf, arbeitet nur mit seinen eigenen Scans.
-  function meineScans(){
-    var liste = scans;
-    if(!darf("inventur_gesamt")){
-      var ich = String(angemeldet || "").toLowerCase();
-      liste = liste.filter(function(s){ return String(s.wer || "").toLowerCase() === ich; });
-    }
-    var b = aktuellerBereich();
-    if(nurBereich && b){
-      liste = liste.filter(function(s){ return (s.bereich || "").trim() === b; });
-    }
-    return liste;
-  }
-
-  function summenRechnenRoh(liste){
-    var nachNr = {}, reihe = [];
-    liste.forEach(function(s){
-      if(!nachNr[s.nr]){ nachNr[s.nr] = { nr:s.nr, menge:0, paletten:0, leute:{} }; reihe.push(nachNr[s.nr]); }
-      nachNr[s.nr].menge += s.menge;
-      nachNr[s.nr].paletten += 1;
-    });
-    return reihe;
-  }
-
-  function summenRechnen(){
-    var nachNr = {}, reihe = [];
-    meineScans().forEach(function(s){
-      if(!nachNr[s.nr]){ nachNr[s.nr] = { nr:s.nr, menge:0, paletten:0, leute:{} }; reihe.push(nachNr[s.nr]); }
-      nachNr[s.nr].menge += s.menge;
-      nachNr[s.nr].paletten += 1;
-      var wer = s.wer || "ohne Namen";
-      nachNr[s.nr].leute[wer] = (nachNr[s.nr].leute[wer] || 0) + s.menge;
-    });
-    return reihe;
-  }
-  function summenText(){
-    return summenRechnen().map(function(g){ return g.menge + "*" + g.nr; }).join("\n");
-  }
-
-  function scansZeichnen(){
-    var summen = summenRechnen();
-    $("summenblock").hidden = summen.length === 0;
-
-    var ul = $("summen");
-    ul.textContent = "";
-    summen.forEach(function(g){
-      var li = document.createElement("li");
-      var code = document.createElement("span");
-      code.className = "code"; code.textContent = g.menge + "*" + g.nr;
-      li.appendChild(code);
-
-      var a = artikelZuCode(g.nr);
-      var was = document.createElement("span"); was.className = "was";
-      var name = darf("artikelname") ? (a ? a.bezeichnung : "nicht im Artikelstamm") : "";
-      was.textContent = (name ? name + " · " : "") + g.paletten + "\u00d7 gescannt";
-      li.appendChild(was);
-
-      // Wer alles sieht, sieht auch, wer wie viel gezählt hat
-      if(darf("inventur_gesamt")){
-        var namen = Object.keys(g.leute);
-        if(namen.length > 1){
-          var auf = document.createElement("span");
-          auf.className = "aufteilung";
-          auf.textContent = namen.map(function(n){ return n + " " + g.leute[n]; }).join("  ·  ");
-          li.appendChild(auf);
-        }
-      }
-
-      // Sollbestand aus dem Artikelstamm gegenrechnen, wenn er da ist
-      if(darf("bestand") && a && a.bestand != null && isFinite(a.bestand)){
-        var diff = g.menge - a.bestand;
-        var ab = document.createElement("span");
-        ab.className = "abgleich " + (diff === 0 ? "passt" : (diff > 0 ? "mehr" : "weniger"));
-        ab.textContent = diff === 0
-          ? "stimmt mit dem Bestand (" + a.bestand + ")"
-          : (diff > 0 ? "+" : "") + diff + " gegenüber Bestand " + a.bestand;
-        li.appendChild(ab);
-      }
-      // Ganze Artikelgruppe verwerfen — für alle Scans dieses Artikels auf einmal
-      if(darf("gruppe_loeschen")){
-        var weg = document.createElement("button");
-        weg.type = "button"; weg.className = "weggruppe";
-        weg.textContent = "Artikel löschen";
-        weg.addEventListener("click", function(){
-          var betroffen = meineScans().filter(function(s){ return s.nr === g.nr; });
-          var wo = (nurBereich && aktuellerBereich()) ? " im Bereich „" + aktuellerBereich() + "“" : "";
-          if(!window.confirm("Alle " + betroffen.length + " Scans von " + g.nr + wo
-            + " löschen?\n\nDie Zählung dieses Artikels beginnt danach wieder bei null.")) return;
-
-          inDenKorb(betroffen);
-          scanMeldung(betroffen.length + " Scans von " + g.nr + " in den Papierkorb gelegt.", "gut");
-          $("zuletzt").hidden = true;
-          scanfeldScharf();
-        });
-        li.appendChild(weg);
-      }
-
-      ul.appendChild(li);
-    });
-
-    bereichslisteFuellen();
-    tafelZeichnen();
-    papierkorbZeichnen();
-    var meine = meineScans();
-    var liste = $("scanliste");
-    liste.textContent = "";
-    meine.slice().reverse().slice(0, 300).forEach(function(s){
-      var li = document.createElement("li");
-      li.className = "scanzeile";
-      var txt = document.createElement("div"); txt.className = "txt";
-      var b = document.createElement("b"); b.className = "code"; b.textContent = s.menge + "*" + s.nr;
-      var kl = document.createElement("small");
-      var bez = darf("artikelname") ? bezeichnungZu(s.nr) : "";
-      var teile2 = [];
-      if(darf("artikelname")) teile2.push(bez || "nicht im Artikelstamm");
-      if(darf("inventur_gesamt") && s.wer) teile2.push(s.wer);
-      kl.textContent = teile2.join(" · ");
-      if(darf("artikelname") && !bez) kl.className = "fehlt";
-      txt.appendChild(b); txt.appendChild(kl);
-
-      var weg = document.createElement("button");
-      weg.className = "still"; weg.textContent = "Entfernen";
-      weg.addEventListener("click", function(){
-        inDenKorb([s]);
-        scanMeldung("Entfernt: " + s.menge + "*" + s.nr + " — liegt im Papierkorb.", "gut");
-        zuletztZeigen(s.nr);
-        scanfeldScharf();
-      });
-      li.appendChild(txt); li.appendChild(weg);
-      liste.appendChild(li);
-    });
-
-    var n = meine.length;
-    var alleZahl = scans.length;
-    if(n === 0){
-      $("scan-zaehler").textContent = "Noch nichts gescannt.";
-    }else if(darf("inventur_gesamt")){
-      var koepfe = {};
-      scans.forEach(function(s){ koepfe[s.wer || "ohne Namen"] = true; });
-      var wieViele = Object.keys(koepfe).length;
-      $("scan-zaehler").textContent = n + " Palette" + (n === 1 ? "" : "n") + " gescannt"
-        + (wieViele > 1 ? " · von " + wieViele + " Personen" : "") + ".";
-    }else{
-      $("scan-zaehler").textContent = n + " Palette" + (n === 1 ? "" : "n") + " von dir gescannt"
-        + (alleZahl > n ? " (andere zählen parallel)" : "") + ".";
-    }
-    var b = aktuellerBereich();
-    if(nurBereich && b && n > 0){
-      $("scan-zaehler").textContent += "  ·  Bereich „" + b + "“";
-    }
-    $("knopf-scan-leeren").hidden = n === 0;
-  }
-
   /* ---------- Kamera-Modus ----------
      Chrome bringt einen eigenen Barcode-Leser mit (BarcodeDetector). Wo der fehlt
      — vor allem auf dem iPhone — wird ZXing nachgeladen. Der Keyence braucht das
@@ -3455,7 +2759,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(sauber === letzterCode && jetzt - letzteCodeZeit < 1500) return;
     letzterCode = sauber; letzteCodeZeit = jetzt;
 
-    if(scanUebernehmen(sauber)){
+    if(i2Scan(sauber)){
       var box = $("kamerabox");
       box.classList.add("getroffen");
       window.setTimeout(function(){ box.classList.remove("getroffen"); }, 450);
@@ -3539,12 +2843,12 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     kameraAn = !!kamera;
     $("modus-kamera").setAttribute("aria-pressed", kameraAn ? "true" : "false");
     $("modus-scanner").setAttribute("aria-pressed", kameraAn ? "false" : "true");
-    $("scanfeld").hidden = kameraAn;
-    $("bereit").hidden = kameraAn;
-    $("knopf-scan-hinzu").hidden = kameraAn || !darf("handeingabe");
+    $("i2-feld").hidden = kameraAn;
+    $("i2-bereit").hidden = kameraAn;
+    $("i2-knopf-hand").hidden = kameraAn || !darf("handeingabe");
     schreib("pal-scanmodus", kameraAn ? "kamera" : "scanner");
     if(kameraAn){ kameraStarten(); }
-    else { kameraStoppen(); scanfeldScharf(); }
+    else { kameraStoppen(); i2FeldScharf(); }
   }
 
   $("modus-kamera").addEventListener("click", function(){ if(!kameraAn) modusSetzen(true); });
@@ -3555,147 +2859,6 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(document.visibilityState !== "visible" && kameraAn) kameraStoppen();
     else if(document.visibilityState === "visible" && kameraAn && !kameraStrom) kameraStarten();
   });
-
-  var scanUhr = null, letzteTaste = 0, letzteLaenge = 0, kamScanner = false;
-
-  $("scanfeld").addEventListener("input", function(){
-    var feld = $("scanfeld");
-    window.clearTimeout(scanUhr);
-
-    var w = feld.value.trim();
-
-    /* Woran man den Scanner erkennt: Er wirft mehrere Zeichen auf einmal ins Feld
-       oder tippt schneller als 35 ms je Zeichen. Beim Menschen trifft beides nie zu. */
-    var jetzt = Date.now();
-    if(w.length - letzteLaenge > 2) kamScanner = true;
-    if(jetzt - letzteTaste < 35) kamScanner = true;
-    letzteTaste = jetzt;
-    letzteLaenge = w.length;
-    var warten = kamScanner ? 60 : 650;
-
-    /* Zwei Palettencodes ineinander: wo der erste endet, ist nicht eindeutig.
-       Das Feld wird sofort geleert — sonst klebt der Rest am nächsten Scan. */
-    if(w.indexOf("*", w.indexOf("*") + 1) > 0){
-      scanMeldung("Zwei Codes sind zusammengelaufen („" + w + "“) — einzeln scannen.", "fehler");
-      scanBlitz(false); piep(false);
-      scanFertig();
-      kamScanner = false;
-      return;
-    }
-
-    bereitZeigen(false);
-    scanUhr = window.setTimeout(function(){
-      var code = feld.value.trim();
-
-      // Erst versuchen, ineinandergelaufene Artikelbarcodes sauber zu trennen
-      if(code.indexOf("*") === -1 && code.length > 14){
-        var teile = codeZerlegen(code);
-        if(teile){
-          var gezaehlt = 0;
-          teile.forEach(function(t){ if(scanUebernehmen(t)) gezaehlt++; });
-          scanFertig();
-          if(gezaehlt > 1) scanMeldung(gezaehlt + " Codes waren zusammengelaufen und wurden einzeln gezählt.", "gut");
-          kamScanner = false;
-          return;
-        }
-        scanMeldung("„" + code + "“ ist zu lang und lässt sich nicht eindeutig trennen — einzeln scannen.", "fehler");
-        scanBlitz(false); piep(false);
-        scanFertig();
-        kamScanner = false;
-        return;
-      }
-
-      if(!kamScanner && !darf("handeingabe")){
-        scanMeldung("Von Hand eintragen ist für dich nicht freigegeben — bitte scannen.", "fehler");
-        scanBlitz(false); piep(false);
-        feld.value = ""; letzteLaenge = 0;
-        bereitZeigen(true);
-        return;
-      }
-      // Kurze Codes wie „G50" sind gültig, sobald sie zu einem Artikel gehören.
-      /* Vom Scanner kommt der Code vollständig in einem Stück — dann wird sofort
-         geprüft, auch bei kurzen Nummern wie „G99". Nur bei Handeingabe wird
-         gewartet, damit nicht schon das halbe Wort als Fehler gilt. */
-      var reif = kamScanner
-        ? code.length >= 2
-        : (code.indexOf("*") > 0 ? code.length >= 3 : (code.length >= 6 || !!artikelZuCode(code)));
-      if(reif){
-        // Angenommen oder abgelehnt — das Feld ist danach in beiden Fällen leer,
-        // sonst klebt ein falscher Code am nächsten Scan.
-        scanUebernehmen(code);
-        scanFertig();
-      }else{
-        bereitZeigen(true);
-      }
-      kamScanner = false;
-    }, warten);
-  });
-
-  $("scanfeld").addEventListener("keydown", function(e){
-    if(e.key !== "Enter") return;
-    e.preventDefault();
-    window.clearTimeout(scanUhr);
-    scanUebernehmen($("scanfeld").value);
-    scanFertig();
-  });
-
-  $("scanfeld").addEventListener("blur", function(){
-    window.setTimeout(function(){
-      var a = document.activeElement;
-      if(!a || a === document.body) scanfeldScharf();
-    }, 60);
-  });
-  $("ansicht-inventur").addEventListener("click", function(e){
-    var t = e.target;
-    if(t && (t.tagName === "BUTTON" || t.tagName === "INPUT" || t.tagName === "LABEL")) return;
-    scanfeldScharf();
-  });
-
-  $("knopf-scan-hinzu").addEventListener("click", function(){
-    if(!darf("handeingabe")){
-      scanMeldung("Von Hand eintragen ist für dich nicht freigegeben.", "fehler");
-      return;
-    }
-    window.clearTimeout(scanUhr);
-    scanUebernehmen($("scanfeld").value);
-    scanFertig();
-  });
-
-  $("knopf-scan-leeren").addEventListener("click", function(){
-    if(!darf("inventur_leeren")){
-      scanMeldung("Die Zählliste darf nur leeren, wer das Recht dazu hat.", "fehler");
-      return;
-    }
-    var betroffen = meineScans();
-    if(betroffen.length === 0) return;
-    var wo = (nurBereich && aktuellerBereich()) ? " im Bereich „" + aktuellerBereich() + "“" : "";
-    var frage = darf("inventur_gesamt")
-      ? "Alle " + betroffen.length + " gescannten Paletten" + wo + " in den Papierkorb legen?\n\nDas gilt für alle Geräte. Zurückholen ist möglich."
-      : "Deine " + betroffen.length + " gescannten Paletten" + wo + " in den Papierkorb legen?\n\nZurückholen ist möglich.";
-    if(!window.confirm(frage)) return;
-
-    inDenKorb(betroffen.slice());
-    scanMeldung(betroffen.length + " Einträge liegen im Papierkorb.", "gut");
-    $("zuletzt").hidden = true;
-    scanFertig();
-  });
-
-  $("knopf-summe-kopieren").addEventListener("click", function(){
-    var text = summenText();
-    if(!text) return;
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text)
-        .then(function(){ scanMeldung("Kopiert: " + text.replace(/\n/g, "  "), "gut"); })
-        .catch(function(){ scanMeldung("Kopieren ging nicht — bitte von Hand abtippen.", "fehler"); });
-    }else{
-      scanMeldung("Kopieren ging nicht — bitte von Hand abtippen.", "fehler");
-    }
-  });
-
-  // Solange die Inventur offen ist, alle 20 Sekunden nachsehen, was die anderen gezählt haben.
-  window.setInterval(function(){
-    if(sb && !$("ansicht-inventur").hidden && document.visibilityState === "visible") scansHolen(false);
-  }, 20000);
 
   /* ================== Inventur 2.0 ==================
      Drei Ebenen: Inventur → Bereich → Zählplatz. Gezählt wird immer auf einem
@@ -3711,7 +2874,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   var i2PlatzScans = [];   // Scans nur dieses Platzes — darum immer eine kurze Liste
   var i2Summen = {};       // platz_id -> {anzahl, menge} für die Tafel
 
-  function i2Kurz(mail){ return String(mail || "").split("@")[0] || "jemand"; }
+  function i2Kurz(mail){ return nameVon(mail); }
   function i2Datum(iso){
     try{
       var d = new Date(iso);
@@ -3783,6 +2946,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   }
   function i2FeldScharf(){
     if($("ansicht-inv2").hidden || $("i2-zaehlen").hidden) return;
+    if(typeof kameraAn !== "undefined" && kameraAn) return;
+    if(!$("i2-sicherung").hidden) return;
     var feld = $("i2-feld");
     if(document.activeElement !== feld) feld.focus();
   }
@@ -3909,6 +3074,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   // ----- B) Tafel -----
   function i2TafelLaden(){
     if(!sb || !i2Aktiv) return Promise.resolve();
+    if(typeof kameraAn !== "undefined" && kameraAn) kameraStoppen();
     i2Platz = null;
     return Promise.all([
       alleZeilen("zaehlplaetze",
@@ -4361,21 +3527,87 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   }
 
   var i2Notizen = {};      // Artikelnummer -> {id, notiz, wer, geaendert_am}
+  var i2Korb = [];         // gelöschte und ersetzte Scans dieses Platzes
 
   function i2PlatzScansHolen(){
-    if(!sb || !i2Platz){ i2PlatzScans = []; i2Notizen = {}; return Promise.resolve(); }
+    if(!sb || !i2Platz){ i2PlatzScans = []; i2Korb = []; i2Notizen = {}; return Promise.resolve(); }
     var platzId = i2Platz.id;
     return Promise.all([
-      alleZeilen("scans", "id,menge,nr,wer,erstellt_am", "erstellt_am",
-        function(q){ return q.eq("platz_id", platzId).is("geloescht_am", null); }),
+      alleZeilen("scans", "id,menge,nr,wer,erstellt_am,geloescht_am,geloescht_von", "erstellt_am",
+        function(q){ return q.eq("platz_id", platzId); }),
       alleZeilen("notizen", "id,nr,notiz,wer,geaendert_am", "",
         function(q){ return q.eq("platz_id", platzId); }).catch(function(){ return []; })
     ]).then(function(beides){
-      i2PlatzScans = beides[0];
+      var alle = beides[0] || [];
+      i2PlatzScans = alle.filter(function(s){ return !s.geloescht_am; });
+      i2Korb       = alle.filter(function(s){ return !!s.geloescht_am; });
       i2Notizen = {};
       (beides[1] || []).forEach(function(n){ i2Notizen[n.nr] = n; });
-    }).catch(function(){ i2PlatzScans = []; i2Notizen = {}; });
+    }).catch(function(){ i2PlatzScans = []; i2Korb = []; i2Notizen = {}; });
   }
+
+  /* Papierkorb: Gelöschtes und durch „Menge ändern" Ersetztes bleibt liegen,
+     bis es jemand ausdrücklich endgültig entfernt. Ohne diese Stufe wäre ein
+     Fehlgriff mitten in der Inventur nicht mehr gutzumachen. */
+  function i2KorbZeichnen(){
+    var kasten = $("i2-papierkorb");
+    kasten.hidden = !darf("papierkorb") || i2Korb.length === 0;
+    if(kasten.hidden) return;
+
+    $("i2-papierkorb-titel").textContent = "Papierkorb — " + i2Korb.length
+      + (i2Korb.length === 1 ? " Eintrag" : " Einträge");
+
+    var ul = $("i2-korbliste");
+    ul.textContent = "";
+    i2Korb.slice().reverse().slice(0, 200).forEach(function(s){
+      var li = document.createElement("li"); li.className = "scanzeile";
+      var txt = document.createElement("div"); txt.className = "txt";
+      var code = document.createElement("b"); code.className = "code";
+      code.textContent = s.menge + "*" + s.nr;
+      var klein = document.createElement("small");
+      var teile = [];
+      if(darf("artikelname")) teile.push(bezeichnungZu(s.nr) || "nicht im Artikelstamm");
+      if(s.geloescht_von) teile.push("entfernt von " + nameVon(s.geloescht_von));
+      klein.textContent = teile.join(" · ");
+      txt.appendChild(code); txt.appendChild(klein);
+      li.appendChild(txt);
+
+      var zurueck = document.createElement("button");
+      zurueck.className = "still"; zurueck.textContent = "Zurückholen";
+      zurueck.addEventListener("click", function(){ i2AusDemKorb([s]); });
+      li.appendChild(zurueck);
+      ul.appendChild(li);
+    });
+  }
+
+  function i2AusDemKorb(liste){
+    if(!sb || !liste.length) return;
+    var ids = liste.map(function(s){ return s.id; });
+    sb.from("scans").update({ geloescht_am:null, geloescht_von:null }).in("id", ids)
+      .then(function(res){
+        if(res.error){ i2Sage("i2-korb-meldung", "Nicht zurückgeholt: " + res.error.message, "fehler"); return; }
+        liste.forEach(function(s){ s.geloescht_am = null; s.geloescht_von = null; i2PlatzScans.push(s); });
+        i2Korb = i2Korb.filter(function(x){ return ids.indexOf(x.id) === -1; });
+        i2Sage("i2-korb-meldung", liste.length + (liste.length === 1 ? " Eintrag" : " Einträge") + " zurückgeholt.", "gut");
+        i2ZaehlenZeichnen();
+      })
+      .catch(function(){ i2Sage("i2-korb-meldung", "Nicht zurückgeholt — Verbindung prüfen.", "fehler"); });
+  }
+
+  $("i2-korb-alles").addEventListener("click", function(){ i2AusDemKorb(i2Korb.slice()); });
+
+  $("i2-korb-leeren").addEventListener("click", function(){
+    if(!sb || !i2Korb.length) return;
+    if(!window.confirm(i2Korb.length + " Einträge endgültig entfernen?\n\n"
+      + "Danach sind sie wirklich weg — auch in der Datenbank.")) return;
+    var ids = i2Korb.map(function(s){ return s.id; });
+    sb.from("scans").delete().in("id", ids).then(function(res){
+      if(res.error){ i2Sage("i2-korb-meldung", "Nicht geleert: " + res.error.message, "fehler"); return; }
+      i2Korb = [];
+      i2Sage("i2-korb-meldung", "Papierkorb geleert.", "gut");
+      i2ZaehlenZeichnen();
+    }).catch(function(){ i2Sage("i2-korb-meldung", "Nicht geleert — Verbindung prüfen.", "fehler"); });
+  });
 
   /* Nach Artikel zusammenfassen, zuletzt Gescanntes zuerst — beim Zählen will
      man die eben gescannte Zeile oben sehen, nicht irgendwo in der Liste. */
@@ -4456,6 +3688,17 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       was.textContent = (name ? name + " · " : "") + g.anzahl + "× gescannt";
       li.appendChild(was);
 
+      // Sollbestand aus dem Artikelstamm gegenrechnen, wenn einer hinterlegt ist
+      if(darf("bestand") && a && a.bestand != null && isFinite(a.bestand)){
+        var diff = g.menge - a.bestand;
+        var ab = document.createElement("span");
+        ab.className = "abgleich " + (diff === 0 ? "passt" : (diff > 0 ? "mehr" : "weniger"));
+        ab.textContent = diff === 0
+          ? "stimmt mit dem Bestand (" + a.bestand + ")"
+          : (diff > 0 ? "+" : "") + diff + " gegenüber Bestand " + a.bestand;
+        li.appendChild(ab);
+      }
+
       if(i2DarfLoeschen(i2Platz)){
         var weg = document.createElement("button");
         weg.type = "button"; weg.className = "weggruppe";
@@ -4502,6 +3745,11 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           i2Meldung("Nicht gelöscht: " + res.error.message, "fehler");
           return;
         }
+        betroffen.forEach(function(x){
+          x.geloescht_am = new Date().toISOString(); x.geloescht_von = angemeldet || "";
+          i2Korb.push(x);
+        });
+        i2ZaehlenZeichnen();
         i2Meldung(betroffen.length + " Scans von " + g.nr + " liegen im Papierkorb.", "gut");
       }).catch(function(){
         i2PlatzScans = i2PlatzScans.concat(betroffen);
@@ -4548,6 +3796,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
               return;
             }
             if(stelle >= 0) i2PlatzScans.splice(stelle, 1);
+            s.geloescht_am = new Date().toISOString(); s.geloescht_von = angemeldet || "";
+            i2Korb.push(s);
             i2PlatzScans.push(neu);
             i2LetzterScan = neu;
             i2ZaehlenZeichnen();
@@ -4582,7 +3832,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     i2PlatzScansHolen().then(function(){
       i2AnsichtZeigen("zaehlen");
       i2ZaehlenZeichnen();
-      i2FeldScharf();
+      // Kameramodus so wiederherstellen, wie er zuletzt war
+      if(lies("pal-scanmodus") === "kamera") modusSetzen(true);
+      else i2FeldScharf();
     });
     if(p.status !== "laeuft" || p.zaehler !== (angemeldet || "")) i2PlatzStatus(p, "laeuft");
   }
@@ -4593,9 +3845,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("i2-wozusatz").textContent = (i2Aktiv ? i2Aktiv.name + " · " : "") + i2Platz.bereich;
     var menge = i2Mengensumme(i2PlatzScans);
     $("i2-stand").textContent = menge;
-    $("i2-knopf-hand").hidden = !darf("handeingabe");
+    $("i2-knopf-hand").hidden = !darf("handeingabe") || (typeof kameraAn !== "undefined" && kameraAn);
 
     i2SummenZeichnen();
+    i2KorbZeichnen();
 
     var darfWeg = i2DarfLoeschen(i2Platz), darfMenge = i2DarfAendern(i2Platz);
     var ul = $("i2-scanliste");
@@ -4654,6 +3907,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
             i2PlatzScans.push(s); i2ZaehlenZeichnen();
             i2Meldung("Nicht entfernt: " + res.error.message, "fehler");
           }
+          s.geloescht_am = new Date().toISOString(); s.geloescht_von = angemeldet || "";
+          i2Korb.push(s); i2ZaehlenZeichnen();
         }).catch(function(){
           i2PlatzScans.push(s); i2ZaehlenZeichnen();
           i2Meldung("Nicht entfernt — Verbindung prüfen.", "fehler");
@@ -4932,14 +4187,15 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   // ---------- Anmeldung ----------
   function appEinrichten(){
     $("knopf-abmelden").hidden = false;
-    statusSetzen("Angemeldet als " + angemeldet, "aktiv");
+    statusNameSetzen();
     mengenfelderBauen();
     rechteHolen().then(function(){
       rechteAnwenden();
+      statusNameSetzen();      // jetzt ist der Spitzname bekannt
       if(rechteLeer && darf("verwaltung")){
-        statusSetzen("Angemeldet als " + angemeldet + " · noch keine Rechte vergeben, du darfst alles", "aktiv");
+        statusSetzen("Angemeldet als " + nameVon(angemeldet) + " · noch keine Rechte vergeben, du darfst alles", "aktiv");
       }
-      return Promise.all([artikelHolen(), leuteHolen(), scansHolen()]);
+      return Promise.all([artikelHolen(), leuteHolen()]);
     }).then(function(){
       leuteWahlFuellen();
       etikettenZeichnen();
@@ -5117,7 +4373,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     lokalLaden();
     mengenfelderBauen();
     stammZeichnen(); leuteZeichnen(); leuteWahlFuellen();
-    trefferZeichnen(); scansZeichnen(); etikettenZeichnen();
+    trefferZeichnen(); etikettenZeichnen();
   }
 
   // ---------- Start ----------
