@@ -650,6 +650,8 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
 .diffkopf .diffzahl{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--gedaempft)}
 .diffkopf button{margin-left:0}
 .diffkopf button:nth-of-type(1){margin-left:auto}
+.diffkopf select{width:auto; min-width:140px; padding:4px 8px; font-size:12px}
+.diffkopf .tonschalter{font-size:11.5px}
 .i2diffliste{list-style:none; margin:0; padding:0; max-height:420px; overflow:auto}
 .i2diffliste li{display:flex; align-items:center; gap:12px; flex-wrap:wrap;
   padding:9px 13px; border-bottom:1px solid var(--kante)}
@@ -1036,7 +1038,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v36</span>
+    <span class="version">v37</span>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
 </header>
@@ -1296,7 +1298,11 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           <div class="i2diff" id="i2-differenz" hidden>
             <div class="diffkopf">
               <span>Differenzen zum Sollbestand</span>
+              <select id="i2-diff-bereich" aria-label="Welcher Bereich"></select>
               <span class="diffzahl" id="i2-diff-zahl"></span>
+              <label class="tonschalter" id="i2-diff-fehlende-wahl">
+                <input type="checkbox" id="i2-diff-fehlende"> auch gar nicht Gezähltes
+              </label>
               <button type="button" class="still" id="i2-diff-kopieren">Kopieren</button>
               <button type="button" class="still" id="i2-diff-zu">Schließen</button>
             </div>
@@ -3420,12 +3426,15 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       kopf.appendChild(titel); kopf.appendChild(zahl); kopf.appendChild(balken);
 
       if(darf("inventur2_bauen")){
-        if(i2Einrichten){
-          var stift = document.createElement("button");
-          stift.type = "button"; stift.className = "still"; stift.textContent = "Bereich ändern";
-          stift.addEventListener("click", function(){ i2EditorOeffnen("bereich", bname); });
-          kopf.appendChild(stift);
-        }
+        /* Immer sichtbar, nicht erst im Einrichten-Modus: hier steckt auch das
+           Löschen eines ganzen Bereichs, und das hat vorher niemand gefunden. */
+        var stift = document.createElement("button");
+        stift.type = "button"; stift.className = "still";
+        stift.textContent = "Ändern";
+        stift.title = "Name, Rechte, oder ganzen Bereich löschen";
+        stift.addEventListener("click", function(){ i2EditorOeffnen("bereich", bname); });
+        kopf.appendChild(stift);
+
         var plus = document.createElement("button");
         plus.type = "button"; plus.className = "still"; plus.textContent = "+ Platz";
         plus.addEventListener("click", function(){ i2PlatzNachtragen(bname); });
@@ -3509,7 +3518,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(!i2Einrichten) i2EditorSchliessen();
     i2TafelZeichnen();
     i2Sage("i2-tafelmeldung", i2Einrichten
-      ? "Einrichten: tipp auf einen Platz oder auf „Bereich ändern“."
+      ? "Einrichten: tipp auf einen Zählplatz, um ihn zu ändern statt zu zählen."
       : "", i2Einrichten ? "gut" : "");
   });
 
@@ -3853,6 +3862,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
      gefunden. Sortiert nach der größten Abweichung, damit die Suche dort
      beginnt, wo am meisten fehlt. */
   var i2DiffText = "";
+  var i2DiffScans = null;      // einmal geholt, dann nur noch neu gerechnet
 
   $("i2-knopf-differenz").addEventListener("click", function(){
     if(!sb || !i2Aktiv) return;
@@ -3862,36 +3872,85 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     }
     i2Sage("i2-tafelmeldung", "Differenzen werden gerechnet …");
 
-    alleZeilen("scans", "menge,nr", "",
+    alleZeilen("scans", "menge,nr,platz_id", "",
       function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
       .then(function(daten){
-        var gezaehlt = {};
-        daten.forEach(function(s){ gezaehlt[s.nr] = (gezaehlt[s.nr] || 0) + (s.menge || 0); });
+        i2DiffScans = daten;
+        i2DiffBereicheFuellen();
+        i2DiffRechnen();
+        $("i2-differenz").hidden = false;
+        i2Sage("i2-tafelmeldung", "");
+      })
+      .catch(function(e){ i2Sage("i2-tafelmeldung", "Nicht gerechnet: " + ((e && e.message) || e), "fehler"); });
+  });
 
-        var zeilen = [];
-        // 1. Alles Gezählte gegen den Sollbestand
-        Object.keys(gezaehlt).forEach(function(nr){
-          var a = artikelZuCode(nr);
-          var soll = (a && a.bestand != null && isFinite(a.bestand)) ? Number(a.bestand) : null;
-          zeilen.push({ nr:nr, ist:gezaehlt[nr], soll:soll,
-                        diff: soll === null ? null : gezaehlt[nr] - soll,
-                        name: a ? a.bezeichnung : "", fehlt:false });
-        });
-        // 2. Artikel mit Sollbestand, die gar nicht gezählt wurden
-        artikel.forEach(function(a){
-          if(!a.nr || gezaehlt[a.nr.toUpperCase()] != null) return;
-          if(a.bestand == null || !isFinite(a.bestand) || Number(a.bestand) === 0) return;
-          zeilen.push({ nr:a.nr.toUpperCase(), ist:0, soll:Number(a.bestand),
-                        diff: -Number(a.bestand), name:a.bezeichnung, fehlt:true });
-        });
+  // Nur Bereiche anbieten, in denen wirklich etwas gezählt wurde
+  function i2DiffBereicheFuellen(){
+    var platzBereich = {};
+    i2Plaetze.forEach(function(p){ platzBereich[p.id] = p.bereich; });
+    var da = {};
+    (i2DiffScans || []).forEach(function(s){
+      var b = platzBereich[s.platz_id];
+      if(b) da[b] = true;
+    });
 
-        // Nur was abweicht, größte Abweichung zuerst
-        var abweichend = zeilen.filter(function(z){ return z.diff !== null && z.diff !== 0; });
-        abweichend.sort(function(x, y){ return Math.abs(y.diff) - Math.abs(x.diff); });
+    var sel = $("i2-diff-bereich");
+    var vorher = sel.value;
+    sel.textContent = "";
+    var alle = document.createElement("option");
+    alle.value = ""; alle.textContent = "Alle Bereiche";
+    sel.appendChild(alle);
+    Object.keys(da).sort().forEach(function(b){
+      var o = document.createElement("option");
+      o.value = b; o.textContent = b;
+      sel.appendChild(o);
+    });
+    if(vorher && da[vorher]) sel.value = vorher;
+  }
 
-        var ohneSoll = zeilen.filter(function(z){ return z.soll === null; }).length;
-        var passt = zeilen.filter(function(z){ return z.diff === 0; }).length;
+  function i2DiffRechnen(){
+    if(!i2DiffScans) return;
+    var wahl = $("i2-diff-bereich").value;
 
+    /* Nur bei „Alle Bereiche" ergibt es Sinn, nach gar nicht Gezähltem zu
+       suchen: Der Sollbestand gilt fürs ganze Lager, nicht für eine Ebene. */
+    $("i2-diff-fehlende-wahl").hidden = !!wahl;
+    var auchFehlende = !wahl && $("i2-diff-fehlende").checked;
+
+    var platzBereich = {};
+    i2Plaetze.forEach(function(p){ platzBereich[p.id] = p.bereich; });
+
+    var gezaehlt = {};
+    i2DiffScans.forEach(function(s){
+      if(wahl && platzBereich[s.platz_id] !== wahl) return;
+      gezaehlt[s.nr] = (gezaehlt[s.nr] || 0) + (s.menge || 0);
+    });
+
+    var zeilen = [];
+    Object.keys(gezaehlt).forEach(function(nr){
+      var a = artikelZuCode(nr);
+      var soll = (a && a.bestand != null && isFinite(a.bestand)) ? Number(a.bestand) : null;
+      zeilen.push({ nr:nr, ist:gezaehlt[nr], soll:soll,
+                    diff: soll === null ? null : gezaehlt[nr] - soll,
+                    name: a ? a.bezeichnung : "", fehlt:false });
+    });
+    if(auchFehlende){
+      artikel.forEach(function(a){
+        if(!a.nr || gezaehlt[a.nr.toUpperCase()] != null) return;
+        if(a.bestand == null || !isFinite(a.bestand) || Number(a.bestand) === 0) return;
+        zeilen.push({ nr:a.nr.toUpperCase(), ist:0, soll:Number(a.bestand),
+                      diff: -Number(a.bestand), name:a.bezeichnung, fehlt:true });
+      });
+    }
+
+    // Nur was abweicht, größte Abweichung zuerst
+    var abweichend = zeilen.filter(function(z){ return z.diff !== null && z.diff !== 0; });
+    abweichend.sort(function(x, y){ return Math.abs(y.diff) - Math.abs(x.diff); });
+
+    var ohneSoll = zeilen.filter(function(z){ return z.soll === null; }).length;
+    var passt = zeilen.filter(function(z){ return z.diff === 0; }).length;
+
+    (function(){
         var ul = $("i2-diffliste");
         ul.textContent = "";
         abweichend.slice(0, 500).forEach(function(z){
@@ -3918,25 +3977,29 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           ul.appendChild(li);
         });
 
-        $("i2-diff-zahl").textContent = abweichend.length
+        $("i2-diff-zahl").textContent = (abweichend.length
           ? abweichend.length + (abweichend.length === 1 ? " Abweichung" : " Abweichungen")
-          : "keine Abweichung";
-        $("i2-diff-hinweis").textContent =
-          (passt ? passt + (passt === 1 ? " Artikel stimmt genau. " : " Artikel stimmen genau. ") : "")
-          + (ohneSoll ? ohneSoll + (ohneSoll === 1 ? " gezählter Artikel hat" : " gezählte Artikel haben")
-              + " keinen Sollbestand hinterlegt und fehlt hier. " : "")
-          + (abweichend.length > 500 ? "Nur die 500 größten Abweichungen sind aufgelistet." : "");
+          : "keine Abweichung")
+          + (wahl ? " · " + wahl : "");
+
+        var satz = "";
+        if(passt) satz += passt + (passt === 1 ? " Artikel stimmt genau. " : " Artikel stimmen genau. ");
+        if(ohneSoll) satz += ohneSoll + (ohneSoll === 1 ? " gezählter Artikel hat" : " gezählte Artikel haben")
+          + " keinen Sollbestand hinterlegt und fehlt hier. ";
+        if(wahl) satz += "Gezeigt wird nur, was im Bereich „" + wahl + "“ gezählt wurde — "
+          + "der Sollbestand aus CAO gilt aber fürs ganze Lager. Liegt derselbe Artikel "
+          + "auch woanders, ist die Differenz hier nur ein Zwischenstand.";
+        if(abweichend.length > 500) satz += " Nur die 500 größten Abweichungen sind aufgelistet.";
+        $("i2-diff-hinweis").textContent = satz;
 
         i2DiffText = abweichend.map(function(z){
           return z.nr + "\t" + z.ist + "\t" + z.soll + "\t" + (z.diff > 0 ? "+" : "") + z.diff;
         }).join("\n");
+    })();
+  }
 
-        $("i2-differenz").hidden = false;
-        i2Sage("i2-tafelmeldung", "");
-      })
-      .catch(function(e){ i2Sage("i2-tafelmeldung", "Nicht gerechnet: " + ((e && e.message) || e), "fehler"); });
-  });
-
+  $("i2-diff-bereich").addEventListener("change", i2DiffRechnen);
+  $("i2-diff-fehlende").addEventListener("change", i2DiffRechnen);
   $("i2-diff-zu").addEventListener("click", function(){ $("i2-differenz").hidden = true; });
 
   $("i2-diff-kopieren").addEventListener("click", function(){
