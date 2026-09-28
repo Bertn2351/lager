@@ -753,6 +753,59 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   background:color-mix(in srgb, var(--gut) 7%, var(--flaeche-2))}
 .i2platz.fertig .pzustand{color:var(--gut)}
 .i2platz.ich{box-shadow:0 0 0 2px color-mix(in srgb, var(--akzent) 32%, transparent)}
+
+/* ===== Blatt — das, was sich in der Mitte öffnet =====
+   Einrichten und Entscheiden sind eigene Schritte und sollen sich auch so
+   anfühlen. Auf der Tafel zählen vier Leute; dort hat ein dauerhaft
+   aufgeklapptes Formular nichts verloren. */
+.blatt{position:fixed; inset:0; z-index:70; display:grid; place-items:center;
+  padding:18px; background:rgba(6,9,11,.62);
+  backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
+  animation:blattAn .16s ease-out}
+html[data-thema="hell"] .blatt{background:rgba(40,48,56,.42)}
+@keyframes blattAn{from{opacity:0} to{opacity:1}}
+.blattkarte{width:100%; max-width:460px; max-height:88vh; display:flex; flex-direction:column;
+  background:var(--flaeche); border:1px solid var(--kante-hell); border-radius:14px;
+  box-shadow:0 30px 70px -30px rgba(0,0,0,.8); overflow:hidden;
+  animation:blattHoch .2s cubic-bezier(.2,.9,.3,1)}
+@keyframes blattHoch{from{transform:translateY(10px) scale(.98); opacity:.5} to{transform:none; opacity:1}}
+.blattkopf{padding:15px 18px 12px; border-bottom:1px solid var(--kante); display:grid; gap:3px}
+.blattkopf b{font-family:Archivo,"IBM Plex Sans",sans-serif; font-size:17px; overflow-wrap:anywhere}
+.blattkopf small{font-size:12px; color:var(--leise); overflow-wrap:anywhere}
+.blattinhalt{padding:15px 18px; display:grid; gap:12px; overflow:auto}
+.blattinhalt .hinweis{margin:0}
+.blattinhalt .schritt > .titel{display:none}
+.blattinhalt .i2neu{display:grid; gap:10px}
+.blattinhalt .i2neu > div{flex:none}
+.blattinhalt .i2neu button{justify-self:start}
+.blattfuss{padding:12px 18px 15px; border-top:1px solid var(--kante);
+  display:flex; gap:9px; flex-wrap:wrap}
+.blattfuss button{flex:1 1 auto; min-width:120px; justify-content:center; text-align:center}
+.blattwahl{display:grid; gap:9px}
+.blattwahl button{width:100%; text-align:left; display:grid; gap:3px; padding:12px 14px;
+  border:1px solid var(--kante); border-radius:10px; background:var(--flaeche-2);
+  color:var(--tinte); font:inherit; cursor:pointer}
+.blattwahl button:hover{border-color:var(--kante-hell); background:var(--flaeche-3)}
+.blattwahl button b{font-size:14px; font-weight:600}
+.blattwahl button small{font-size:11.5px; color:var(--gedaempft); line-height:1.45}
+.blattwahl button.haupt{border-color:var(--akzent);
+  background:color-mix(in srgb, var(--akzent) 10%, var(--flaeche-2))}
+.blattwahl button.haupt b{color:var(--akzent-weich)}
+.blattzahl{display:flex; gap:14px; flex-wrap:wrap; padding:11px 13px; border-radius:10px;
+  background:var(--flaeche-2); border:1px solid var(--kante)}
+.blattzahl div{display:grid; gap:2px}
+.blattzahl span{font-size:10.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--leise)}
+.blattzahl b{font-family:"IBM Plex Mono",monospace; font-size:18px; font-variant-numeric:tabular-nums}
+@media (max-width:700px){
+  .blatt{padding:10px; align-items:flex-end}
+  .blattkarte{max-width:none; max-height:92vh; border-radius:13px}
+  .blattkopf{padding:12px 13px 10px}
+  .blattkopf b{font-size:15px}
+  .blattinhalt{padding:12px 13px; gap:10px}
+  .blattfuss{padding:10px 13px 12px}
+  .blattfuss button{min-width:100px}
+  .blattzahl b{font-size:16px}
+}
 .i2platz .prunde{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600;
   font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
 .i2platz .prunde.passt{color:var(--gut)}
@@ -1067,6 +1120,17 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </footer>
 </div>
 
+<div class="blatt" id="blatt" hidden>
+  <div class="blattkarte" role="dialog" aria-modal="true" aria-labelledby="blatt-titel">
+    <div class="blattkopf">
+      <b id="blatt-titel"></b>
+      <small id="blatt-unter"></small>
+    </div>
+    <div class="blattinhalt" id="blatt-inhalt"></div>
+    <div class="blattfuss" id="blatt-fuss"></div>
+  </div>
+</div>
+
 <div class="quittung" id="quittung" hidden aria-hidden="true">
   <div class="quittinhalt">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
@@ -1108,7 +1172,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v39</span>
+    <span class="version">v40</span>
     <button type="button" id="knopf-thema" title="Zwischen hell und dunkel wechseln">Hell</button>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
@@ -1328,8 +1392,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           <p class="hinweis" id="i2-tafelleer" hidden>Noch kein Bereich angelegt.
             Trag unten den ersten ein, zum Beispiel „Tiefkühl“.</p>
 
+          <!-- Die beiden Formulare wohnen hier, gezeigt werden sie im Blatt -->
           <div class="schritt" id="i2-bereichneu" hidden>
-            <div class="titel"><span class="nr">+</span><span>Bereich anlegen</span></div>
             <div class="i2neu">
               <div>
                 <label for="i2-bname">Bereich</label>
@@ -1339,18 +1403,18 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
                 <label for="i2-bplaetze">Zählplätze <span style="text-transform:none">(mit Komma trennen)</span></label>
                 <input id="i2-bplaetze" placeholder="Ebene 1, Ebene 2, Ebene 3" autocomplete="off">
               </div>
-              <button type="button" class="still" id="i2-knopf-bereichneu">Anlegen</button>
             </div>
             <p class="hinweis">Statt einer Liste geht auch eine Spanne: <b>1-8</b> wird zu
               Ebene 1 … Ebene 8, <b>Regal 1-8</b> zu Regal 1 … Regal 8.
               Lässt du das Feld leer, bekommt der Bereich einen einzigen Platz.</p>
+          </div>
 
-            <div class="i2neu" style="margin-top:4px">
+          <div class="schritt" id="i2-vorlageneu" hidden>
+            <div class="i2neu">
               <div>
-                <label for="i2-vorlage">Oder alles aus einer früheren Inventur übernehmen</label>
+                <label for="i2-vorlage">Frühere Inventur</label>
                 <select id="i2-vorlage"></select>
               </div>
-              <button type="button" class="still" id="i2-knopf-vorlage">Struktur übernehmen</button>
             </div>
             <p class="hinweis">Kopiert alle Bereiche und Zählplätze <b>samt Rechten</b> —
               alles steht wieder auf „offen“, gezählt ist nichts. Was hier schon angelegt ist,
@@ -1358,11 +1422,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           </div>
 
           <div style="display:flex; gap:9px; flex-wrap:wrap; align-items:center">
-            <button type="button" class="still" id="i2-knopf-summe">Summe für CAO</button>
-            <button type="button" class="still" id="i2-knopf-auffrischen">Auffrischen</button>
+            <button type="button" class="still" id="i2-knopf-bereich-blatt" hidden>Bereich anlegen</button>
+            <button type="button" class="still" id="i2-knopf-vorlage-blatt" hidden>Aus früherer Inventur</button>
             <button type="button" class="still" id="i2-knopf-bearbeiten" aria-pressed="false" hidden>Einrichten</button>
             <button type="button" class="still" id="i2-knopf-abschliessen" hidden>Inventur abschließen</button>
+            <button type="button" class="still" id="i2-knopf-summe">Summe für CAO</button>
             <button type="button" class="still" id="i2-knopf-differenz" hidden>Differenzen</button>
+            <button type="button" class="still" id="i2-knopf-auffrischen">Auffrischen</button>
             <span class="meldung" id="i2-tafelmeldung" style="margin-left:auto"></span>
           </div>
 
@@ -1479,6 +1545,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
           <div style="display:flex; gap:9px; flex-wrap:wrap; align-items:center">
             <button type="button" class="tat" id="i2-knopf-fertig">Platz fertig</button>
+            <button type="button" class="tat" id="i2-knopf-nachzaehlen" hidden>Nachzählen starten</button>
             <button type="button" class="still" id="i2-knopf-pause">Pause machen</button>
             <button type="button" class="still" id="i2-knopf-zurueck">Zurück zur Tafel</button>
             <span class="hinweis" id="i2-zaehler" style="margin-left:auto">Noch nichts gescannt.</span>
@@ -3167,6 +3234,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   function i2FeldScharf(){
     if($("ansicht-inv2").hidden || $("i2-zaehlen").hidden) return;
+    if(blattOffen() || i2NurLesen) return;
     if(i2TastaturAus) return;
     if(typeof kameraAn !== "undefined" && kameraAn) return;
     if(!$("i2-sicherung").hidden) return;
@@ -3218,7 +3286,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   // Reiter betreten: dort weitermachen, wo man war
   function i2Oeffnen(){
     $("i2-invneu").hidden     = !darf("inventur2_bauen");
-    $("i2-bereichneu").hidden = !darf("inventur2_bauen");
+
     if(!sb){
       i2Sage("i2-startmeldung", "Inventur 2.0 braucht die Datenbank — ohne Verbindung geht sie nicht.", "fehler");
       i2AnsichtZeigen("start");
@@ -3393,7 +3461,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(vorher) sel.value = vorher;
   }
 
-  $("i2-knopf-vorlage").addEventListener("click", function(){
+  function i2VorlageUebernehmen(){
     if(!sb || !i2Aktiv || !darf("inventur2_bauen")) return;
     var quelleId = $("i2-vorlage").value;
     if(!quelleId){ i2Sage("i2-tafelmeldung", "Bitte erst eine Inventur auswählen.", "fehler"); return; }
@@ -3427,12 +3495,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         });
         return sb.from("zaehlplaetze").insert(zeilen).then(function(res){
           if(res.error){ i2Sage("i2-tafelmeldung", "Nicht übernommen: " + res.error.message, "fehler"); return; }
+          blattSchliessen();
           i2Sage("i2-tafelmeldung", neu.length + (neu.length === 1 ? " Platz" : " Plätze") + " übernommen.", "gut");
           i2TafelLaden();
         });
       })
       .catch(function(e){ i2Sage("i2-tafelmeldung", "Nicht übernommen: " + ((e && e.message) || e), "fehler"); });
-  });
+  }
 
   $("i2-knopf-invneu").addEventListener("click", function(){
     if(!darf("inventur2_bauen") || !sb) return;
@@ -3500,6 +3569,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var box = $("i2-bereiche");
     box.textContent = "";
     $("i2-knopf-bearbeiten").hidden = !darf("inventur2_bauen");
+    $("i2-knopf-bereich-blatt").hidden = !darf("inventur2_bauen");
+    $("i2-knopf-vorlage-blatt").hidden = !darf("inventur2_bauen");
     $("i2-knopf-summe").hidden = !darf("inventur2_summe");
 
     // Abgeschlossene Inventur: Schloss zeigen, Zählen sperren
@@ -3874,20 +3945,40 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       .then(function(res){
         if(res.error){ i2Sage("i2-tafelmeldung", "Nicht angelegt: " + res.error.message, "fehler"); return; }
         $("i2-bname").value = ""; $("i2-bplaetze").value = "";
+        blattSchliessen();
         i2Sage("i2-tafelmeldung", neu.length + (neu.length === 1 ? " Platz" : " Plätze") + " angelegt.", "gut");
         i2TafelLaden();
       })
       .catch(function(){ i2Sage("i2-tafelmeldung", "Nicht angelegt — Verbindung prüfen.", "fehler"); });
   }
 
-  $("i2-knopf-bereichneu").addEventListener("click", function(){
+  $("i2-knopf-bereich-blatt").addEventListener("click", function(){
+    if(!darf("inventur2_bauen")) return;
+    blattOeffnen("Bereich anlegen", i2Aktiv ? i2Aktiv.name : "");
+    blattFormular("i2-bereichneu");
+    $("i2-bname").value = ""; $("i2-bplaetze").value = "";
+    blattKnopf("Anlegen", "haupt", function(){ i2BereichAnlegen(); });
+    blattKnopf("Abbrechen", "still", blattSchliessen);
+    window.setTimeout(function(){ try{ $("i2-bname").focus(); }catch(e){} }, 60);
+  });
+
+  $("i2-knopf-vorlage-blatt").addEventListener("click", function(){
+    if(!darf("inventur2_bauen")) return;
+    blattOeffnen("Aus früherer Inventur übernehmen", i2Aktiv ? i2Aktiv.name : "");
+    blattFormular("i2-vorlageneu");
+    i2VorlagenFuellen();
+    blattKnopf("Struktur übernehmen", "haupt", function(){ i2VorlageUebernehmen(); });
+    blattKnopf("Abbrechen", "still", blattSchliessen);
+  });
+
+  function i2BereichAnlegen(){
     if(!darf("inventur2_bauen")) return;
     var bereich = $("i2-bname").value.trim();
     if(!bereich){ i2Sage("i2-tafelmeldung", "Bitte einen Bereichsnamen eingeben.", "fehler"); return; }
     var namen = i2PlaetzeAusText($("i2-bplaetze").value);
     if(!namen.length) namen = [bereich];     // Bereich ohne Unterteilung
     i2PlaetzeAnlegen(bereich, namen);
-  });
+  }
 
   function i2PlatzNachtragen(bereich){
     var eingabe = window.prompt("Neue Zählplätze in „" + bereich + "“\n\n"
@@ -4179,6 +4270,75 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
      würde eine Nachzählung die Menge verdoppeln. */
   function i2Runde(p){ return (p && p.runde) ? p.runde : 1; }
 
+  /* ---------- Das Blatt ----------
+     Ein einziges Fenster für alles, was eine Entscheidung oder eine Eingabe
+     ist. Formulare, die schon im Seitenaufbau stehen, werden hineingeschoben
+     und beim Schließen an ihren Platz zurückgestellt — so behalten sie ihre
+     IDs und ihre Zuhörer, und es gibt keinen zweiten Satz Felder. */
+  var blattHeimat = [];        // [{knoten, elternteil}] zum Zurückstellen
+
+  function blattOffen(){ return !$("blatt").hidden; }
+
+  function blattSchliessen(){
+    blattHeimat.forEach(function(e){
+      e.knoten.hidden = true;
+      e.elternteil.appendChild(e.knoten);
+    });
+    blattHeimat = [];
+    $("blatt-inhalt").textContent = "";
+    $("blatt-fuss").textContent = "";
+    $("blatt").hidden = true;
+    i2FeldScharf();
+  }
+
+  function blattOeffnen(titel, unterzeile){
+    blattSchliessen();
+    $("blatt-titel").textContent = titel;
+    $("blatt-unter").textContent = unterzeile || "";
+    $("blatt-unter").hidden = !unterzeile;
+    $("blatt").hidden = false;
+    return $("blatt-inhalt");
+  }
+
+  // Ein vorhandenes Formular ins Blatt holen
+  function blattFormular(id){
+    var knoten = $(id);
+    blattHeimat.push({ knoten:knoten, elternteil:knoten.parentNode });
+    knoten.hidden = false;
+    $("blatt-inhalt").appendChild(knoten);
+    return knoten;
+  }
+
+  function blattKnopf(text, art, aufKlick){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = art === "haupt" ? "tat" : "still";
+    b.textContent = text;
+    b.addEventListener("click", aufKlick);
+    $("blatt-fuss").appendChild(b);
+    return b;
+  }
+
+  // Eine große Auswahlfläche mit Überschrift und Erklärung
+  function blattWahl(kasten, titel, erklaerung, haupt, aufKlick){
+    var b = document.createElement("button");
+    b.type = "button";
+    if(haupt) b.className = "haupt";
+    var t = document.createElement("b"); t.textContent = titel;
+    var e = document.createElement("small"); e.textContent = erklaerung;
+    b.appendChild(t); b.appendChild(e);
+    b.addEventListener("click", aufKlick);
+    kasten.appendChild(b);
+    return b;
+  }
+
+  $("blatt").addEventListener("click", function(e){
+    if(e.target === $("blatt")) blattSchliessen();     // neben die Karte getippt
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && blattOffen()) blattSchliessen();
+  });
+
   /* Der wichtigste Filter im ganzen Reiter: Jede Auswertung über die ganze
      Inventur — Summe für CAO, Differenzen — darf je Platz NUR die aktuelle
      Runde sehen. Sonst addiert eine Nachzählung die alte Zählung obendrauf
@@ -4192,16 +4352,47 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     });
   }
 
-  function i2NachzaehlenStarten(p){
+  /* Ein fertiger Platz kann zweierlei bedeuten: nachsehen, was drinsteht, oder
+     neu zählen. Das ist eine Entscheidung, keine Ja/Nein-Frage — darum ein
+     Blatt mit zwei benannten Wegen statt eines Bestätigungsfensters. */
+  function i2FertigBlatt(p){
     var alt = i2Summen[p.id] || { menge:0, anzahl:0 };
-    var frage = "„" + p.name + "“ nachzählen?\n\n"
-      + "Runde " + i2Runde(p) + " bleibt gespeichert: " + alt.menge + " Stück aus "
-      + alt.anzahl + (alt.anzahl === 1 ? " Scan." : " Scans.") + "\n\n"
-      + "Du beginnst Runde " + (i2Runde(p) + 1) + " bei null. Beim Zählen siehst du "
-      + "die alte Zahl daneben und sofort die Differenz.\n\n"
-      + "Gelöscht wird nichts.";
-    if(!window.confirm(frage)) return false;
+    var kasten = blattOeffnen(p.name, p.bereich + " · fertig gezählt"
+      + (p.zaehler ? " von " + i2Kurz(p.zaehler) : ""));
 
+    var zahlen = document.createElement("div");
+    zahlen.className = "blattzahl";
+    [["Runde", String(i2Runde(p))], ["Stück", String(alt.menge)], ["Scans", String(alt.anzahl)]]
+      .forEach(function(paar){
+        var d = document.createElement("div");
+        var s = document.createElement("span"); s.textContent = paar[0];
+        var b = document.createElement("b"); b.textContent = paar[1];
+        d.appendChild(s); d.appendChild(b);
+        zahlen.appendChild(d);
+      });
+    kasten.appendChild(zahlen);
+
+    var wahl = document.createElement("div");
+    wahl.className = "blattwahl";
+    blattWahl(wahl, "Übersicht ansehen",
+      "Zeigt, was hier gezählt wurde. Es wird nichts verändert und nichts gescannt.",
+      false, function(){ blattSchliessen(); i2PlatzOeffnen(p, true); });
+
+    if(i2DarfZaehlen(p)){
+      blattWahl(wahl, "Runde " + (i2Runde(p) + 1) + " starten",
+        "Nachzählen von null. Runde " + i2Runde(p) + " bleibt gespeichert und steht beim "
+        + "Zählen als Vergleich daneben. Gelöscht wird nichts.",
+        true, function(){
+          blattSchliessen();
+          if(i2NachzaehlenStarten(p)) i2PlatzOeffnen(p, false, true);
+        });
+    }
+    kasten.appendChild(wahl);
+
+    blattKnopf("Abbrechen", "still", blattSchliessen);
+  }
+
+  function i2NachzaehlenStarten(p){
     p.runde = i2Runde(p) + 1;
     p.status = "laeuft";
     p.zaehler = angemeldet || "";
@@ -4546,19 +4737,23 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       .catch(function(){ i2Meldung("Nicht geändert — Verbindung prüfen. Der alte Eintrag steht unverändert.", "fehler"); });
   }
 
-  function i2PlatzOeffnen(p){
-    if(i2Aktiv && i2Aktiv.status === "fertig"){
+  var i2NurLesen = false;      // Platz nur ansehen, nicht zählen
+
+  function i2PlatzOeffnen(p, nurLesen, schonGestartet){
+    if(i2Aktiv && i2Aktiv.status === "fertig" && !nurLesen){
       i2Sage("i2-tafelmeldung", "„" + i2Aktiv.name + "“ ist abgeschlossen — hier wird nicht mehr gezählt."
         + (darf("inventur2_bauen") ? " Mit „Wieder öffnen“ kannst du sie freigeben." : ""), "fehler");
       return;
     }
-    if(!i2DarfZaehlen(p)){
+    if(!nurLesen && !i2DarfZaehlen(p)){
       i2Sage("i2-tafelmeldung", "„" + p.name + "“ ist für dich nicht zum Zählen freigegeben.", "fehler");
       return;
     }
-    if(p.status === "fertig"){
-      if(!i2NachzaehlenStarten(p)) return;
+    if(p.status === "fertig" && !nurLesen && !schonGestartet){
+      i2FertigBlatt(p);
+      return;
     }
+    i2NurLesen = !!nurLesen;
     i2Platz = p;
     i2Meldung("");
     i2LetzterScan = null;
@@ -4577,16 +4772,28 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       if(lies("pal-scanmodus") === "kamera") modusSetzen(true);
       else i2FeldScharf();
     });
-    if(p.status !== "laeuft" || p.zaehler !== (angemeldet || "")) i2PlatzStatus(p, "laeuft");
+    if(!i2NurLesen && (p.status !== "laeuft" || p.zaehler !== (angemeldet || ""))) i2PlatzStatus(p, "laeuft");
   }
 
   function i2ZaehlenZeichnen(){
     if(!i2Platz) return;
     $("i2-wo").textContent = i2Platz.name;
-    $("i2-wozusatz").textContent = (i2Aktiv ? i2Aktiv.name + " · " : "") + i2Platz.bereich;
+    $("i2-wozusatz").textContent = (i2Aktiv ? i2Aktiv.name + " · " : "") + i2Platz.bereich
+      + (i2NurLesen ? " · nur ansehen" : "");
     var menge = i2Mengensumme(i2PlatzScans);
     $("i2-stand").textContent = menge;
     i2TastaturAnwenden();
+
+    /* Nur-Ansehen: alles weg, womit sich etwas verändern ließe. Der Platz
+       bleibt „fertig", niemand übernimmt ihn, und es kann nichts verrutschen. */
+    var lesen = i2NurLesen;
+    $("i2-feld").hidden = lesen;
+    $("i2-bereit").hidden = lesen;
+    $("i2-knopf-fertig").hidden = lesen;
+    $("i2-knopf-pause").hidden = lesen;
+    $("i2-knopf-nachzaehlen").hidden = !lesen || !i2DarfZaehlen(i2Platz);
+    document.querySelector("#i2-zaehlen .modus").hidden = lesen;
+    if(lesen){ $("i2-knopf-hand").hidden = true; $("i2-zaktion").hidden = true; }
 
     // Nachzählung: alte Zahl, neue Zahl und die Differenz in einer Zeile
     var runde = i2Runde(i2Platz);
@@ -4900,6 +5107,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     i2PlatzStatus(i2Platz, "pause").then(function(){ i2TafelLaden(); });
   });
 
+  $("i2-knopf-nachzaehlen").addEventListener("click", function(){
+    if(!i2Platz) return;
+    var p = i2Platz;
+    i2NurLesen = false;
+    if(i2NachzaehlenStarten(p)) i2PlatzOeffnen(p, false, true);
+  });
+
   $("i2-runde-weg").addEventListener("click", i2NachzaehlenVerwerfen);
 
   $("i2-knopf-zurueck").addEventListener("click", function(){ i2TafelLaden(); });
@@ -4926,6 +5140,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
      ankommt, ist der Scanner. */
   document.addEventListener("keydown", function(e){
     if($("ansicht-inv2").hidden || $("i2-zaehlen").hidden) return;
+    if(blattOffen() || i2NurLesen) return;      // im Blatt gehört die Tastatur dem Blatt
     if(e.ctrlKey || e.metaKey || e.altKey) return;
     var feld = $("i2-feld");
     if(document.activeElement === feld) return;
