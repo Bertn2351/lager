@@ -840,6 +840,19 @@ html[data-thema="hell"] .blatt{background:rgba(40,48,56,.42)}
   .i2runde .rdiff{font-size:15px}
   .summen .vorrunde{font-size:10.5px; padding:1px 7px}
 }
+/* Eine angefangene, noch leere Nachzählung ist der gefährlichste Zustand im
+   ganzen Reiter: Der Platz sieht fertig aus, zählt aber null — und die alte
+   Menge fehlt still in jeder Summe. Also laut markieren. */
+.i2platz.alarm{border-color:var(--kritisch); border-style:solid;
+  background:color-mix(in srgb, var(--kritisch) 10%, var(--flaeche-2));
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--kritisch) 22%, transparent)}
+.i2platz.alarm .pzustand{color:var(--kritisch)}
+.i2alarm{display:flex; gap:10px; align-items:flex-start; padding:11px 13px; border-radius:10px;
+  border:1px solid var(--kritisch); line-height:1.5; font-size:12.5px;
+  background:color-mix(in srgb, var(--kritisch) 12%, var(--flaeche-2))}
+.i2alarm > span:first-child{font-size:15px; line-height:1.2}
+.i2alarm b{color:var(--kritisch)}
+
 .i2platz.pause{border-color:var(--kante-hell); border-style:dashed}
 .i2platz.pause .pzustand{color:var(--akzent-weich)}
 .i2platz.gesperrt{opacity:.5; cursor:not-allowed}
@@ -1172,7 +1185,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v40</span>
+    <span class="version">v41</span>
     <button type="button" id="knopf-thema" title="Zwischen hell und dunkel wechseln">Hell</button>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
@@ -1448,6 +1461,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           </div>
 
           <div class="sicherung" id="i2-sicherung" hidden>
+            <div class="i2alarm" id="i2-summewarnung" hidden>
+              <span>⚠</span>
+              <span id="i2-summewarnung-text"></span>
+            </div>
             <p class="hinweis">Das fügst du in dein Warenwirtschaftsprogramm ein — eine Zeile
               je Artikel, über alle Bereiche dieser Inventur zusammengezählt.</p>
             <textarea id="i2-sicherungstext" readonly spellcheck="false"></textarea>
@@ -3657,7 +3674,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     k.type = "button";
     var meiner = p.zaehler && p.zaehler === (angemeldet || "");
     var zaehlbar = i2DarfZaehlen(p);
-    k.className = "i2platz"
+    var jetztMenge = (i2Summen[p.id] || {}).menge || 0;
+    var vorMenge2 = (i2Vorrunden[p.id] || {}).menge || 0;
+    var alarm = i2Runde(p) > 1 && jetztMenge === 0 && vorMenge2 > 0;
+    k.className = "i2platz" + (alarm ? " alarm" : "")
       + (p.status === "fertig" ? " fertig" : (p.status === "laeuft" ? " laeuft" : ""))
       + (p.status === "pause" ? " pause" : "")
       + (meiner && p.status === "laeuft" ? " ich" : "")
@@ -3679,7 +3699,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         + " · " + (unterschied > 0 ? "+" : "") + unterschied;
     }
     var zustand = document.createElement("span"); zustand.className = "pzustand";
-    zustand.textContent = p.status === "fertig"
+    zustand.textContent = alarm
+      ? "Nachzählung leer — zählt 0!"
+      : p.status === "fertig"
       ? ("fertig" + (p.zaehler ? " · " + i2Kurz(p.zaehler) : ""))
       : p.status === "pause"
         ? ("Pause" + (p.zaehler ? " · " + i2Kurz(p.zaehler) : ""))
@@ -4046,6 +4068,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         if(!nummern.length){ i2Sage("i2-tafelmeldung", "In dieser Inventur ist noch nichts gezählt.", "fehler"); return; }
         var text = nummern.map(function(nr){ return nach[nr] + "*" + nr; }).join("\n");
         $("i2-sicherungstext").value = text;
+        var warnung = i2SummeWarnung();
+        $("i2-summewarnung").hidden = !warnung;
+        $("i2-summewarnung-text").textContent = warnung;
         $("i2-sicherung").hidden = false;
 
         /* Notizen stehen bewusst NICHT im Kopiertext — der geht so, wie er ist,
@@ -4207,6 +4232,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         if(passt) satz += passt + (passt === 1 ? " Artikel stimmt genau. " : " Artikel stimmen genau. ");
         if(ohneSoll) satz += ohneSoll + (ohneSoll === 1 ? " gezählter Artikel hat" : " gezählte Artikel haben")
           + " keinen Sollbestand hinterlegt und fehlt hier. ";
+        var warn = i2SummeWarnung();
+        if(warn) satz += warn + " ";
         if(wahl) satz += "Gezeigt wird nur, was im Bereich „" + wahl + "“ gezählt wurde — "
           + "der Sollbestand aus CAO gilt aber fürs ganze Lager. Liegt derselbe Artikel "
           + "auch woanders, ist die Differenz hier nur ein Zwischenstand.";
@@ -4343,6 +4370,52 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
      Inventur — Summe für CAO, Differenzen — darf je Platz NUR die aktuelle
      Runde sehen. Sonst addiert eine Nachzählung die alte Zählung obendrauf
      und die Inventur wäre doppelt so hoch. */
+  /* Plätze, die in einer angefangenen Nachzählung stehen, in der noch nichts
+     gezählt ist. Ihre frühere Menge zählt nicht mehr mit, die neue ist null —
+     die Summe ist dann um genau diese Menge zu klein, ohne dass es auffällt.
+     Das darf nie stillschweigend passieren. */
+  function i2LeereNachzaehlungen(){
+    return i2Plaetze.filter(function(p){
+      if(i2Runde(p) < 2) return false;
+      var jetzt = (i2Summen[p.id] || {}).menge || 0;
+      var vorher = (i2Vorrunden[p.id] || {}).menge || 0;
+      return jetzt === 0 && vorher > 0;
+    });
+  }
+
+  function i2LaufendeZaehlungen(){
+    return i2Plaetze.filter(function(p){ return p.status === "laeuft"; });
+  }
+
+  /* Eine Warnzeile für Summe und Differenzen. Gibt "" zurück, wenn alles sauber
+     ist — dann bleibt der Kasten aus. */
+  function i2SummeWarnung(){
+    var leer = i2LeereNachzaehlungen();
+    var laeuft = i2LaufendeZaehlungen().filter(function(p){
+      return leer.indexOf(p) === -1;
+    });
+    if(!leer.length && !laeuft.length) return "";
+
+    var text = "";
+    if(leer.length){
+      var fehlt = leer.reduce(function(s, p){ return s + ((i2Vorrunden[p.id] || {}).menge || 0); }, 0);
+      text += leer.length + (leer.length === 1 ? " Zählplatz steht" : " Zählplätze stehen")
+        + " in einer Nachzählung, in der noch nichts gezählt ist. Die frühere Zählung von "
+        + fehlt + " Stück ist deshalb NICHT in dieser Summe: "
+        + leer.map(function(p){
+            return p.bereich + " · " + p.name + " (Runde " + i2Runde(p) + ", vorher "
+              + ((i2Vorrunden[p.id] || {}).menge || 0) + ")";
+          }).join(", ")
+        + ". Entweder dort zu Ende zählen oder die Nachzählung verwerfen — dann gilt die alte Runde wieder.";
+    }
+    if(laeuft.length){
+      if(text) text += "  ";
+      text += laeuft.length + (laeuft.length === 1 ? " Zählplatz wird" : " Zählplätze werden")
+        + " gerade gezählt, die Summe kann sich also noch ändern.";
+    }
+    return text;
+  }
+
   function i2NurAktiveRunde(daten){
     var aktiv = {};
     i2Plaetze.forEach(function(p){ aktiv[p.id] = i2Runde(p); });
@@ -4372,11 +4445,38 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       });
     kasten.appendChild(zahlen);
 
+    // Steht hier eine leere Nachzählung, gehört die Warnung ganz nach oben
+    var vorher = (i2Vorrunden[p.id] || {}).menge || 0;
+    if(i2Runde(p) > 1 && alt.menge === 0 && vorher > 0){
+      var warn = document.createElement("div");
+      warn.className = "i2alarm";
+      var zeichen = document.createElement("span"); zeichen.textContent = "⚠";
+      var wtext = document.createElement("span");
+      wtext.textContent = "Auf diesem Platz läuft Runde " + i2Runde(p) + ", in der noch nichts"
+        + " gezählt ist. Deshalb zählt er gerade 0 statt " + vorher + " Stück — auch in der Summe"
+        + " für CAO. Zähl hier zu Ende oder verwirf die Nachzählung.";
+      warn.appendChild(zeichen); warn.appendChild(wtext);
+      kasten.appendChild(warn);
+    }
+
     var wahl = document.createElement("div");
     wahl.className = "blattwahl";
     blattWahl(wahl, "Übersicht ansehen",
       "Zeigt, was hier gezählt wurde. Es wird nichts verändert und nichts gescannt.",
       false, function(){ blattSchliessen(); i2PlatzOeffnen(p, true); });
+
+    // Zurück zur Vorrunde — der Weg raus, wenn eine Nachzählung aus Versehen begann
+    if(i2Runde(p) > 1 && i2DarfZaehlen(p)){
+      blattWahl(wahl, "Runde " + i2Runde(p) + " verwerfen",
+        "Zurück zu Runde " + (i2Runde(p) - 1) + " mit " + vorher + " Stück. "
+        + (alt.anzahl ? alt.anzahl + " Scans dieser Runde wandern in den Papierkorb und "
+            + "lassen sich zurückholen." : "In dieser Runde ist nichts gezählt, es geht nichts verloren."),
+        alt.menge === 0 && vorher > 0, function(){
+          blattSchliessen();
+          i2Platz = p;
+          i2PlatzScansHolen().then(i2NachzaehlenVerwerfen);
+        });
+    }
 
     if(i2DarfZaehlen(p)){
       blattWahl(wahl, "Runde " + (i2Runde(p) + 1) + " starten",
