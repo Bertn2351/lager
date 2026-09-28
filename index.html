@@ -1236,7 +1236,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v43</span>
+    <span class="version">v44</span>
     <button type="button" id="knopf-thema" title="Zwischen hell und dunkel wechseln">Hell</button>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
@@ -1818,7 +1818,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   // ---------- Gerätespeicher (wenn keine Datenbank erreichbar ist) ----------
   function lokalLaden(){
     try{
-      var a = lies("pal-artikel"); if(a) artikel = JSON.parse(a) || [];
+      var a = lies("pal-artikel"); if(a){ artikel = JSON.parse(a) || []; artikelIndexLeeren(); }
       var l = lies("pal-leute-stamm"); if(l) leute = JSON.parse(l) || [];
     }catch(e){}
   }
@@ -2713,6 +2713,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
                  vpe_vk:(a.vpe_vk == null ? null : Number(a.vpe_vk)),
                  vpe_ek:(a.vpe_ek == null ? null : Number(a.vpe_ek)) };
       });
+      artikelIndexLeeren();
       artikelSortieren();
       if(gewaehlt){
         var neu = artikel.filter(function(a){ return a.id === gewaehlt.id; })[0];
@@ -2747,6 +2748,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       feld.disabled = !darf("artikel_aendern");
       feld.addEventListener("change", function(){
         a.nr = feld.value.trim().toUpperCase();
+        artikelIndexLeeren();
         s.textContent = a.nr ? ("Artikelnr. " + a.nr) : "Artikelnummer fehlt";
         s.className = a.nr ? "" : "fehlt";
         if(gewaehlt && gewaehlt.id === a.id){ gewaehltAnzeigen(); etikettenZeichnen(); }
@@ -2760,6 +2762,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       weg.addEventListener("click", function(){
         if(!window.confirm("„" + a.bezeichnung + "“ wirklich löschen?")) return;
         artikel = artikel.filter(function(x){ return x.id !== a.id; });
+        artikelIndexLeeren();
         if(gewaehlt && gewaehlt.id === a.id){ gewaehlt = null; $("gewaehlt-karte").hidden = true; }
         if(sb) sb.from("artikel").delete().eq("id", a.id).then(function(){});
         lokalArtikel();
@@ -2788,6 +2791,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
     if(!sb){
       artikel.push({ id:neueId("a"), nr:nr, bezeichnung:bez });
+    artikelIndexLeeren();
       artikelSortieren(); lokalArtikel();
       $("neu-nr").value = ""; $("neu-bez").value = "";
       m.textContent = "Angelegt."; m.className = "meldung gut";
@@ -2834,6 +2838,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       if(!window.confirm("Die " + artikel.length + " vorhandenen Artikel werden gelöscht und durch "
         + zeilen.length + " Zeilen ersetzt.\n\nDas gilt für alle Geräte. Fortfahren?")) return;
       artikel = [];
+      artikelIndexLeeren();
     }
 
     function teile(zeile){
@@ -2867,7 +2872,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       if(da){
         var geaendert = false;
         if(da.bezeichnung !== bez){ da.bezeichnung = bez; geaendert = true; }
-        if(ean && da.ean !== ean){ da.ean = ean; geaendert = true; }
+        if(ean && da.ean !== ean){ da.ean = ean; geaendert = true; artikelIndexLeeren(); }
         if(bestand !== null && da.bestand !== bestand){ da.bestand = bestand; geaendert = true; }
         if(vpeVk !== null && da.vpe_vk !== vpeVk){ da.vpe_vk = vpeVk; geaendert = true; }
         if(vpeEk !== null && da.vpe_ek !== vpeEk){ da.vpe_ek = vpeEk; geaendert = true; }
@@ -2896,6 +2901,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         artikel.push({ id:neueId("a"), nr:n.nr, bezeichnung:n.bezeichnung, ean:n.ean,
                        bestand:n.bestand, vpe_vk:n.vpe_vk, vpe_ek:n.vpe_ek });
       });
+      artikelIndexLeeren();
       fertig();
       return;
     }
@@ -3020,12 +3026,26 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   });
 
   // ---------- Inventur ----------
+  /* Nachschlagewerk statt Durchsuchen. Vorher lief jede Abfrage zweimal durch
+     die ganze Artikelliste und legte dabei zwei neue Listen an — bei ein paar
+     tausend Artikeln und ein paar hundert Zeilen in der Übersicht sind das
+     Millionen Vergleiche, und das Handgerät bleibt hängen. Die Reihenfolge
+     bleibt wie vorher: erst Barcode, dann Artikelnummer, erster Treffer gilt. */
+  var artikelIndex = null;
+  function artikelIndexLeeren(){ artikelIndex = null; }
+
   function artikelZuCode(code){
     if(!code) return null;
+    if(!artikelIndex){
+      artikelIndex = {};
+      for(var i = 0; i < artikel.length; i++){
+        var a = artikel[i];
+        if(a.ean){ var e = "E:" + a.ean.toUpperCase(); if(!artikelIndex[e]) artikelIndex[e] = a; }
+        if(a.nr){ var n = "N:" + a.nr.toUpperCase();  if(!artikelIndex[n]) artikelIndex[n] = a; }
+      }
+    }
     var c = String(code).toUpperCase();
-    var treffer = artikel.filter(function(x){ return x.ean && x.ean.toUpperCase() === c; })[0];
-    if(treffer) return treffer;
-    return artikel.filter(function(x){ return x.nr && x.nr.toUpperCase() === c; })[0] || null;
+    return artikelIndex["E:" + c] || artikelIndex["N:" + c] || null;
   }
   function bezeichnungZu(nr){
     var a = artikelZuCode(nr);
@@ -3657,8 +3677,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       alleZeilen("zaehlplaetze",
         "id,inventur_id,bereich,name,status,zaehler,begonnen_am,fertig_am,sortierung,sehen,bearbeiten,loeschen,aendern,runde",
         "sortierung", function(q){ return q.eq("inventur_id", i2Aktiv.id); }),
-      alleZeilen("scans", "menge,platz_id,runde", "",
-        function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
+      i2SummenHolen()
     ]).then(function(beides){
       i2Plaetze = beides[0];
 
@@ -3670,15 +3689,17 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
       i2Summen = {};
       i2Vorrunden = {};
-      beides[1].forEach(function(s){
+      var paket = beides[1];
+      paket.daten.forEach(function(s){
         var k = s.platz_id || "-";
         var r = s.runde || 1;
         var aktiv = aktiveRunde[k] || 1;
         var topf = (r === aktiv) ? i2Summen : (r === aktiv - 1 ? i2Vorrunden : null);
         if(!topf) return;
         if(!topf[k]) topf[k] = { anzahl:0, menge:0 };
-        topf[k].anzahl++;
-        topf[k].menge += (s.menge || 0);
+        // aus der Datenbank kommen fertige Summen, roh kommt Zeile für Zeile
+        topf[k].anzahl += (paket.art === "rpc" ? (Number(s.anzahl) || 0) : 1);
+        topf[k].menge  += (Number(s.menge) || 0);
       });
       i2TafelZeichnen();
       i2AnsichtZeigen("tafel");
@@ -4195,10 +4216,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       return;
     }
     i2Sage("i2-tafelmeldung", "Wird gerechnet …");
-    alleZeilen("scans", "menge,nr,platz_id,runde", "",
-      function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
-      .then(function(roh){
-        var daten = i2NurAktiveRunde(roh);
+    i2ArtikelSummenHolen()
+      .then(function(daten){
         var nach = {};
         daten.forEach(function(s){ nach[s.nr] = (nach[s.nr] || 0) + (s.menge || 0); });
         var nummern = Object.keys(nach).sort();
@@ -4255,10 +4274,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     }
     i2Sage("i2-tafelmeldung", "Differenzen werden gerechnet …");
 
-    alleZeilen("scans", "menge,nr,platz_id,runde", "",
-      function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
-      .then(function(roh){
-        i2DiffScans = i2NurAktiveRunde(roh);
+    i2ArtikelSummenHolen()
+      .then(function(daten){
+        i2DiffScans = daten;
         i2DiffBereicheFuellen();
         i2DiffRechnen();
         $("i2-differenz").hidden = false;
@@ -4269,13 +4287,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   // Nur Bereiche anbieten, in denen wirklich etwas gezählt wurde
   function i2DiffBereicheFuellen(){
-    var platzBereich = {};
-    i2Plaetze.forEach(function(p){ platzBereich[p.id] = p.bereich; });
     var da = {};
-    (i2DiffScans || []).forEach(function(s){
-      var b = platzBereich[s.platz_id];
-      if(b) da[b] = true;
-    });
+    (i2DiffScans || []).forEach(function(s){ if(s.bereich) da[s.bereich] = true; });
 
     var sel = $("i2-diff-bereich");
     var vorher = sel.value;
@@ -4300,12 +4313,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("i2-diff-fehlende-wahl").hidden = !!wahl;
     var auchFehlende = !wahl && $("i2-diff-fehlende").checked;
 
-    var platzBereich = {};
-    i2Plaetze.forEach(function(p){ platzBereich[p.id] = p.bereich; });
-
     var gezaehlt = {};
     i2DiffScans.forEach(function(s){
-      if(wahl && platzBereich[s.platz_id] !== wahl) return;
+      if(wahl && s.bereich !== wahl) return;
       gezaehlt[s.nr] = (gezaehlt[s.nr] || 0) + (s.menge || 0);
     });
 
@@ -4551,6 +4561,64 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         + " gerade gezählt, die Summe kann sich also noch ändern.";
     }
     return text;
+  }
+
+  /* ---------- Rechnen lassen, wo die Daten liegen ----------
+     Die Tafel holte bisher ALLE Scans der Inventur, nur um Summen je Zählplatz
+     zu bilden — bei 40.000 Stück sind das mehrere Abrufe zu je 1000 Zeilen,
+     und das alle 15 Sekunden neu. Dieselbe Rechnung macht die Datenbank in
+     einem Zug und schickt ein paar Zeilen zurück. Fehlt die Funktion (SQL noch
+     nicht gelaufen), fällt alles auf den alten Weg zurück. */
+  var i2RpcDa = { summen:true, artikel:true };
+
+  function i2SummenHolen(){
+    if(i2RpcDa.summen){
+      return sb.rpc("inventur_summen", { inv: i2Aktiv.id }).then(function(res){
+        if(res.error) throw res.error;
+        return { art:"rpc", daten:res.data || [] };
+      }).catch(function(){
+        i2RpcDa.summen = false;          // einmal gemerkt, nicht bei jedem Aufbau neu probieren
+        return i2SummenHolenRoh();
+      });
+    }
+    return i2SummenHolenRoh();
+  }
+  function i2SummenHolenRoh(){
+    return alleZeilen("scans", "menge,platz_id,runde", "",
+      function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
+      .then(function(d){ return { art:"roh", daten:d }; });
+  }
+
+  // Mengen je Artikel und Bereich — für die Summe und die Differenzen
+  function i2ArtikelSummenHolen(){
+    if(i2RpcDa.artikel){
+      return sb.rpc("inventur_artikel", { inv: i2Aktiv.id }).then(function(res){
+        if(res.error) throw res.error;
+        return (res.data || []).map(function(r){
+          return { nr:r.nr, bereich:r.bereich, menge:Number(r.menge) || 0 };
+        });
+      }).catch(function(){
+        i2RpcDa.artikel = false;
+        return i2ArtikelSummenRoh();
+      });
+    }
+    return i2ArtikelSummenRoh();
+  }
+  function i2ArtikelSummenRoh(){
+    var platzBereich = {};
+    i2Plaetze.forEach(function(p){ platzBereich[p.id] = p.bereich; });
+    return alleZeilen("scans", "menge,nr,platz_id,runde", "",
+      function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
+      .then(function(roh){
+        var nach = {};
+        i2NurAktiveRunde(roh).forEach(function(s){
+          var b = platzBereich[s.platz_id] || "ohne Bereich";
+          var k = s.nr + " " + b;
+          if(!nach[k]) nach[k] = { nr:s.nr, bereich:b, menge:0 };
+          nach[k].menge += (s.menge || 0);
+        });
+        return Object.keys(nach).map(function(k){ return nach[k]; });
+      });
   }
 
   function i2NurAktiveRunde(daten){
@@ -5408,8 +5476,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
      anderen stehen. Nur wenn die Tafel offen und das Fenster sichtbar ist. */
   window.setInterval(function(){
     if(sb && i2Aktiv && !$("ansicht-inv2").hidden && !$("i2-tafel").hidden
-      && document.visibilityState === "visible") i2TafelLaden();
-  }, 15000);
+      && !blattOffen() && document.visibilityState === "visible") i2TafelLaden();
+  }, 25000);
 
   // ---------- Anmeldung ----------
   function appEinrichten(){
@@ -5578,7 +5646,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(!sb) return;
     sb.auth.signOut().then(function(){
       angemeldet = null;
-      artikel = []; leute = []; scans = [];
+      artikel = []; leute = []; artikelIndexLeeren();
       $("login-pw").value = "";
       anmeldungZeigen("Abgemeldet.", "");
     });
