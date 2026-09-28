@@ -357,6 +357,9 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 .darstellung > span{font-size:12px; color:var(--leise); letter-spacing:.05em}
 .darstellung select{width:auto; min-width:118px; font-size:13px; padding:6px 30px 6px 10px;
   background-position:calc(100% - 16px) 53%, calc(100% - 10px) 53%}
+.hakengruppe{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--leise);
+  margin:11px 0 6px; padding-bottom:5px; border-bottom:1px solid var(--kante)}
+.rechtekarte > .hakengruppe:first-of-type{margin-top:4px}
 .haken{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:7px}
 .haken label{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--gedaempft);
   cursor:pointer; padding:6px 9px; border:1px solid var(--kante); border-radius:8px;
@@ -997,6 +1000,41 @@ button.werkzeug.nurbild span{display:none}
   .i2modus .text{font-size:11px; min-width:110px}
 }
 
+/* ===== Die feste Scanleiste =====
+   Mit Handschuhen trifft man ein Textfeld nicht, einen Knopf über die ganze
+   Breite am unteren Rand schon — dort ist der Daumen ohnehin. Der Knopf tut
+   nur eines: den Fokus zurück ins Scanfeld holen. Das Feld selbst darf dafür
+   klein sein, man tippt ja nicht hinein. */
+.scanleiste{position:fixed; left:0; right:0; bottom:0; z-index:60;
+  display:flex; justify-content:center; pointer-events:none;
+  padding:14px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  background:linear-gradient(0deg, var(--grund) 58%, transparent)}
+.scanknopf{pointer-events:auto; width:100%; max-width:620px;
+  display:inline-flex; align-items:center; justify-content:center; gap:11px;
+  font:inherit; font-family:Archivo,"IBM Plex Sans",sans-serif; font-weight:700;
+  font-size:17px; letter-spacing:.01em; cursor:pointer;
+  padding:16px 20px; border:1px solid transparent; border-radius:13px;
+  background:var(--gut); color:#04160f;
+  box-shadow:0 14px 34px -14px rgba(0,0,0,.85);
+  transition:background-color .16s, color .16s, box-shadow .16s}
+.scanknopf svg{width:20px; height:20px; flex:none}
+.scanknopf:active{transform:translateY(1px)}
+/* Sitzt der Fokus schon im Feld, wird der Knopf ruhig — er schreit nur,
+   wenn er gebraucht wird. */
+.scanknopf[data-scharf="ja"]{background:color-mix(in srgb, var(--gut) 15%, var(--flaeche-2));
+  color:var(--gut); border-color:color-mix(in srgb, var(--gut) 45%, var(--kante));
+  box-shadow:none}
+body.mitscanleiste .buehne{padding-bottom:104px}
+@media (max-width:700px){
+  .scanleiste{padding:10px 9px calc(9px + env(safe-area-inset-bottom, 0px))}
+  .scanknopf{font-size:15.5px; padding:14px 16px; border-radius:11px}
+  body.mitscanleiste .buehne{padding-bottom:92px}
+}
+
+/* Das Scanfeld darf klein sein — hineingetippt wird nicht */
+#i2-feld{font-size:15px; padding:9px 12px; border-radius:9px}
+@media (max-width:700px){ #i2-feld{font-size:14px; padding:8px 10px} }
+
 /* ===== Kompakt =====
    Die Bildschirmtastatur frisst am Handgerät die untere Hälfte. Sie lässt sich
    nicht wegschalten, ohne den Scanner mit abzuschalten — also bleibt nur,
@@ -1257,6 +1295,18 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </footer>
 </div>
 
+<div class="scanleiste" id="i2-scanleiste" hidden>
+  <button type="button" class="scanknopf" id="i2-knopf-scanstart">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 7V5a1 1 0 0 1 1-1h2"></path><path d="M17 4h2a1 1 0 0 1 1 1v2"></path>
+      <path d="M20 17v2a1 1 0 0 1-1 1h-2"></path><path d="M7 20H5a1 1 0 0 1-1-1v-2"></path>
+      <path d="M8 8v8"></path><path d="M11.5 8v8"></path><path d="M15 8v8"></path>
+    </svg>
+    <span id="i2-scanstart-text">Scannen beginnen</span>
+  </button>
+</div>
+
 <div class="blatt" id="blatt" hidden>
   <div class="blattkarte" role="dialog" aria-modal="true" aria-labelledby="blatt-titel">
     <div class="blattkopf">
@@ -1309,7 +1359,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v49</span>
+    <span class="version">v51</span>
     <button type="button" id="knopf-thema" title="Zwischen hell und dunkel wechseln">Hell</button>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
@@ -1734,7 +1784,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           </div>
 
           <input type="checkbox" id="ton" checked hidden>
-          <input id="i2-feld" class="gross" placeholder="Hier scannen …" autocomplete="off"
+          <input id="i2-feld" placeholder="Hier scannen …" autocomplete="off"
                  autocapitalize="characters" spellcheck="false">
           <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center">
             <span class="bereit" id="i2-bereit"><span class="punkt"></span>Bereit für die nächste Palette</span>
@@ -1984,22 +2034,34 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   }
 
   // ---------- Rechte ----------
+  /* Nach Bereichen gruppiert — die Inventur allein hat sechzehn Häkchen, und
+     unsortiert findet man darin nichts wieder. */
   var BEREICHE = [
-    { schluessel:"etikett",              name:"Etiketten drucken" },
-    { schluessel:"inventur2",            name:"Inventur benutzen" },
-    { schluessel:"inventur2_uebersicht", name:"Übersicht sehen" },
-    { schluessel:"inventur2_summe",      name:"Summe für CAO" },
-    { schluessel:"inventur2_bauen",      name:"Inventur einrichten", wichtig:true },
-    { schluessel:"inventur_gesamt",      name:"Zählung aller sehen" },
-    { schluessel:"artikelname",          name:"Artikelbezeichnung sehen" },
-    { schluessel:"scanliste",            name:"Einzelne Scans sehen" },
-    { schluessel:"handeingabe",          name:"Von Hand eintragen" },
-    { schluessel:"bestand",              name:"Lagerbestand sehen" },
-    { schluessel:"papierkorb",           name:"Papierkorb sehen" },
-    { schluessel:"artikel",              name:"Artikel ansehen" },
-    { schluessel:"artikel_aendern", name:"Artikel ändern",     wichtig:true },
-    { schluessel:"mitarbeiter",     name:"Mitarbeiter pflegen" },
-    { schluessel:"verwaltung",      name:"Rechte vergeben",    wichtig:true }
+    { gruppe:"Allgemein", schluessel:"etikett", name:"Etiketten drucken" },
+
+    { gruppe:"Inventur", schluessel:"inventur2",            name:"Inventur benutzen" },
+    { gruppe:"Inventur", schluessel:"inventur2_uebersicht", name:"Übersicht" },
+    { gruppe:"Inventur", schluessel:"scanliste",            name:"Einzelne Scans" },
+    { gruppe:"Inventur", schluessel:"artikelname",          name:"Artikelbezeichnung" },
+    { gruppe:"Inventur", schluessel:"bestand",              name:"Lagerbestand" },
+    { gruppe:"Inventur", schluessel:"inv_notizen",          name:"Notizen" },
+    { gruppe:"Inventur", schluessel:"inventur_gesamt",      name:"Zählung aller sehen" },
+    { gruppe:"Inventur", schluessel:"papierkorb",           name:"Papierkorb" },
+    { gruppe:"Inventur", schluessel:"inventur2_summe",      name:"Summe für CAO" },
+
+    { gruppe:"Beim Zählen", schluessel:"handeingabe",  name:"Von Hand" },
+    { gruppe:"Beim Zählen", schluessel:"inv_kamera",   name:"Kamera" },
+    { gruppe:"Beim Zählen", schluessel:"inv_ton",      name:"Ton" },
+    { gruppe:"Beim Zählen", schluessel:"inv_kompakt",  name:"Kompakt" },
+    { gruppe:"Beim Zählen", schluessel:"inv_fokus",    name:"Fokus lösen dürfen" },
+    { gruppe:"Beim Zählen", schluessel:"inv_artikel_weg", name:"Artikel löschen", wichtig:true },
+    { gruppe:"Beim Zählen", schluessel:"inventur2_bauen",  name:"Inventur einrichten", wichtig:true },
+
+    { gruppe:"Artikel", schluessel:"artikel",        name:"Artikel ansehen" },
+    { gruppe:"Artikel", schluessel:"artikel_aendern", name:"Artikel ändern", wichtig:true },
+
+    { gruppe:"Verwaltung", schluessel:"mitarbeiter", name:"Mitarbeiter pflegen" },
+    { gruppe:"Verwaltung", schluessel:"verwaltung",  name:"Rechte vergeben", wichtig:true }
   ];
   var GROESSEN = [
     { wert:"normal", name:"Normal",     px:"21px" },
@@ -2015,16 +2077,22 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   var anzeige = { groesse:"normal", farbe:"hell" };
 
   // Wer nicht eingetragen ist, darf das Nötigste: drucken und zählen.
+  /* Die Bequemlichkeits-Schalter stehen ab Werk auf true: ein neues Häkchen
+     darf niemandem still etwas wegnehmen. Nur was löschen kann, ist aus. */
   var GRUNDRECHTE = { etikett:true, inventur2:false, inventur2_bauen:false,
                       inventur2_uebersicht:true, inventur2_summe:false,
                       inventur_gesamt:false, artikelname:true,
                       scanliste:true, handeingabe:true, bestand:false,
+                      inv_notizen:true, inv_kamera:true, inv_ton:true,
+                      inv_kompakt:true, inv_fokus:true, inv_artikel_weg:false,
                       papierkorb:false, artikel:false,
                       artikel_aendern:false, mitarbeiter:false, verwaltung:false };
   var ALLES = { etikett:true, inventur2:true, inventur2_bauen:true,
                 inventur2_uebersicht:true, inventur2_summe:true,
                 inventur_gesamt:true, artikelname:true,
                 scanliste:true, handeingabe:true, bestand:true,
+                inv_notizen:true, inv_kamera:true, inv_ton:true,
+                inv_kompakt:true, inv_fokus:true, inv_artikel_weg:true,
                 papierkorb:true, artikel:true,
                 artikel_aendern:true, mitarbeiter:true, verwaltung:true };
 
@@ -2167,8 +2235,20 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       kopf.appendChild(weg);
       karte.appendChild(kopf);
 
-      var haken = document.createElement("div"); haken.className = "haken";
+      // Je Gruppe eine eigene Überschrift und ein eigenes Gitter
+      var gruppen = {}, haken = null;
       BEREICHE.forEach(function(b){
+        if(!gruppen[b.gruppe]){
+          var kopfzeile = document.createElement("div");
+          kopfzeile.className = "hakengruppe";
+          kopfzeile.textContent = b.gruppe;
+          karte.appendChild(kopfzeile);
+          gruppen[b.gruppe] = document.createElement("div");
+          gruppen[b.gruppe].className = "haken";
+          karte.appendChild(gruppen[b.gruppe]);
+        }
+        haken = gruppen[b.gruppe];
+
         var label = document.createElement("label");
         if(b.wichtig) label.className = "wichtig";
         var box2 = document.createElement("input");
@@ -2194,7 +2274,6 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         label.appendChild(box2); label.appendChild(text);
         haken.appendChild(label);
       });
-      karte.appendChild(haken);
 
       // Darstellung des Codes für diese Person
       var darstellung = document.createElement("div");
@@ -2347,6 +2426,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       $("reiter-" + r).setAttribute("aria-selected", name === r ? "true" : "false");
     });
     $("vorschauspalte").hidden = name !== "etikett";
+    if(name !== "inv2") i2ScanleisteZeigen(false);
   }
   function inventurVerlassen(){ if(typeof kameraAn !== "undefined" && kameraAn) kameraStoppen(); }
 
@@ -3517,6 +3597,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(a === feld) return;                        // sitzt schon: nicht anfassen
     if(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT")) return;
     feld.focus();
+    i2ScanknopfStand();
   }, 400);
   /* Die Tastatur lässt sich auf diesem Gerät nicht wegschalten — dritter und
      letzter Befund.
@@ -3536,6 +3617,18 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     feld.readOnly = false;
     feld.removeAttribute("inputmode");            // niemals "none" — das killt den Scanner
     feld.placeholder = "Hier scannen …";
+
+    /* Welche Schalter überhaupt dastehen, entscheiden die Rechte. Wer den
+       Fokus nicht lösen darf, bekommt ihn festgenagelt — genau dafür ist das
+       Häkchen da. */
+    $("modus-kamera").hidden  = !darf("inv_kamera");
+    $("i2-knopf-ton").hidden  = !darf("inv_ton");
+    $("i2-knopf-kompakt").hidden = !darf("inv_kompakt");
+    $("i2-knopf-fokus").hidden   = !darf("inv_fokus");
+    if(!darf("inv_fokus") && !i2FokusHalten){ i2FokusHalten = true; schreib("pal-i2-fokus", "an"); }
+    if(!darf("inv_kompakt") && i2Kompakt){ i2Kompakt = false; schreib("pal-i2-kompakt", "aus"); }
+    if(!darf("inv_kamera") && typeof kameraAn !== "undefined" && kameraAn) modusSetzen(false);
+
     $("i2-zaehlen").classList.toggle("kompakt", i2Kompakt);
     var tonAn = lies("pal-i2-ton") !== "aus";
     $("ton").checked = tonAn;
@@ -3572,6 +3665,28 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     try{ $("i2-zuletzt").scrollIntoView({ block:"nearest", behavior:"smooth" }); }catch(e){}
   }
 
+  function i2ScanleisteZeigen(an){
+    $("i2-scanleiste").hidden = !an;
+    document.body.classList.toggle("mitscanleiste", !!an);
+    if(an) i2ScanknopfStand();
+  }
+
+  // Der Knopf zeigt, ob das Feld schon scharf ist
+  function i2ScanknopfStand(){
+    var scharf = document.activeElement === $("i2-feld");
+    $("i2-knopf-scanstart").setAttribute("data-scharf", scharf ? "ja" : "nein");
+    $("i2-scanstart-text").textContent = scharf ? "Bereit — jetzt scannen" : "Scannen beginnen";
+  }
+
+  $("i2-knopf-scanstart").addEventListener("click", function(){
+    var feld = $("i2-feld");
+    if(document.activeElement !== feld) feld.focus();
+    try{ feld.scrollIntoView({ block:"nearest", behavior:"smooth" }); }catch(e){}
+    i2ScanknopfStand();
+  });
+  $("i2-feld").addEventListener("focus", i2ScanknopfStand);
+  $("i2-feld").addEventListener("blur", function(){ window.setTimeout(i2ScanknopfStand, 80); });
+
   function i2FeldScharf(){
     if($("ansicht-inv2").hidden || $("i2-zaehlen").hidden) return;
     if(blattOffen() || i2NurLesen) return;
@@ -3585,6 +3700,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     $("i2-start").hidden   = welche !== "start";
     $("i2-tafel").hidden   = welche !== "tafel";
     $("i2-zaehlen").hidden = welche !== "zaehlen";
+    i2ScanleisteZeigen(welche === "zaehlen" && !i2NurLesen);
     i2PfadZeichnen(welche);
   }
 
@@ -5088,6 +5204,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   function i2NotizBearbeiten(nr){
     if(!sb || !i2Platz) return;
+    if(!darf("inv_notizen")){ i2Meldung("Notizen sind für dich nicht freigegeben.", "fehler"); return; }
     if(!i2DarfZaehlen(i2Platz)){ i2Meldung("Notizen darf hier nur schreiben, wer zählen darf.", "fehler"); return; }
     var alt = i2Notizen[nr];
     var kasten = blattOeffnen("Notiz",
@@ -5192,7 +5309,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         li.appendChild(ab);
       }
 
-      if(i2DarfLoeschen(i2Platz)){
+      if(i2DarfLoeschen(i2Platz) && darf("inv_artikel_weg")){
         var weg = document.createElement("button");
         weg.type = "button"; weg.className = "weggruppe";
         weg.textContent = "Artikel löschen";
@@ -5209,12 +5326,14 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         ? "Notiz: " + notiz.notiz + (notiz.wer ? "  (" + i2Kurz(notiz.wer) + ")" : "")
         : "keine Notiz";
       zeile.appendChild(zettel);
-      var stift = document.createElement("button");
-      stift.type = "button"; stift.className = "still";
-      stift.textContent = (notiz && notiz.notiz) ? "ändern" : "Notiz";
-      stift.addEventListener("click", function(){ i2NotizBearbeiten(g.nr); });
-      zeile.appendChild(stift);
-      li.appendChild(zeile);
+      if(darf("inv_notizen")){
+        var stift = document.createElement("button");
+        stift.type = "button"; stift.className = "still";
+        stift.textContent = (notiz && notiz.notiz) ? "ändern" : "Notiz";
+        stift.addEventListener("click", function(){ i2NotizBearbeiten(g.nr); });
+        zeile.appendChild(stift);
+      }
+      if(darf("inv_notizen") || (notiz && notiz.notiz)) li.appendChild(zeile);
 
       ul.appendChild(li);
     });
@@ -5222,6 +5341,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   // Alle Scans eines Artikels auf diesem Platz in den Papierkorb
   function i2GruppeWeg(g){
+    if(!darf("inv_artikel_weg")){ i2Meldung("Ganze Artikel zu löschen ist für dich nicht freigegeben.", "fehler"); return; }
     if(!i2DarfLoeschen(i2Platz)){ i2Meldung("Löschen ist für dich hier nicht freigegeben.", "fehler"); return; }
     var betroffen = i2PlatzScans.filter(function(s){ return s.nr === g.nr; });
     if(!betroffen.length) return;
@@ -5524,7 +5644,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var da = !!i2LetzterScan;
     $("i2-zletzt-aendern").hidden = !da || !i2DarfAendern(i2Platz);
     $("i2-zletzt-weg").hidden     = !da || !i2DarfLoeschen(i2Platz);
-    $("i2-zletzt-notiz").hidden   = !da;
+    $("i2-zletzt-notiz").hidden   = !da || !darf("inv_notizen");
     $("i2-zaktion").hidden = !da
       || ($("i2-zletzt-aendern").hidden && $("i2-zletzt-weg").hidden && $("i2-zletzt-notiz").hidden);
   }
