@@ -753,6 +753,40 @@ textarea#import{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
   background:color-mix(in srgb, var(--gut) 7%, var(--flaeche-2))}
 .i2platz.fertig .pzustand{color:var(--gut)}
 .i2platz.ich{box-shadow:0 0 0 2px color-mix(in srgb, var(--akzent) 32%, transparent)}
+.i2platz .prunde{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600;
+  font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
+.i2platz .prunde.passt{color:var(--gut)}
+.i2platz .prunde.mehr{color:var(--akzent-weich)}
+.i2platz .prunde.weniger{color:var(--kritisch)}
+
+/* Nachzählung: die alte Zahl bleibt beim Zählen in Sichtweite */
+.i2runde{display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 13px;
+  border:1px solid var(--kante-hell); border-radius:11px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--akzent) 8%, var(--flaeche-2)), var(--flaeche-2))}
+.i2runde .marke{font-size:10px; letter-spacing:.1em; text-transform:uppercase; white-space:nowrap;
+  color:var(--akzent-weich); border:1px solid currentColor; border-radius:999px; padding:2px 9px}
+.i2runde .text{font-size:12.5px; color:var(--gedaempft); flex:1; min-width:120px}
+.i2runde .text b{font-family:"IBM Plex Mono",monospace; color:var(--tinte); font-variant-numeric:tabular-nums}
+.i2runde .rdiff{font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:18px;
+  font-variant-numeric:tabular-nums; white-space:nowrap}
+.i2runde .rdiff.passt{color:var(--gut)}
+.i2runde .rdiff.mehr{color:var(--akzent-weich)}
+.i2runde .rdiff.weniger{color:var(--kritisch)}
+.i2runde button{font-size:11px; padding:3px 10px}
+
+/* Gegenüberstellung je Artikel in der Übersicht */
+.summen .vorrunde{font-family:"IBM Plex Mono",monospace; font-size:11.5px;
+  font-variant-numeric:tabular-nums; white-space:nowrap; padding:2px 9px;
+  border-radius:999px; border:1px dashed currentColor}
+.summen .vorrunde.passt{color:var(--gut)}
+.summen .vorrunde.mehr{color:var(--akzent-weich)}
+.summen .vorrunde.weniger{color:var(--kritisch)}
+@media (max-width:700px){
+  .i2runde{padding:8px 10px; gap:8px}
+  .i2runde .text{font-size:11px; min-width:90px}
+  .i2runde .rdiff{font-size:15px}
+  .summen .vorrunde{font-size:10.5px; padding:1px 7px}
+}
 .i2platz.pause{border-color:var(--kante-hell); border-style:dashed}
 .i2platz.pause .pzustand{color:var(--akzent-weich)}
 .i2platz.gesperrt{opacity:.5; cursor:not-allowed}
@@ -1074,7 +1108,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v38</span>
+    <span class="version">v39</span>
     <button type="button" id="knopf-thema" title="Zwischen hell und dunkel wechseln">Hell</button>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
@@ -1364,6 +1398,15 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
               <small id="i2-wozusatz"></small>
             </span>
             <span class="stand" id="i2-stand">0</span>
+          </div>
+
+          <div class="i2runde" id="i2-runde" hidden>
+            <span class="marke" id="i2-runde-marke">Runde 2</span>
+            <span class="text">
+              Vorher <b id="i2-runde-alt">0</b> Stück · jetzt <b id="i2-runde-neu">0</b>
+            </span>
+            <span class="rdiff" id="i2-runde-diff">±0</span>
+            <button type="button" class="still" id="i2-runde-weg">Nachzählung verwerfen</button>
           </div>
 
           <div class="i2warnung" id="i2-doppelt" hidden>
@@ -3417,18 +3460,30 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     i2Platz = null;
     return Promise.all([
       alleZeilen("zaehlplaetze",
-        "id,inventur_id,bereich,name,status,zaehler,begonnen_am,fertig_am,sortierung,sehen,bearbeiten,loeschen,aendern",
+        "id,inventur_id,bereich,name,status,zaehler,begonnen_am,fertig_am,sortierung,sehen,bearbeiten,loeschen,aendern,runde",
         "sortierung", function(q){ return q.eq("inventur_id", i2Aktiv.id); }),
-      alleZeilen("scans", "menge,platz_id", "",
+      alleZeilen("scans", "menge,platz_id,runde", "",
         function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
     ]).then(function(beides){
       i2Plaetze = beides[0];
+
+      /* Nur die aktuelle Zählrunde jedes Platzes zählt. Die Scans älterer
+         Runden bleiben liegen — sie sind der Vergleichswert beim Nachzählen,
+         dürfen aber nirgends mitaddiert werden. */
+      var aktiveRunde = {};
+      i2Plaetze.forEach(function(p){ aktiveRunde[p.id] = i2Runde(p); });
+
       i2Summen = {};
+      i2Vorrunden = {};
       beides[1].forEach(function(s){
         var k = s.platz_id || "-";
-        if(!i2Summen[k]) i2Summen[k] = { anzahl:0, menge:0 };
-        i2Summen[k].anzahl++;
-        i2Summen[k].menge += (s.menge || 0);
+        var r = s.runde || 1;
+        var aktiv = aktiveRunde[k] || 1;
+        var topf = (r === aktiv) ? i2Summen : (r === aktiv - 1 ? i2Vorrunden : null);
+        if(!topf) return;
+        if(!topf[k]) topf[k] = { anzahl:0, menge:0 };
+        topf[k].anzahl++;
+        topf[k].menge += (s.menge || 0);
       });
       i2TafelZeichnen();
       i2AnsichtZeigen("tafel");
@@ -3541,6 +3596,17 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var s = i2Summen[p.id] || { anzahl:0, menge:0 };
     var zahl = document.createElement("span"); zahl.className = "pzahl";
     zahl.textContent = s.menge + " Stück · " + s.anzahl + " Scans";
+
+    // Ab Runde 2 gehört der Vergleich zur Vorrunde auf die Kachel
+    var vor = (i2Runde(p) > 1) ? (i2Vorrunden[p.id] || { menge:0 }) : null;
+    var rundeZeile = null;
+    if(vor){
+      var unterschied = s.menge - vor.menge;
+      rundeZeile = document.createElement("span");
+      rundeZeile.className = "prunde " + (unterschied === 0 ? "passt" : (unterschied > 0 ? "mehr" : "weniger"));
+      rundeZeile.textContent = "Runde " + i2Runde(p) + " · vorher " + vor.menge
+        + " · " + (unterschied > 0 ? "+" : "") + unterschied;
+    }
     var zustand = document.createElement("span"); zustand.className = "pzustand";
     zustand.textContent = p.status === "fertig"
       ? ("fertig" + (p.zaehler ? " · " + i2Kurz(p.zaehler) : ""))
@@ -3550,7 +3616,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           ? (meiner ? "du zählst hier" : i2Kurz(p.zaehler) + " zählt")
           : "offen";
 
-    k.appendChild(name); k.appendChild(zahl); k.appendChild(zustand);
+    k.appendChild(name); k.appendChild(zahl);
+    if(rundeZeile) k.appendChild(rundeZeile);
+    k.appendChild(zustand);
 
     if(i2Einrichten){
       var stift = document.createElement("span");
@@ -3877,9 +3945,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       return;
     }
     i2Sage("i2-tafelmeldung", "Wird gerechnet …");
-    alleZeilen("scans", "menge,nr", "",
+    alleZeilen("scans", "menge,nr,platz_id,runde", "",
       function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
-      .then(function(daten){
+      .then(function(roh){
+        var daten = i2NurAktiveRunde(roh);
         var nach = {};
         daten.forEach(function(s){ nach[s.nr] = (nach[s.nr] || 0) + (s.menge || 0); });
         var nummern = Object.keys(nach).sort();
@@ -3933,10 +4002,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     }
     i2Sage("i2-tafelmeldung", "Differenzen werden gerechnet …");
 
-    alleZeilen("scans", "menge,nr,platz_id", "",
+    alleZeilen("scans", "menge,nr,platz_id,runde", "",
       function(q){ return q.eq("inventur_id", i2Aktiv.id).is("geloescht_am", null); })
-      .then(function(daten){
-        i2DiffScans = daten;
+      .then(function(roh){
+        i2DiffScans = i2NurAktiveRunde(roh);
         i2DiffBereicheFuellen();
         i2DiffRechnen();
         $("i2-differenz").hidden = false;
@@ -4101,22 +4170,105 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   var i2Notizen = {};      // Artikelnummer -> {id, notiz, wer, geaendert_am}
   var i2Korb = [];         // gelöschte und ersetzte Scans dieses Platzes
+  var i2PlatzVorher = [];  // Scans der Vorrunde — der Vergleich beim Nachzählen
+  var i2Vorrunden = {};    // platz_id -> {anzahl, menge} der Vorrunde, für die Tafel
+
+  /* Eine Zählrunde ist ein kompletter Durchgang über einen Platz. Nachzählen
+     heißt: Runde hochzählen und bei null anfangen — NICHT weiterzählen. Die
+     alte Runde bleibt vollständig stehen und wird danebengestellt. Ohne das
+     würde eine Nachzählung die Menge verdoppeln. */
+  function i2Runde(p){ return (p && p.runde) ? p.runde : 1; }
+
+  /* Der wichtigste Filter im ganzen Reiter: Jede Auswertung über die ganze
+     Inventur — Summe für CAO, Differenzen — darf je Platz NUR die aktuelle
+     Runde sehen. Sonst addiert eine Nachzählung die alte Zählung obendrauf
+     und die Inventur wäre doppelt so hoch. */
+  function i2NurAktiveRunde(daten){
+    var aktiv = {};
+    i2Plaetze.forEach(function(p){ aktiv[p.id] = i2Runde(p); });
+    return (daten || []).filter(function(s){
+      if(!s.platz_id) return true;                       // Scans ohne Platz (Altbestand)
+      return (s.runde || 1) === (aktiv[s.platz_id] || 1);
+    });
+  }
+
+  function i2NachzaehlenStarten(p){
+    var alt = i2Summen[p.id] || { menge:0, anzahl:0 };
+    var frage = "„" + p.name + "“ nachzählen?\n\n"
+      + "Runde " + i2Runde(p) + " bleibt gespeichert: " + alt.menge + " Stück aus "
+      + alt.anzahl + (alt.anzahl === 1 ? " Scan." : " Scans.") + "\n\n"
+      + "Du beginnst Runde " + (i2Runde(p) + 1) + " bei null. Beim Zählen siehst du "
+      + "die alte Zahl daneben und sofort die Differenz.\n\n"
+      + "Gelöscht wird nichts.";
+    if(!window.confirm(frage)) return false;
+
+    p.runde = i2Runde(p) + 1;
+    p.status = "laeuft";
+    p.zaehler = angemeldet || "";
+    if(sb){
+      sb.from("zaehlplaetze").update({ runde:p.runde, status:"laeuft", zaehler:p.zaehler,
+                                       begonnen_am:new Date().toISOString(), fertig_am:null })
+        .eq("id", p.id).then(function(res){
+          if(res.error){
+            p.runde = p.runde - 1;
+            i2Sage("i2-tafelmeldung", "Nachzählung nicht gestartet: " + res.error.message, "fehler");
+          }
+        }).catch(function(){
+          p.runde = p.runde - 1;
+          i2Sage("i2-tafelmeldung", "Nachzählung nicht gestartet — Verbindung prüfen.", "fehler");
+        });
+    }
+    return true;
+  }
+
+  /* Verwerfen legt die Scans dieser Runde in den Papierkorb und geht eine Runde
+     zurück. Rettbar bleiben sie trotzdem — und ein erneutes Nachzählen fängt
+     wieder sauber bei null an, statt die verworfenen wieder einzusammeln. */
+  function i2NachzaehlenVerwerfen(){
+    if(!i2Platz || i2Runde(i2Platz) < 2) return;
+    var p = i2Platz, runde = i2Runde(p);
+    var weg = i2PlatzScans.slice();
+    if(!window.confirm("Runde " + runde + " auf „" + p.name + "“ verwerfen?\n\n"
+      + weg.length + (weg.length === 1 ? " Scan wandert" : " Scans wandern") + " in den Papierkorb, "
+      + "und Runde " + (runde - 1) + " gilt wieder.")) return;
+
+    var weiter = weg.length
+      ? sb.from("scans").update({ geloescht_am:new Date().toISOString(), geloescht_von:angemeldet || "" })
+          .in("id", weg.map(function(x){ return x.id; }))
+      : Promise.resolve({});
+
+    weiter.then(function(res){
+      if(res && res.error) throw res.error;
+      return sb.from("zaehlplaetze").update({ runde: runde - 1, status:"fertig" }).eq("id", p.id);
+    }).then(function(res2){
+      if(res2 && res2.error) throw res2.error;
+      p.runde = runde - 1;
+      p.status = "fertig";
+      i2Sage("i2-tafelmeldung", "Runde " + runde + " verworfen — Runde " + (runde - 1) + " gilt wieder.", "gut");
+      i2TafelLaden();
+    }).catch(function(e){
+      i2Meldung("Nicht verworfen: " + ((e && e.message) || e), "fehler");
+    });
+  }
 
   function i2PlatzScansHolen(){
     if(!sb || !i2Platz){ i2PlatzScans = []; i2Korb = []; i2Notizen = {}; return Promise.resolve(); }
     var platzId = i2Platz.id;
     return Promise.all([
-      alleZeilen("scans", "id,menge,nr,wer,erstellt_am,geloescht_am,geloescht_von", "erstellt_am",
+      alleZeilen("scans", "id,menge,nr,wer,erstellt_am,geloescht_am,geloescht_von,runde", "erstellt_am",
         function(q){ return q.eq("platz_id", platzId); }),
       alleZeilen("notizen", "id,nr,notiz,wer,geaendert_am", "",
         function(q){ return q.eq("platz_id", platzId); }).catch(function(){ return []; })
     ]).then(function(beides){
       var alle = beides[0] || [];
-      i2PlatzScans = alle.filter(function(s){ return !s.geloescht_am; });
-      i2Korb       = alle.filter(function(s){ return !!s.geloescht_am; });
+      var jetzt = i2Runde(i2Platz);
+      var lebend = alle.filter(function(s){ return !s.geloescht_am; });
+      i2PlatzScans   = lebend.filter(function(s){ return (s.runde || 1) === jetzt; });
+      i2PlatzVorher  = lebend.filter(function(s){ return (s.runde || 1) === jetzt - 1; });
+      i2Korb         = alle.filter(function(s){ return !!s.geloescht_am; });
       i2Notizen = {};
       (beides[1] || []).forEach(function(n){ i2Notizen[n.nr] = n; });
-    }).catch(function(){ i2PlatzScans = []; i2Korb = []; i2Notizen = {}; });
+    }).catch(function(){ i2PlatzScans = []; i2PlatzVorher = []; i2Korb = []; i2Notizen = {}; });
   }
 
   /* Papierkorb: Gelöschtes und durch „Menge ändern" Ersetztes bleibt liegen,
@@ -4261,6 +4413,18 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       was.textContent = (name ? name + " · " : "") + g.anzahl + "× gescannt";
       li.appendChild(was);
 
+      /* Beim Nachzählen steht neben jedem Artikel, was er in der Vorrunde
+         hatte — dort sucht man den Fehler, nicht in der Gesamtsumme. */
+      if(i2Runde(i2Platz) > 1){
+        var vorMenge = 0;
+        i2PlatzVorher.forEach(function(x){ if(x.nr === g.nr) vorMenge += (x.menge || 0); });
+        var unterschied2 = g.menge - vorMenge;
+        var vr = document.createElement("span");
+        vr.className = "vorrunde " + (unterschied2 === 0 ? "passt" : (unterschied2 > 0 ? "mehr" : "weniger"));
+        vr.textContent = "vorher " + vorMenge + " · " + (unterschied2 > 0 ? "+" : "") + unterschied2;
+        li.appendChild(vr);
+      }
+
       // Sollbestand aus dem Artikelstamm gegenrechnen, wenn einer hinterlegt ist
       if(darf("bestand") && a && a.bestand != null && isFinite(a.bestand)){
         var diff = g.menge - a.bestand;
@@ -4348,7 +4512,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
     i2Meldung("Wird geändert …");
     sb.from("scans").insert({ menge:zahl, nr:s.nr, wer:angemeldet || "",
-                              bereich:i2Platz.bereich, inventur_id:i2Aktiv.id, platz_id:i2Platz.id })
+                              bereich:i2Platz.bereich, inventur_id:i2Aktiv.id, platz_id:i2Platz.id,
+                              runde:i2Runde(i2Platz) })
       .select("id,menge,nr,wer,erstellt_am")
       .then(function(res){
         if(res.error || !res.data || !res.data[0]){
@@ -4392,9 +4557,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       return;
     }
     if(p.status === "fertig"){
-      if(!window.confirm("„" + p.name + "“ ist als fertig gezählt"
-        + (p.zaehler ? " von " + i2Kurz(p.zaehler) : "") + ".\n\n"
-        + "Wieder öffnen und nachzählen?\n\nDie bisherigen Scans bleiben stehen — es wird nichts gelöscht.")) return;
+      if(!i2NachzaehlenStarten(p)) return;
     }
     i2Platz = p;
     i2Meldung("");
@@ -4424,6 +4587,22 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var menge = i2Mengensumme(i2PlatzScans);
     $("i2-stand").textContent = menge;
     i2TastaturAnwenden();
+
+    // Nachzählung: alte Zahl, neue Zahl und die Differenz in einer Zeile
+    var runde = i2Runde(i2Platz);
+    var band = $("i2-runde");
+    band.hidden = runde < 2;
+    if(runde >= 2){
+      var alt = i2Mengensumme(i2PlatzVorher);
+      var unterschied = menge - alt;
+      $("i2-runde-marke").textContent = "Runde " + runde;
+      $("i2-runde-alt").textContent = alt;
+      $("i2-runde-neu").textContent = menge;
+      var d = $("i2-runde-diff");
+      d.className = "rdiff " + (unterschied === 0 ? "passt" : (unterschied > 0 ? "mehr" : "weniger"));
+      d.textContent = (unterschied > 0 ? "+" : "") + unterschied;
+      $("i2-runde-weg").hidden = !i2DarfLoeschen(i2Platz);
+    }
 
     i2SummenZeichnen();
     i2KorbZeichnen();
@@ -4588,7 +4767,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         notBlitz(titel, g.menge + " × " + g.nr + " zählt nicht. Verbindung prüfen und nochmal scannen.");
       };
       sb.from("scans").insert({ menge:g.menge, nr:g.nr, wer:angemeldet || "",
-                                bereich:i2Platz.bereich, inventur_id:i2Aktiv.id, platz_id:i2Platz.id })
+                                bereich:i2Platz.bereich, inventur_id:i2Aktiv.id, platz_id:i2Platz.id,
+                                runde:i2Runde(i2Platz) })
         .select("id,menge,nr,wer,erstellt_am")
         .then(function(res){
           if(res.error || !res.data || !res.data[0]){ verloren("Nicht gespeichert"); return; }
@@ -4719,6 +4899,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(!i2Platz) return;
     i2PlatzStatus(i2Platz, "pause").then(function(){ i2TafelLaden(); });
   });
+
+  $("i2-runde-weg").addEventListener("click", i2NachzaehlenVerwerfen);
 
   $("i2-knopf-zurueck").addEventListener("click", function(){ i2TafelLaden(); });
 
