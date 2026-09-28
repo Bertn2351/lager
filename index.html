@@ -948,6 +948,28 @@ button.werkzeug.nurbild span{display:none}
   .i2modus .text{font-size:11px; min-width:110px}
 }
 
+/* ===== Kompakt =====
+   Die Bildschirmtastatur frisst am Handgerät die untere Hälfte. Sie lässt sich
+   nicht wegschalten, ohne den Scanner mit abzuschalten — also bleibt nur,
+   darüber mit dem Platz auszukommen. Alles, was beim Zählen nicht gebraucht
+   wird, verschwindet; Platzname, Menge, Scanfeld und der letzte Scan bleiben. */
+#i2-zaehlen.kompakt .i2uebersicht,
+#i2-zaehlen.kompakt #i2-scanliste,
+#i2-zaehlen.kompakt .papierkorb,
+#i2-zaehlen.kompakt > .hinweis,
+#i2-zaehlen.kompakt #modus-scanner,
+#i2-zaehlen.kompakt #modus-kamera,
+#i2-zaehlen.kompakt .tonschalter{display:none}
+#i2-zaehlen.kompakt .i2platzkopf{padding:7px 11px; gap:8px}
+#i2-zaehlen.kompakt .i2platzkopf .wo b{font-size:14px}
+#i2-zaehlen.kompakt .i2platzkopf .wo small{font-size:10px}
+#i2-zaehlen.kompakt .i2platzkopf .stand{font-size:20px}
+#i2-zaehlen.kompakt .zuletzt{padding:8px 10px; gap:8px}
+#i2-zaehlen.kompakt .zuletzt .ztext b{font-size:12.5px}
+#i2-zaehlen.kompakt #i2-feld{padding:9px 11px}
+#i2-zaehlen.kompakt .i2runde{padding:7px 10px}
+#i2-zaehlen.kompakt .i2runde .text{display:none}
+
 .i2neu{display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end}
 .i2neu > div{flex:1 1 150px; min-width:0}
 .i2neu button{flex:none}
@@ -1236,7 +1258,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v44</span>
+    <span class="version">v45</span>
     <button type="button" id="knopf-thema" title="Zwischen hell und dunkel wechseln">Hell</button>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
@@ -1597,7 +1619,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           <div class="modus" role="group" aria-label="Wie wird gescannt">
             <button type="button" id="modus-scanner" aria-pressed="true">Keyence</button>
             <button type="button" id="modus-kamera" aria-pressed="false">Handy-Kamera</button>
-            <button type="button" id="i2-knopf-tastatur" aria-pressed="false">Tastatur sperren</button>
+            <button type="button" id="i2-knopf-kompakt" aria-pressed="false"
+                    title="Nur das Nötigste zeigen, damit es über der Tastatur Platz hat">Kompakt</button>
           </div>
 
           <div class="kamerabox" id="kamerabox" hidden>
@@ -3331,41 +3354,47 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     el.className = "bereit" + (bereit ? "" : " schlaeft");
     el.lastChild.nodeValue = bereit ? "Bereit für die nächste Palette" : "Ins Feld tippen, dann geht es weiter";
   }
-  /* Tastatursperre — zweiter Anlauf.
-     Der erste war falsch: Er machte das Feld `readOnly` und nahm ihm den Fokus.
-     Der Keyence schreibt seinen Code aber über die Eingabemethode in das
-     FOKUSSIERTE Feld, wie eine Tastatur. Ohne Fokus kommt nichts an, und ein
-     readonly-Feld nimmt ohnehin nichts entgegen — deshalb passierte gar nichts.
-     Richtig ist: Fokus behalten, beschreibbar lassen, und dem Browser per
-     inputmode="none" sagen, dass er die Bildschirmtastatur weglassen soll. */
-  var i2TastaturAus = lies("pal-i2-tastatur") === "zu";
+  /* Die Tastatur lässt sich auf diesem Gerät nicht wegschalten — dritter und
+     letzter Befund.
+     Der Keyence liefert seinen Code über die Eingabemethode, also über
+     dieselbe Schiene wie die Bildschirmtastatur. Beide Versuche, sie
+     loszuwerden, haben deshalb das Scannen mitabgeschaltet:
+        readOnly + Fokus weg  → das Feld nimmt nichts an
+        inputmode="none"      → Android startet die Eingabemethode gar nicht
+     Was von der Webseite aus geht, ist das Gegenteil: die Tastatur stehen
+     lassen und dafür sorgen, dass alles Wichtige über ihr sichtbar bleibt.
+     Genau das macht der Kompakt-Modus. Wer die Tastatur wirklich weghaben
+     will, stellt das am Gerät ein, nicht hier. */
+  var i2Kompakt = lies("pal-i2-kompakt") === "an";
 
   function i2TastaturAnwenden(){
     var feld = $("i2-feld");
-    feld.readOnly = false;                        // nie readonly, sonst kommt kein Scan an
-    feld.setAttribute("inputmode", i2TastaturAus ? "none" : "text");
-    feld.placeholder = i2TastaturAus ? "Scannen — Tastatur ist gesperrt" : "Hier scannen …";
-    var k = $("i2-knopf-tastatur");
-    k.setAttribute("aria-pressed", i2TastaturAus ? "true" : "false");
-    k.textContent = i2TastaturAus ? "Tastatur frei" : "Tastatur sperren";
-    // Von Hand eintragen braucht die Tastatur
-    $("i2-knopf-hand").hidden = !darf("handeingabe") || i2TastaturAus
+    feld.readOnly = false;
+    feld.removeAttribute("inputmode");            // niemals "none" — das killt den Scanner
+    feld.placeholder = "Hier scannen …";
+    $("i2-zaehlen").classList.toggle("kompakt", i2Kompakt);
+    var k = $("i2-knopf-kompakt");
+    k.setAttribute("aria-pressed", i2Kompakt ? "true" : "false");
+    k.textContent = i2Kompakt ? "Alles zeigen" : "Kompakt";
+    $("i2-knopf-hand").hidden = !darf("handeingabe")
       || (typeof kameraAn !== "undefined" && kameraAn);
-    schreib("pal-i2-tastatur", i2TastaturAus ? "zu" : "auf");
+    schreib("pal-i2-kompakt", i2Kompakt ? "an" : "aus");
   }
 
-  $("i2-knopf-tastatur").addEventListener("click", function(){
-    i2TastaturAus = !i2TastaturAus;
+  $("i2-knopf-kompakt").addEventListener("click", function(){
+    i2Kompakt = !i2Kompakt;
     i2TastaturAnwenden();
-    /* Erst den Fokus wegnehmen, dann neu setzen: Android entscheidet beim
-       Fokussieren, ob die Tastatur kommt — ein bereits scharfes Feld übernimmt
-       den geänderten inputmode sonst nicht. */
-    try{ $("i2-feld").blur(); }catch(e){}
-    window.setTimeout(i2FeldScharf, 30);
-    i2Meldung(i2TastaturAus
-      ? "Tastatur gesperrt — Scannen geht weiter, nur von Hand tippen nicht."
-      : "Tastatur frei.", "gut");
+    i2FeldScharf();
+    i2Meldung(i2Kompakt
+      ? "Kompakt — nur noch das Nötigste, damit es über der Tastatur Platz hat."
+      : "Alles wieder sichtbar.", "gut");
   });
+
+  /* Nach jedem Scan das Ergebnis in den sichtbaren Bereich holen. Steht die
+     Tastatur im Weg, ist das der Unterschied zwischen sehen und raten. */
+  function i2ErgebnisZeigen(){
+    try{ $("i2-zuletzt").scrollIntoView({ block:"nearest", behavior:"smooth" }); }catch(e){}
+  }
 
   function i2FeldScharf(){
     if($("ansicht-inv2").hidden || $("i2-zaehlen").hidden) return;
@@ -5269,6 +5298,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     i2Blitz(true); piep(true);
     quittung(true, g.menge + " × " + g.nr);
     i2ZuletztZeigen(g.nr);
+    i2ErgebnisZeigen();
 
     if(sb){
       var verloren = function(titel){
@@ -5461,8 +5491,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       return;
     }
     // Manche Scanner hängen ein Tabulatorzeichen an — das würde den Fokus
-    // auf den nächsten Knopf schieben. Gesperrt bleibt der Fokus, wo er ist.
-    if(e.key === "Tab" && i2TastaturAus){ e.preventDefault(); return; }
+    // auf den nächsten Knopf schieben.
+    if(e.key === "Tab"){ e.preventDefault(); return; }
 
     if(e.key.length !== 1) return;
     e.preventDefault();
