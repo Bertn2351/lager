@@ -1185,7 +1185,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v41</span>
+    <span class="version">v42</span>
     <button type="button" id="knopf-thema" title="Zwischen hell und dunkel wechseln">Hell</button>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
@@ -1347,19 +1347,23 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
             <div class="titel"><span class="nr">1</span><span>Inventur wählen</span></div>
             <ul class="i2liste" id="i2-invliste"></ul>
             <p class="hinweis" id="i2-invleer" hidden>Noch keine Inventur angelegt.</p>
-            <button type="button" class="still" id="i2-inv-alte" hidden>Abgeschlossene zeigen</button>
+            <div style="display:flex; gap:9px; flex-wrap:wrap; align-items:center; margin-top:2px">
+              <button type="button" class="still" id="i2-inv-alte" hidden>Abgeschlossene zeigen</button>
+              <button type="button" class="tat" id="i2-knopf-invneu-blatt" hidden>Neue Inventur</button>
+            </div>
           </div>
+
+          <!-- wohnt hier, gezeigt wird es im Blatt -->
           <div class="schritt" id="i2-invneu" hidden>
-            <div class="titel"><span class="nr">2</span><span>Neue Inventur</span></div>
             <div class="i2neu">
               <div>
                 <label for="i2-neuname">Name</label>
                 <input id="i2-neuname" placeholder="z. B. Inventur September 2026" autocomplete="off">
               </div>
-              <button type="button" class="still" id="i2-knopf-invneu">Inventur anlegen</button>
             </div>
             <p class="hinweis">Eine Inventur ist die Klammer um eine ganze Zählung.
-              Solange sie offen ist, wird in sie gezählt.</p>
+              Solange sie offen ist, wird in sie gezählt. Die Bereiche legst du
+              gleich danach an — oder übernimmst sie aus einer früheren Inventur.</p>
           </div>
           <p class="meldung" id="i2-startmeldung"></p>
         </div>
@@ -3215,16 +3219,19 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     el.className = "bereit" + (bereit ? "" : " schlaeft");
     el.lastChild.nodeValue = bereit ? "Bereit für die nächste Palette" : "Ins Feld tippen, dann geht es weiter";
   }
-  /* Tastatursperre: Am Handgerät schiebt sich bei jedem Fokus die
-     Bildschirmtastatur über den halben Bildschirm, obwohl getippt gar nicht
-     wird. Gesperrt bekommt das Feld gar keinen Fokus mehr — die Zeichen des
-     Scanners fängt der Zuhörer auf der ganzen Seite ab und schreibt sie
-     hinein. Gescannt wird also genau wie vorher, nur ohne Tastatur. */
+  /* Tastatursperre — zweiter Anlauf.
+     Der erste war falsch: Er machte das Feld `readOnly` und nahm ihm den Fokus.
+     Der Keyence schreibt seinen Code aber über die Eingabemethode in das
+     FOKUSSIERTE Feld, wie eine Tastatur. Ohne Fokus kommt nichts an, und ein
+     readonly-Feld nimmt ohnehin nichts entgegen — deshalb passierte gar nichts.
+     Richtig ist: Fokus behalten, beschreibbar lassen, und dem Browser per
+     inputmode="none" sagen, dass er die Bildschirmtastatur weglassen soll. */
   var i2TastaturAus = lies("pal-i2-tastatur") === "zu";
 
   function i2TastaturAnwenden(){
     var feld = $("i2-feld");
-    feld.readOnly = i2TastaturAus;                 // verhindert die Bildschirmtastatur
+    feld.readOnly = false;                        // nie readonly, sonst kommt kein Scan an
+    feld.setAttribute("inputmode", i2TastaturAus ? "none" : "text");
     feld.placeholder = i2TastaturAus ? "Scannen — Tastatur ist gesperrt" : "Hier scannen …";
     var k = $("i2-knopf-tastatur");
     k.setAttribute("aria-pressed", i2TastaturAus ? "true" : "false");
@@ -3232,18 +3239,17 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     // Von Hand eintragen braucht die Tastatur
     $("i2-knopf-hand").hidden = !darf("handeingabe") || i2TastaturAus
       || (typeof kameraAn !== "undefined" && kameraAn);
-    if(i2TastaturAus){
-      try{ feld.blur(); }catch(e){}
-      // Auch ein Knopf darf den Fokus nicht behalten, sonst trifft ihn der Scanner
-      try{ if(document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); }catch(e){}
-    }
     schreib("pal-i2-tastatur", i2TastaturAus ? "zu" : "auf");
   }
 
   $("i2-knopf-tastatur").addEventListener("click", function(){
     i2TastaturAus = !i2TastaturAus;
     i2TastaturAnwenden();
-    if(!i2TastaturAus) i2FeldScharf();
+    /* Erst den Fokus wegnehmen, dann neu setzen: Android entscheidet beim
+       Fokussieren, ob die Tastatur kommt — ein bereits scharfes Feld übernimmt
+       den geänderten inputmode sonst nicht. */
+    try{ $("i2-feld").blur(); }catch(e){}
+    window.setTimeout(i2FeldScharf, 30);
     i2Meldung(i2TastaturAus
       ? "Tastatur gesperrt — Scannen geht weiter, nur von Hand tippen nicht."
       : "Tastatur frei.", "gut");
@@ -3252,7 +3258,6 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   function i2FeldScharf(){
     if($("ansicht-inv2").hidden || $("i2-zaehlen").hidden) return;
     if(blattOffen() || i2NurLesen) return;
-    if(i2TastaturAus) return;
     if(typeof kameraAn !== "undefined" && kameraAn) return;
     if(!$("i2-sicherung").hidden) return;
     var feld = $("i2-feld");
@@ -3302,7 +3307,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   // Reiter betreten: dort weitermachen, wo man war
   function i2Oeffnen(){
-    $("i2-invneu").hidden     = !darf("inventur2_bauen");
+    $("i2-knopf-invneu-blatt").hidden = !darf("inventur2_bauen");
 
     if(!sb){
       i2Sage("i2-startmeldung", "Inventur 2.0 braucht die Datenbank — ohne Verbindung geht sie nicht.", "fehler");
@@ -3520,7 +3525,17 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       .catch(function(e){ i2Sage("i2-tafelmeldung", "Nicht übernommen: " + ((e && e.message) || e), "fehler"); });
   }
 
-  $("i2-knopf-invneu").addEventListener("click", function(){
+  $("i2-knopf-invneu-blatt").addEventListener("click", function(){
+    if(!darf("inventur2_bauen") || !sb) return;
+    blattOeffnen("Neue Inventur", "");
+    blattFormular("i2-invneu");
+    $("i2-neuname").value = "";
+    blattKnopf("Inventur anlegen", "haupt", i2InvAnlegen);
+    blattKnopf("Abbrechen", "still", blattSchliessen);
+    window.setTimeout(function(){ try{ $("i2-neuname").focus(); }catch(e){} }, 60);
+  });
+
+  function i2InvAnlegen(){
     if(!darf("inventur2_bauen") || !sb) return;
     var name = $("i2-neuname").value.trim();
     if(!name){ i2Sage("i2-startmeldung", "Bitte einen Namen eingeben.", "fehler"); return; }
@@ -3532,12 +3547,14 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
           return;
         }
         $("i2-neuname").value = "";
+        blattSchliessen();
         i2Inv.unshift(res.data[0]);
+        i2InvStand[res.data[0].id] = { gesamt:0, fertig:0 };
         i2Aktiv = res.data[0];
         i2TafelLaden();
       })
       .catch(function(){ i2Sage("i2-startmeldung", "Nicht angelegt — Verbindung prüfen.", "fehler"); });
-  });
+  }
 
   // ----- B) Tafel -----
   function i2TafelLaden(){
@@ -5091,7 +5108,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var feld = $("i2-feld");
     feld.value = "";
     i2LetzteLaenge = 0;
-    if(!i2TastaturAus) feld.focus();
+    feld.focus();
     i2Bereit(true);
   }
 
@@ -5174,10 +5191,6 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     i2FeldFertig();
   });
 
-  $("i2-feld").addEventListener("focus", function(){
-    if(i2TastaturAus){ try{ $("i2-feld").blur(); }catch(e){} }
-  });
-
   $("i2-feld").addEventListener("blur", function(){
     window.setTimeout(function(){
       var a = document.activeElement;
@@ -5222,10 +5235,10 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   $("ansicht-inv2").addEventListener("click", function(e){
     var t = e.target;
     if(t && t.tagName === "BUTTON"){
-      /* Ein angeklickter Knopf behält den Fokus. Bei gesperrter Tastatur würde
-         das Enter des Scanners ihn dann erneut auslösen — „Platz fertig" beim
-         nächsten Scan. Also den Fokus gleich wieder abgeben. */
-      if(i2TastaturAus){ try{ t.blur(); }catch(err){} }
+      /* Ein angeklickter Knopf behält den Fokus — das Enter des Scanners würde
+         ihn dann erneut auslösen. Also Fokus abgeben und zurück ins Scanfeld. */
+      try{ t.blur(); }catch(err){}
+      window.setTimeout(i2FeldScharf, 40);
       return;
     }
     if(t && (t.tagName === "INPUT" || t.tagName === "LABEL" || t.tagName === "TEXTAREA"
@@ -5265,7 +5278,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
     if(e.key.length !== 1) return;
     e.preventDefault();
-    if(!i2TastaturAus) feld.focus();       // gesperrt: kein Fokus, keine Tastatur
+    feld.focus();
     feld.value += e.key;
     i2VomScanner = true;
     feld.dispatchEvent(new Event("input", { bubbles:true }));
