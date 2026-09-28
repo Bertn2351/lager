@@ -913,7 +913,7 @@ html[data-thema="hell"] .blatt{background:rgba(40,48,56,.42)}
   background:color-mix(in srgb, var(--akzent) 7%, var(--flaeche-2)); display:grid; gap:11px}
 .i2editor > .kopf{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
 .i2editor > .kopf b{font-size:14px; flex:1; min-width:0; overflow-wrap:anywhere}
-.i2editor .wer{display:grid; gap:5px; max-height:230px; overflow:auto;
+.i2editor .wer, .wer{display:grid; gap:5px; max-height:230px; overflow:auto;
   border:1px solid var(--kante); border-radius:9px; padding:8px 9px; background:var(--grund)}
 .i2werzeile{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12.5px;
   padding-bottom:8px; margin-bottom:2px; border-bottom:1px solid var(--kante)}
@@ -1309,7 +1309,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   </div>
   <div class="status" id="status">
     <span id="status-text">Verbindung wird geprüft …</span>
-    <span class="version">v47</span>
+    <span class="version">v49</span>
     <button type="button" id="knopf-thema" title="Zwischen hell und dunkel wechseln">Hell</button>
     <button type="button" id="knopf-abmelden" hidden>Abmelden</button>
   </div>
@@ -1555,6 +1555,15 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
             <p class="hinweis">Statt einer Liste geht auch eine Spanne: <b>1-8</b> wird zu
               Ebene 1 … Ebene 8, <b>Regal 1-8</b> zu Regal 1 … Regal 8.
               Lässt du das Feld leer, bekommt der Bereich einen einzigen Platz.</p>
+
+            <div>
+              <label>Wer darf hier was</label>
+              <div class="wer" id="i2-neu-wer"></div>
+              <p class="hinweis">Bei <b>sehen</b> und <b>zählen</b> gilt: kein Haken heißt,
+                alle dürfen. <b>Löschen</b> und <b>Menge ändern</b> darf dagegen nur, wer
+                ausdrücklich angehakt ist. Du kannst das später jederzeit über „Ändern“
+                am Bereich anpassen.</p>
+            </div>
           </div>
 
           <div class="schritt" id="i2-vorlageneu" hidden>
@@ -3497,7 +3506,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(blattOffen() || i2NurLesen) return;
     if(typeof kameraAn !== "undefined" && kameraAn) return;
     if(!$("i2-sicherung").hidden) return;
-    if(!document.hasFocus()) return;              // die Seite ist gar nicht vorne
+    /* Bewusst KEINE Vorbehalte auf document.hasFocus() oder visibilityState.
+       Beide melden in genau den Lagen „nein", in denen der Fokus am dringendsten
+       zurückmuss — nach einem Systemdialog, nach einem Wechsel, im
+       Vorschaufenster. Dann käme der Wächter nie wieder, und wer Handschuhe
+       trägt, kommt ohne ihn nicht mehr ins Feld.
+       Gefahrlos ist das, weil focus() den Fokus nur innerhalb der Seite bewegt:
+       aus der Adresszeile des Browsers holt es ihn nicht. */
     var feld = $("i2-feld"), a = document.activeElement;
     if(a === feld) return;                        // sitzt schon: nicht anfassen
     if(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT")) return;
@@ -4121,28 +4136,13 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     return Object.keys(mails).sort();
   }
 
-  function i2EditorOeffnen(art, ziel){
-    i2EditorArt = art;
-    i2EditorZiel = ziel;
-    i2Sage("i2-editor-meldung", "");
-
-    var plaetze = art === "bereich"
-      ? i2Plaetze.filter(function(p){ return p.bereich === ziel; })
-      : [ziel];
-    var muster = plaetze[0] || {};
-
-    $("i2-editor-titel").textContent = art === "bereich"
-      ? "Bereich „" + ziel + "“"
-      : "Platz „" + ziel.name + "“";
-    $("i2-editor-art").className = "i2fahne offen";
-    $("i2-editor-art").textContent = art === "bereich"
-      ? plaetze.length + (plaetze.length === 1 ? " Platz" : " Plätze")
-      : ziel.bereich;
-    $("i2-editor-name").value = art === "bereich" ? ziel : ziel.name;
-
-    // Häkchenstand aus dem ersten Platz; beim Bereich gilt er für alle
+  /* Die Häkchentafel „wer darf was" — dieselbe beim Anlegen wie beim Ändern.
+     Schreibt ihren Stand nach i2EditorRechte, von wo ihn i2RechteEinsammeln()
+     wieder abholt. `muster` ist ein vorhandener Platz, dessen Rechte
+     vorbelegt werden; beim Anlegen wird ein leeres Objekt übergeben. */
+  function i2RechteTafelBauen(box, muster){
+    muster = muster || {};
     i2EditorRechte = {};
-    var box = $("i2-editor-wer");
     box.textContent = "";
     var leute = i2EditorLeute();
     if(!leute.length){
@@ -4150,6 +4150,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       leer.className = "hinweis";
       leer.textContent = "Noch niemand unter „Rechte“ eingetragen — solange dürfen alle.";
       box.appendChild(leer);
+      return;
     }
     leute.forEach(function(mail){
       var stand = {
@@ -4184,7 +4185,6 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         var haken = document.createElement("input");
         haken.type = "checkbox";
         haken.checked = stand[schluessel];
-        if(istOberchef(mail)){ haken.checked = true; haken.disabled = true; }
         kaesten[schluessel] = haken;
         haken.addEventListener("change", function(){
           stand[schluessel] = haken.checked;
@@ -4205,6 +4205,47 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
       });
       box.appendChild(zeile);
     });
+  }
+
+  // Aus der Häkchentafel die vier Listen machen; leer heißt null (= alle dürfen)
+  function i2RechteEinsammeln(){
+    var sehen = [], bearbeiten = [], loeschen = [], aendern = [];
+    Object.keys(i2EditorRechte).forEach(function(mail){
+      var st = i2EditorRechte[mail];
+      if(st.sehen) sehen.push(mail);
+      if(st.bearbeiten) bearbeiten.push(mail);
+      if(st.loeschen) loeschen.push(mail);
+      if(st.aendern) aendern.push(mail);
+    });
+    return {
+      sehen: sehen.length ? sehen : null,
+      bearbeiten: bearbeiten.length ? bearbeiten : null,
+      loeschen: loeschen.length ? loeschen : null,
+      aendern: aendern.length ? aendern : null
+    };
+  }
+
+  function i2EditorOeffnen(art, ziel){
+    i2EditorArt = art;
+    i2EditorZiel = ziel;
+    i2Sage("i2-editor-meldung", "");
+
+    var plaetze = art === "bereich"
+      ? i2Plaetze.filter(function(p){ return p.bereich === ziel; })
+      : [ziel];
+    var muster = plaetze[0] || {};
+
+    $("i2-editor-titel").textContent = art === "bereich"
+      ? "Bereich „" + ziel + "“"
+      : "Platz „" + ziel.name + "“";
+    $("i2-editor-art").className = "i2fahne offen";
+    $("i2-editor-art").textContent = art === "bereich"
+      ? plaetze.length + (plaetze.length === 1 ? " Platz" : " Plätze")
+      : ziel.bereich;
+    $("i2-editor-name").value = art === "bereich" ? ziel : ziel.name;
+
+    // Häkchenstand aus dem ersten Platz; beim Bereich gilt er für alle
+    i2RechteTafelBauen($("i2-editor-wer"), muster);
 
     $("i2-editor").hidden = false;
     // Der Editor sitzt oben — bei vielen Bereichen sähe man ihn sonst gar nicht
@@ -4223,21 +4264,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var name = $("i2-editor-name").value.trim();
     if(!name){ i2Sage("i2-editor-meldung", "Der Name darf nicht leer sein.", "fehler"); return; }
 
-    var sehen = [], bearbeiten = [], loeschen = [], aendern = [];
-    Object.keys(i2EditorRechte).forEach(function(mail){
-      var st = i2EditorRechte[mail];
-      if(st.sehen) sehen.push(mail);
-      if(st.bearbeiten) bearbeiten.push(mail);
-      if(st.loeschen) loeschen.push(mail);
-      if(st.aendern) aendern.push(mail);
-    });
-
-    var daten = {
-      sehen: sehen.length ? sehen : null,
-      bearbeiten: bearbeiten.length ? bearbeiten : null,
-      loeschen: loeschen.length ? loeschen : null,
-      aendern: aendern.length ? aendern : null
-    };
+    var daten = i2RechteEinsammeln();
     var abfrage;
     if(i2EditorArt === "bereich"){
       daten.bereich = name;
@@ -4307,7 +4334,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     return roh.split(/[,;\n]/).map(function(t){ return t.trim(); }).filter(Boolean);
   }
 
-  function i2PlaetzeAnlegen(bereich, namen){
+  function i2PlaetzeAnlegen(bereich, namen, rechte){
     if(!sb || !i2Aktiv) return;
     // Doppelte überspringen, damit zweimaliges Drücken nichts verdoppelt
     var da = {};
@@ -4315,8 +4342,9 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     var neu = namen.filter(function(n){ return !da[bereich + " " + n]; });
     if(!neu.length){ i2Sage("i2-tafelmeldung", "Diese Plätze gibt es schon.", "fehler"); return; }
 
-    // Neue Plätze erben die Sichtbarkeit ihres Bereichs
-    var vorbild = i2Plaetze.filter(function(p){ return p.bereich === bereich; })[0] || {};
+    /* Beim Anlegen kommen die Rechte aus der Häkchentafel; beim Nachtragen
+       eines einzelnen Platzes erbt er sie vom Bereich, in den er kommt. */
+    var vorbild = rechte || i2Plaetze.filter(function(p){ return p.bereich === bereich; })[0] || {};
     var basis = i2Plaetze.length;
     var zeilen = neu.map(function(n, i){
       return { inventur_id:i2Aktiv.id, bereich:bereich, name:n, status:"offen",
@@ -4341,6 +4369,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     blattOeffnen("Bereich anlegen", i2Aktiv ? i2Aktiv.name : "");
     blattFormular("i2-bereichneu");
     $("i2-bname").value = ""; $("i2-bplaetze").value = "";
+    i2RechteTafelBauen($("i2-neu-wer"), {});      // leer = alle dürfen
     blattKnopf("Anlegen", "haupt", function(){ i2BereichAnlegen(); });
     blattKnopf("Abbrechen", "still", blattSchliessen);
     window.setTimeout(function(){ try{ $("i2-bname").focus(); }catch(e){} }, 60);
@@ -4361,7 +4390,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(!bereich){ i2Sage("i2-tafelmeldung", "Bitte einen Bereichsnamen eingeben.", "fehler"); return; }
     var namen = i2PlaetzeAusText($("i2-bplaetze").value);
     if(!namen.length) namen = [bereich];     // Bereich ohne Unterteilung
-    i2PlaetzeAnlegen(bereich, namen);
+    i2PlaetzeAnlegen(bereich, namen, i2RechteEinsammeln());
   }
 
   function i2PlatzNachtragen(bereich){
@@ -4648,6 +4677,15 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
      würde eine Nachzählung die Menge verdoppeln. */
   function i2Runde(p){ return (p && p.runde) ? p.runde : 1; }
 
+  /* Jeder Systemdialog nimmt der Seite den Fokus. Wer mit Handschuhen zählt,
+     kann ihn nicht zurücktippen — also holt ihn die App selbst zurück, sofort
+     und nicht erst beim nächsten Wächterlauf. */
+  function i2Frage(text){
+    var ja = window.confirm(text);
+    window.setTimeout(i2FeldScharf, 0);
+    return ja;
+  }
+
   /* ---------- Das Blatt ----------
      Ein einziges Fenster für alles, was eine Entscheidung oder eine Eingabe
      ist. Formulare, die schon im Seitenaufbau stehen, werden hineingeschoben
@@ -4928,7 +4966,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(!i2Platz || i2Runde(i2Platz) < 2) return;
     var p = i2Platz, runde = i2Runde(p);
     var weg = i2PlatzScans.slice();
-    if(!window.confirm("Runde " + runde + " auf „" + p.name + "“ verwerfen?\n\n"
+    if(!i2Frage("Runde " + runde + " auf „" + p.name + "“ verwerfen?\n\n"
       + weg.length + (weg.length === 1 ? " Scan wandert" : " Scans wandern") + " in den Papierkorb, "
       + "und Runde " + (runde - 1) + " gilt wieder.")) return;
 
@@ -5023,7 +5061,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
   $("i2-korb-leeren").addEventListener("click", function(){
     if(!sb || !i2Korb.length) return;
-    if(!window.confirm(i2Korb.length + " Einträge endgültig entfernen?\n\n"
+    if(!i2Frage(i2Korb.length + " Einträge endgültig entfernen?\n\n"
       + "Danach sind sie wirklich weg — auch in der Datenbank.")) return;
     var ids = i2Korb.map(function(s){ return s.id; });
     sb.from("scans").delete().in("id", ids).then(function(res){
@@ -5052,11 +5090,29 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(!sb || !i2Platz) return;
     if(!i2DarfZaehlen(i2Platz)){ i2Meldung("Notizen darf hier nur schreiben, wer zählen darf.", "fehler"); return; }
     var alt = i2Notizen[nr];
-    var eingabe = window.prompt("Notiz zu " + nr
-      + (darf("artikelname") ? " — " + (bezeichnungZu(nr) || "") : "")
-      + "\n\nLeer lassen und OK löscht die Notiz.", (alt && alt.notiz) || "");
-    if(eingabe === null) return;
-    var text = String(eingabe).trim();
+    var kasten = blattOeffnen("Notiz",
+      nr + (darf("artikelname") ? " · " + (bezeichnungZu(nr) || "") : ""));
+    var feld = document.createElement("textarea");
+    feld.id = "i2-notizfeld";
+    feld.rows = 4;
+    feld.placeholder = "z. B. Karton oben eingerissen";
+    feld.value = (alt && alt.notiz) || "";
+    kasten.appendChild(feld);
+    var satz = document.createElement("p");
+    satz.className = "hinweis";
+    satz.textContent = "Leeres Feld speichern löscht die Notiz. Sie gehört zu diesem Artikel "
+      + "auf diesem Zählplatz.";
+    kasten.appendChild(satz);
+    blattKnopf("Speichern", "haupt", function(){
+      var text = feld.value.trim();
+      blattSchliessen();
+      i2NotizSpeichern(nr, alt, text);
+    });
+    blattKnopf("Abbrechen", "still", blattSchliessen);
+    window.setTimeout(function(){ try{ feld.focus(); }catch(e){} }, 60);
+  }
+
+  function i2NotizSpeichern(nr, alt, text){
 
     if(alt && alt.id){
       if(!text){
@@ -5169,7 +5225,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     if(!i2DarfLoeschen(i2Platz)){ i2Meldung("Löschen ist für dich hier nicht freigegeben.", "fehler"); return; }
     var betroffen = i2PlatzScans.filter(function(s){ return s.nr === g.nr; });
     if(!betroffen.length) return;
-    if(!window.confirm("Alle " + betroffen.length + " Scans von " + g.nr + " auf „" + i2Platz.name + "“ löschen?\n\n"
+    if(!i2Frage("Alle " + betroffen.length + " Scans von " + g.nr + " auf „" + i2Platz.name + "“ löschen?\n\n"
       + "Sie wandern in den Papierkorb und lassen sich zurückholen.")) return;
     var ids = betroffen.map(function(s){ return s.id; });
     i2PlatzScans = i2PlatzScans.filter(function(s){ return s.nr !== g.nr; });
@@ -5198,16 +5254,48 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   /* Menge berichtigen, ohne etwas zu verlieren: erst der neue Eintrag, dann
      wandert der alte in den Papierkorb. Geht das Zweite schief, steht im
      schlimmsten Fall zu viel da — sichtbar. Nie zu wenig. */
+  /* Im Blatt statt im Systemdialog: ein prompt() nimmt der Seite den Fokus,
+     und mit Handschuhen bekommt man ihn nicht zurück ins Scanfeld. Das Blatt
+     bleibt in der Seite, und beim Schließen wird das Feld wieder scharf. */
   function i2MengeAendern(s){
     if(!i2DarfAendern(i2Platz)){ i2Meldung("Mengen ändern ist für dich hier nicht freigegeben.", "fehler"); return; }
-    var eingabe = window.prompt("Neue Menge für " + s.nr
-      + (darf("artikelname") ? " — " + (bezeichnungZu(s.nr) || "") : "")
-      + "\n\nBisher: " + s.menge
-      + "\n\nDer alte Eintrag wandert in den Papierkorb — verloren geht nichts.", String(s.menge));
-    if(eingabe === null) return;
-    var zahl = parseInt(String(eingabe).replace(/[^0-9]/g, ""), 10);
-    if(!isFinite(zahl) || zahl <= 0){ i2Meldung("„" + eingabe + "“ ist keine gültige Menge.", "fehler"); return; }
-    if(zahl === s.menge) return;
+    var kasten = blattOeffnen("Menge ändern",
+      s.nr + (darf("artikelname") ? " · " + (bezeichnungZu(s.nr) || "") : ""));
+
+    var zeile = document.createElement("div");
+    var etikett = document.createElement("label");
+    etikett.setAttribute("for", "i2-mengefeld");
+    etikett.textContent = "Neue Menge";
+    var feld = document.createElement("input");
+    feld.id = "i2-mengefeld"; feld.className = "gross";
+    feld.setAttribute("inputmode", "numeric");
+    feld.value = String(s.menge);
+    zeile.appendChild(etikett); zeile.appendChild(feld);
+    kasten.appendChild(zeile);
+
+    var satz = document.createElement("p");
+    satz.className = "hinweis";
+    satz.textContent = "Bisher " + s.menge + ". Der alte Eintrag wandert in den Papierkorb — "
+      + "verloren geht nichts.";
+    kasten.appendChild(satz);
+
+    feld.addEventListener("keydown", function(e){
+      if(e.key === "Enter"){ e.preventDefault(); uebernehmen(); }
+    });
+    blattKnopf("Übernehmen", "haupt", uebernehmen);
+    blattKnopf("Abbrechen", "still", blattSchliessen);
+    window.setTimeout(function(){ try{ feld.focus(); feld.select(); }catch(e){} }, 60);
+
+    function uebernehmen(){
+      var zahl = parseInt(String(feld.value).replace(/[^0-9]/g, ""), 10);
+      if(!isFinite(zahl) || zahl <= 0){ i2Sage("i2-meldung", "Das ist keine gültige Menge.", "fehler"); return; }
+      blattSchliessen();
+      if(zahl === s.menge) return;
+      i2MengeSpeichern(s, zahl);
+    }
+  }
+
+  function i2MengeSpeichern(s, zahl){
     if(!sb) return;
 
     i2Meldung("Wird geändert …");
@@ -5603,7 +5691,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
   $("i2-knopf-fertig").addEventListener("click", function(){
     if(!i2Platz) return;
     if(i2PlatzScans.length === 0
-      && !window.confirm("Auf „" + i2Platz.name + "“ ist nichts gezählt.\n\nTrotzdem als fertig markieren?")) return;
+      && !i2Frage("Auf „" + i2Platz.name + "“ ist nichts gezählt.\n\nTrotzdem als fertig markieren?")) return;
     var p = i2Platz;
     i2PlatzStatus(p, "fertig").then(function(){ i2TafelLaden(); });
   });
