@@ -96,169 +96,153 @@ h1,h2{margin:0; font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif;
 ::-webkit-scrollbar-thumb{background:var(--kante); border-radius:99px; border:3px solid var(--grund)}
 ::-webkit-scrollbar-thumb:hover{background:var(--kante-hell)}
 
-/* ---------- Anmeldung: PORTAL ----------
-   Werte nach der mitgelieferten Referenz. Alles auf .anmelden begrenzt,
-   damit die übrige Anwendung unberührt bleibt. */
+/* ---------- Anmeldung: Tools-Portal ----------
+   Das Lager bleibt dunkel und robust, der Zugang liegt wie in der
+   Aktions-App auf einer hellen, ruhigen Arbeitsfläche. */
 .anmelden{
-  --p-orange:#ff852e; --p-ink:#080b0e; --p-text:#f6f4ef;
+  --p-orange:#ff8a19; --p-orange-dunkel:#e76f0d; --p-ink:#14171b; --p-text:#f8f7f4;
   position:fixed; inset:0; z-index:50; isolation:isolate;
   min-height:100svh; overflow-x:hidden; overflow-y:auto;
-  display:flex; flex-direction:column;
-  background:var(--p-ink); color:var(--p-text);
-  font-family:Arial,Helvetica,sans-serif;
+  display:grid; grid-template-columns:minmax(0,61%) minmax(390px,39%);
+  background:#f8f9fb; color:#15181d; font-family:Arial,Helvetica,sans-serif;
 }
 .anmelden *{box-sizing:border-box}
 .anmelden button,.anmelden input{font:inherit}
 .anmelden button{cursor:pointer}
-.anmelden button:focus-visible,.anmelden input:focus-visible{outline:2px solid #ffd4a7; outline-offset:4px}
+.anmelden a:focus-visible,.anmelden button:focus-visible,.anmelden input:focus-visible{
+  outline:3px solid #ffb067; outline-offset:3px}
 
-/* Kopf */
+/* Dunkle Markenseite */
+.p-brand{position:relative; min-height:100svh; overflow:hidden; display:flex; flex-direction:column;
+  color:var(--p-text); background:
+    radial-gradient(circle at 18% 6%,rgba(255,138,25,.13),transparent 31%),
+    linear-gradient(135deg,#1c1e21 0%,#12161a 56%,#1b1715 100%)}
+.p-brand::before{content:""; position:absolute; width:min(66vw,820px); aspect-ratio:1;
+  right:-42%; bottom:-58%; border:clamp(70px,9vw,135px) solid rgba(255,138,25,.08);
+  border-radius:50%; transform:rotate(-18deg); pointer-events:none}
+.p-brand::after{content:""; position:absolute; width:130px; height:105px; right:8%; bottom:10%;
+  opacity:.24; background-image:radial-gradient(circle,#ff8a19 1.5px,transparent 1.7px);
+  background-size:14px 14px; pointer-events:none}
 .p-header{display:flex; align-items:center; justify-content:space-between; gap:18px;
-  padding:26px 36px; position:relative; z-index:4; border-bottom:1px solid #ffffff0d; flex:none}
-.p-header .logo{width:150px; height:32px; background-position:left center}
-.p-marke{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:1px;
-  color:#b6babe; text-align:right; line-height:1.6}
+  padding:54px clamp(42px,6vw,92px) 20px; position:relative; z-index:3; flex:none}
+.p-header .logo{width:177px; height:38px; background-position:left center}
+.p-marke{font:10px/1.55 "IBM Plex Mono",monospace; letter-spacing:1.4px;
+  color:#aeb3b8; text-align:right}
 .p-marke span{color:var(--p-orange)}
 
-/* Rumpf */
-.p-body{position:relative; flex:1 0 auto; min-height:561px;
-  display:grid; grid-template-columns:43% 57%; padding:0 36px}
-.p-story{position:relative; z-index:2; align-self:center; padding-bottom:22px}
-.p-eyebrow{display:flex; align-items:center; gap:10px;
-  font:11px/1.5 "IBM Plex Mono",monospace; letter-spacing:2px; color:#c2c5c8; margin-bottom:28px}
-.p-eyebrow::before{content:""; width:22px; height:1px; background:var(--p-orange); flex:none}
-.p-story h1{font-size:clamp(38px,5.1vw,59px); line-height:1.05; font-weight:500;
-  letter-spacing:-2.8px; margin:0 0 23px; color:var(--p-text); font-family:inherit}
-.p-story h1 em{font-family:Georgia,"Times New Roman",serif; font-weight:400;
-  color:var(--p-orange); font-style:italic}
-.p-copy{max-width:264px; color:#aab0b5; font-size:14px; line-height:1.7; margin:0 0 40px}
-.p-marker{display:flex; gap:11px; align-items:center; font-size:11px;
-  font-family:"IBM Plex Mono",monospace; letter-spacing:1px; color:#c6cbcb}
-.p-marker b{width:6px; height:6px; border-radius:50%; background:var(--p-orange);
-  box-shadow:0 0 12px var(--p-orange); flex:none}
-
-/* Portalraum */
-.p-world{position:relative; min-width:0; display:grid; place-items:center;
-  perspective:1000px; padding:53px 28px 66px; overflow:clip}
-.p-floor{position:absolute; pointer-events:none; width:900px; height:310px; bottom:-158px;
-  left:50%; transform:translateX(-50%) rotateX(69deg);
-  background-image:linear-gradient(#ff852e15 1px,transparent 1px),
-                   linear-gradient(90deg,#ff852e15 1px,transparent 1px);
-  background-size:56px 50px;
-  -webkit-mask-image:radial-gradient(ellipse,#000 5%,transparent 65%);
-  mask-image:radial-gradient(ellipse,#000 5%,transparent 65%)}
-.p-glow{position:absolute; inset:0 -85px; pointer-events:none;
-  background:radial-gradient(ellipse at 54% 51%,#ff852e15,transparent 65%); transition:opacity .5s}
-
-.p-orbit{position:absolute; width:390px; height:476px; max-width:110%;
-  border:1px solid #ffa556bd; border-radius:48% 48% 46% 46%;
-  transform:rotateY(-24deg) rotateZ(-9deg);
-  box-shadow:-6px 0 3px -5px #ffe3c4, -11px 0 16px -9px var(--p-orange),
-             inset 8px 0 20px -17px var(--p-orange), 8px 0 0 -7px #ff9c685a;
-  transition:transform 1.05s cubic-bezier(.19,1,.22,1), opacity .8s, border-color .5s;
-  pointer-events:none}
-.p-orbit::before{content:""; position:absolute; inset:-13px;
-  border:1px solid #ff852e22; border-radius:inherit}
-.p-orbit::after{content:""; position:absolute; inset:9px;
-  border:1px solid #ffbc7838; border-radius:inherit; border-right-color:transparent}
-.p-orbit2{transform:rotateY(23deg) rotateZ(10deg) scale(.95);
-  border-color:#ff852e30; box-shadow:none}
-
-/* Terminal */
-.p-terminal{position:relative; z-index:2; width:100%; max-width:302px;
-  padding:26px 23px 23px; background:linear-gradient(145deg,#1a1c20fa,#101316fa 62%);
-  border:1px solid #ffffff21; box-shadow:0 28px 55px #0009; border-radius:19px;
-  transition:transform .9s cubic-bezier(.2,.7,.2,1), opacity .5s}
-.p-terminal::before{content:""; position:absolute; top:-1px; left:30%; right:30%; height:1px;
-  background:#ffd0a5; box-shadow:0 0 18px 3px #ff852e44}
-.p-terminal-top{display:flex; justify-content:space-between; align-items:center;
-  color:#a9afb3; font:10px "IBM Plex Mono",monospace; letter-spacing:1px; margin-bottom:23px}
-.p-terminal-top svg{width:15px; height:15px; color:var(--p-orange); display:block}
-.p-terminal h2{font-size:22px; line-height:1.2; font-weight:500; letter-spacing:-.5px;
-  margin:0 0 7px; color:var(--p-text); font-family:inherit}
-.p-subtitle{font-size:12px; color:#a9afb3; margin:0 0 24px; line-height:1.6}
-
-.p-field{display:block; margin-bottom:17px}
-.p-field > span{display:block; font-size:11px; color:#b9bfc3; margin-bottom:8px}
-.p-input-wrap{position:relative}
-.anmelden input{width:100%; min-width:0; background:#080c0f; color:#f4f1ea;
-  border:1px solid #333b40; border-radius:8px; padding:12px 11px; font-size:14px;
-  height:45px; transition:border-color .2s; box-shadow:none}
-.anmelden input:focus{border-color:var(--p-orange); outline:none}
-.anmelden input[type=password],.anmelden .p-secret{padding-right:45px}
-.p-eye{position:absolute; right:1px; top:1px; width:42px; height:43px; border:0;
-  border-radius:7px; background:transparent; color:#adb6bc; display:grid; place-items:center}
-.p-eye svg{width:17px; height:17px}
-.p-eye:hover{color:#f4f1ea}
-
-.p-submit{display:flex; align-items:center; justify-content:space-between; gap:10px;
-  width:100%; border:1px solid #ffb575; background:var(--p-orange); color:#1c1004;
-  padding:13px 14px; border-radius:8px; font-size:13px; font-weight:700; min-height:47px;
-  box-shadow:0 7px 22px #ff852e20; transition:filter .2s, transform .2s}
-.p-submit:hover:not(:disabled){filter:brightness(1.12); transform:translateY(-1px)}
-.p-submit:active:not(:disabled){transform:translateY(1px)}
-.p-submit:disabled{cursor:wait; filter:saturate(.8)}
-.p-submit svg{width:17px; height:17px; flex:none}
-
-.p-status{display:flex; align-items:center; justify-content:center; gap:7px;
-  font:10px/1.5 "IBM Plex Mono",monospace; color:#b1b8bd; margin:16px 0 0;
-  min-height:16px; text-align:center; letter-spacing:.5px}
-.p-status b{width:6px; height:6px; border-radius:50%; background:#4a555d; flex:none;
-  transition:background .3s, box-shadow .3s}
-.p-status.gut{color:#8fe0bf} .p-status.gut b{background:#3fbf94; box-shadow:0 0 10px #3fbf94aa}
-.p-status.fehler{color:#ffb1a8} .p-status.fehler b{background:var(--p-orange); box-shadow:0 0 10px #ff852eaa}
-
-/* Fuß */
-.p-footer{position:relative; z-index:4; display:flex; justify-content:space-between; gap:10px;
-  align-items:center; padding:18px 36px; border-top:1px solid #ffffff0d; color:#a6adb2;
-  font:10px/1.6 "IBM Plex Mono",monospace; letter-spacing:.8px; flex:none}
-.p-footer button{display:flex; align-items:center; gap:7px; background:transparent; border:0;
-  color:#d6c2ac; font:inherit; padding:4px 0; min-height:28px}
+.p-story{position:relative; z-index:2; margin:auto 0; padding:54px clamp(42px,6vw,92px) 44px;
+  max-width:860px}
+.p-eyebrow{display:flex; align-items:center; gap:13px; margin-bottom:26px;
+  font:600 11px/1.5 "IBM Plex Mono",monospace; letter-spacing:2.2px; color:#e7a665}
+.p-eyebrow::before{content:""; width:31px; height:2px; border-radius:2px; background:var(--p-orange); flex:none}
+.p-story h1{max-width:720px; font-size:clamp(48px,5.5vw,82px); line-height:1.02; font-weight:700;
+  letter-spacing:-4.3px; margin:0 0 25px; color:var(--p-text); font-family:inherit}
+.p-story h1 em{font:inherit; color:var(--p-orange); font-style:normal}
+.p-copy{max-width:620px; color:#bdc2c7; font-size:clamp(15px,1.25vw,19px); line-height:1.7;
+  margin:0 0 37px}
+.p-marker{display:flex; gap:10px; align-items:center; font:10px/1.5 "IBM Plex Mono",monospace;
+  letter-spacing:1.3px; color:#c7cbcf; margin-bottom:28px}
+.p-marker b{width:7px; height:7px; border-radius:50%; background:var(--p-orange);
+  box-shadow:0 0 15px #ff8a19aa; flex:none}
+.p-chips{display:flex; flex-wrap:wrap; gap:10px}
+.p-chips span{padding:9px 14px; border:1px solid #ffffff22; border-radius:999px;
+  background:#ffffff08; color:#c9cdd1; font-size:11px; box-shadow:inset 0 1px #ffffff09}
+.p-footer{position:relative; z-index:4; display:flex; justify-content:space-between; gap:16px;
+  align-items:center; padding:18px clamp(42px,6vw,92px) 27px; color:#8e959c;
+  font:9px/1.6 "IBM Plex Mono",monospace; letter-spacing:.9px; flex:none}
+.p-footer button{display:flex; align-items:center; gap:7px; border:0; background:transparent;
+  color:#aeb3b8; font:inherit; padding:8px 0}
+.p-footer button:hover{color:#fff}
 .p-footer svg{width:13px; height:13px}
 
-/* Zustände */
-.anmelden.p-email .p-orbit{transform:rotateY(-13deg) rotateZ(-5deg); border-color:#ffbc78}
-.anmelden.p-password .p-orbit{transform:rotateY(-39deg) rotateZ(-8deg); border-color:#ff852e55}
-.anmelden.p-password .p-orbit2{transform:rotateY(40deg) rotateZ(11deg)}
-.anmelden.p-dim .p-glow{opacity:.25}
-.anmelden.p-dim .p-orbit{border-color:#b7a18a; box-shadow:-4px 0 14px -6px #ffe1b9}
+/* Helle Zugangsspalte */
+.p-world{position:relative; min-width:0; min-height:100svh; display:grid; place-items:center;
+  padding:54px clamp(34px,4.4vw,72px); overflow:hidden; background:
+    linear-gradient(180deg,#fff 0%,#fbfbfc 72%,#f7f8fa 100%)}
+.p-world::before{content:""; position:absolute; inset:0 0 auto; height:5px;
+  background:linear-gradient(90deg,var(--p-orange),#ffb352)}
+.p-login-wrap{width:min(100%,560px); position:relative; z-index:2}
+.p-login-kicker{font:700 11px/1.4 "IBM Plex Mono",monospace; letter-spacing:2px;
+  color:var(--p-orange-dunkel); text-transform:uppercase; margin-bottom:17px}
+.p-login-wrap > h1{font-size:clamp(38px,4vw,58px); line-height:1.02; letter-spacing:-2.6px;
+  margin:0 0 14px; color:#181b20; font-family:Arial,Helvetica,sans-serif; font-weight:700}
+.p-subtitle{font-size:16px; color:#6d747e; margin:0 0 39px; line-height:1.6}
 
-/* Öffnung — erst nach bestätigter Anmeldung */
-.anmelden.p-launch .p-terminal{transform:translateZ(-350px) scale(.65); opacity:0; pointer-events:none}
-.anmelden.p-launch .p-orbit{transform:translateZ(420px) scale(2.4); opacity:0}
-.anmelden.p-launch .p-orbit2{transform:translateZ(300px) scale(2.1)}
-.anmelden.p-launch .p-story,.anmelden.p-launch .p-header,.anmelden.p-launch .p-footer{
-  opacity:0; transition:opacity .45s ease}
-.anmelden.p-launch{background:transparent; transition:background .5s ease .35s}
-@keyframes p-eintreten{from{transform:scale(1.03); opacity:.5} to{transform:scale(1); opacity:1}}
+.p-terminal{width:100%; transition:transform .7s cubic-bezier(.2,.7,.2,1),opacity .45s}
+.p-field{display:block; margin-bottom:17px}
+.p-field > span{display:block; font-size:12px; font-weight:700; color:#4c535b; margin-bottom:8px}
+.p-input-wrap{position:relative}
+.anmelden input{width:100%; min-width:0; height:54px; padding:14px 16px; border:1px solid #d4d9df;
+  border-radius:11px; background:#f8f9fa; color:#1b1e22; font-size:15px; box-shadow:0 1px 2px #15181d05;
+  transition:border-color .2s,box-shadow .2s,background .2s}
+.anmelden input:hover{border-color:#b9c0c8}
+.anmelden input:focus{border-color:var(--p-orange); background:#fff; outline:none;
+  box-shadow:0 0 0 4px #ff8a1919}
+.anmelden input[type=password],.anmelden .p-secret{padding-right:52px}
+.p-eye{position:absolute; right:4px; top:4px; width:45px; height:46px; border:0; border-radius:9px;
+  background:transparent; color:#7a838d; display:grid; place-items:center}
+.p-eye:hover{background:#eceff2; color:#20252a}
+.p-eye svg{width:18px; height:18px}
+.p-submit,.p-tool-link{display:flex; align-items:center; justify-content:space-between; gap:12px;
+  width:100%; min-height:52px; padding:13px 17px; border-radius:10px; font-size:13px; font-weight:700;
+  text-decoration:none; transition:transform .18s,box-shadow .18s,filter .18s}
+.p-submit{border:1px solid #ff9f43; background:var(--p-orange); color:#241306;
+  box-shadow:0 10px 24px #ff8a1923}
+.p-submit:hover:not(:disabled),.p-tool-link:hover{transform:translateY(-2px)}
+.p-submit:hover:not(:disabled){filter:brightness(1.04); box-shadow:0 14px 28px #ff8a1930}
+.p-submit:active:not(:disabled),.p-tool-link:active{transform:translateY(0)}
+.p-submit:disabled{cursor:wait; filter:saturate(.7); opacity:.8}
+.p-submit svg,.p-tool-link svg{width:18px; height:18px; flex:none}
+.p-status{display:flex; align-items:center; justify-content:center; gap:7px; min-height:19px;
+  margin:13px 0 0; color:#7c848c; font:10px/1.5 "IBM Plex Mono",monospace;
+  text-align:center; letter-spacing:.35px}
+.p-status b{width:6px; height:6px; border-radius:50%; background:#c3c9ce; flex:none}
+.p-status.gut{color:#16805d}.p-status.gut b{background:#24a579;box-shadow:0 0 9px #24a57977}
+.p-status.fehler{color:#bd463e}.p-status.fehler b{background:#df5b52;box-shadow:0 0 9px #df5b5277}
+
+.p-tool-jump{margin-top:19px; padding-top:19px; border-top:1px solid #e4e7ea}
+.p-tool-caption{display:flex; justify-content:space-between; gap:14px; align-items:flex-end;
+  margin:0 0 10px; color:#737b84; font-size:11px}
+.p-tool-caption strong{color:#31363c; font-size:12px}
+.p-tool-link{border:1px solid #dfe3e7; background:#fff; color:#252a30; box-shadow:0 8px 22px #17202a0c}
+.p-tool-link:hover{border-color:#c9cfd5; box-shadow:0 12px 26px #17202a14}
+.p-security{margin:25px 0 0; color:#a5abb2; font-size:10px; text-align:center}
+
+/* Zustände und Öffnung nach bestätigter Anmeldung */
+.anmelden.p-email .p-brand::before{border-color:rgba(255,138,25,.12)}
+.anmelden.p-password .p-brand::before{transform:rotate(-13deg) scale(1.03)}
+.anmelden.p-dim .p-brand{filter:brightness(.82)}
+.anmelden.p-launch .p-terminal,.anmelden.p-launch .p-tool-jump{transform:translateY(24px);opacity:0;pointer-events:none}
+.anmelden.p-launch .p-brand,.anmelden.p-launch .p-login-wrap{opacity:0;transition:opacity .45s ease}
+.anmelden.p-launch{background:transparent;transition:background .5s ease .3s}
+@keyframes p-eintreten{from{transform:scale(1.02);opacity:.55}to{transform:scale(1);opacity:1}}
 #app.p-eintritt{animation:p-eintreten .8s cubic-bezier(.22,1,.36,1)}
 
-@media(max-width:800px){
-  .p-header{padding:22px 25px}
-  .p-header .logo{width:126px; height:27px}
-  .p-body{padding:0 25px; grid-template-columns:42% 58%}
-  .p-story h1{font-size:43px; letter-spacing:-2px}
-  .p-world{padding-left:18px; padding-right:9px}
-  .p-orbit{width:340px; height:453px}
-  .p-footer{padding:16px 25px}
+@media(max-width:920px){
+  .anmelden{grid-template-columns:minmax(0,53%) minmax(365px,47%)}
+  .p-header,.p-story,.p-footer{padding-left:36px;padding-right:36px}
+  .p-story h1{font-size:clamp(42px,6vw,58px);letter-spacing:-3px}
+  .p-copy{font-size:14px}
+  .p-world{padding-left:32px;padding-right:32px}
 }
-@media(max-width:590px){
-  .p-header{padding:20px}
-  .p-header .logo{width:112px; height:24px}
-  .p-marke{font-size:10px; letter-spacing:0}
-  .p-body{grid-template-columns:1fr; padding:0 20px; min-height:0}
-  .p-story{padding:29px 0 0}
-  .p-eyebrow{margin-bottom:13px; font-size:10px}
-  .p-story h1{font-size:38px; line-height:1.07; letter-spacing:-1.8px; margin-bottom:13px}
-  .p-copy{font-size:12px; margin:0; max-width:280px}
+@media(max-width:700px){
+  .anmelden{position:fixed;display:block;background:#fff}
+  .p-brand{min-height:auto}
+  .p-brand::before{width:510px;right:-54%;bottom:-72%}
+  .p-header{padding:25px 23px 12px}
+  .p-header .logo{width:132px;height:29px}
+  .p-marke{font-size:8px}
+  .p-story{padding:32px 23px 34px}
+  .p-eyebrow{font-size:9px;margin-bottom:15px}
+  .p-story h1{font-size:clamp(37px,11vw,51px);letter-spacing:-2.4px;margin-bottom:14px}
+  .p-copy{font-size:13px;line-height:1.55;margin-bottom:22px;max-width:470px}
   .p-marker{display:none}
-  .p-world{min-height:min(491px, 62svh); padding:36px 6px 40px}
-  .p-orbit{max-width:111%; width:347px; height:440px}
-  .p-terminal{max-width:302px}
-  .anmelden input{font-size:16px; height:48px}
-  .p-submit{min-height:48px}
-  .p-footer{padding:14px 20px; font-size:9px}
-  .p-footer button{min-height:44px}
+  .p-chips span{font-size:10px;padding:7px 10px}
+  .p-footer{display:none}
+  .p-world{min-height:auto;place-items:start center;padding:44px 23px 50px}
+  .p-login-wrap > h1{font-size:39px;letter-spacing:-2px}
+  .p-subtitle{font-size:14px;margin-bottom:30px}
+  .anmelden input{font-size:16px}
 }
 @media(prefers-reduced-motion:reduce){
   .anmelden *,.anmelden *::before,.anmelden *::after{animation:none !important; transition:none !important}
@@ -1235,48 +1219,54 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
 <!-- ===== Anmeldung ===== -->
 <div class="anmelden" id="anmelden" hidden>
-  <header class="p-header">
-    <span class="logo" role="img" aria-label="Mein Döner Cash &amp; Carry"></span>
-    <div class="p-marke">G.A.B GMBH<br><span>LAGER</span></div>
-  </header>
+  <section class="p-brand" aria-label="Lagerportal">
+    <header class="p-header">
+      <span class="logo" role="img" aria-label="Mein Döner Cash &amp; Carry"></span>
+      <div class="p-marke">G.A.B GMBH<br><span>LAGER</span></div>
+    </header>
 
-  <div class="p-body">
-    <section class="p-story">
-      <div class="p-eyebrow">G.A.B · PALETTENVERWALTUNG</div>
-      <h1>Dein Zugang.<br>Eine andere<br><em>Dimension.</em></h1>
-      <p class="p-copy">Die Nacht liegt vor der Tür.<br>Dein Lager wartet dahinter.</p>
-      <div class="p-marker"><b></b> TOR 01 · BEREIT FÜR DICH</div>
-    </section>
+    <div class="p-story">
+      <div class="p-eyebrow">LAGER- &amp; PALETTENVERWALTUNG</div>
+      <h1>Dein Lager.<br>Alles an seinem <em>Platz.</em></h1>
+      <p class="p-copy">Paletten beschriften, Bestände prüfen und Inventuren gemeinsam erledigen – zentral an einem Ort.</p>
+      <div class="p-marker"><b></b> LAGERTOOL · BEREIT FÜR DICH</div>
+      <div class="p-chips" aria-label="Funktionen">
+        <span>Palettenetiketten</span>
+        <span>Inventur 2.0</span>
+        <span>Live-Bestand</span>
+      </div>
+    </div>
 
-    <div class="p-world">
-      <div class="p-floor" aria-hidden="true"></div>
-      <div class="p-glow" aria-hidden="true"></div>
-      <div class="p-orbit" aria-hidden="true"></div>
-      <div class="p-orbit p-orbit2" aria-hidden="true"></div>
+    <footer class="p-footer">
+      <span>MEIN DÖNER / G.A.B GMBH</span>
+      <button class="p-light" type="button" id="licht" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/><path d="M12 3v1M12 20v1M3 12h1M20 12h1M5.6 5.6l.7.7M17.7 17.7l.7.7M18.4 5.6l-.7.7M6.3 17.7l-.7.7"/>
+        </svg>
+        <span id="licht-text">Licht dimmen</span>
+      </button>
+    </footer>
+  </section>
+
+  <main class="p-world">
+    <div class="p-login-wrap">
+      <div class="p-login-kicker">MEIN DÖNER · LAGERTOOL</div>
+      <h1>Beim Lagertool<br>anmelden</h1>
+      <p class="p-subtitle">Melde dich an und öffne deinen digitalen Lagerbereich.</p>
 
       <form class="p-terminal" id="anmeldeformular" novalidate>
-        <div class="p-terminal-top">
-          <span>DEIN ZUGANG ZUM LAGER</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/>
-          </svg>
-        </div>
-
-        <h2>Schön, dass du da bist.</h2>
-        <p class="p-subtitle">Die nächste Schicht beginnt mit dir.</p>
-
         <label class="p-field">
-          <span>E-Mail</span>
+          <span>E-Mail-Adresse</span>
           <input type="email" id="login-mail" name="email" autocomplete="username"
-                 inputmode="email" autocapitalize="off" spellcheck="false" required>
+                 inputmode="email" autocapitalize="off" spellcheck="false" placeholder="name@firma.at" required>
         </label>
 
         <label class="p-field">
           <span>Passwort</span>
           <div class="p-input-wrap">
             <input class="p-secret" type="password" id="login-pw" name="password"
-                   autocomplete="current-password" required>
+                   autocomplete="current-password" placeholder="Dein Passwort" required>
             <button class="p-eye" type="button" id="pw-zeigen" aria-pressed="false"
                     aria-label="Passwort anzeigen" title="Passwort anzeigen">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1290,7 +1280,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
         </label>
 
         <button class="p-submit" type="submit" id="knopf-anmelden">
-          <span id="knopf-text">Anmelden &amp; Tor öffnen</span>
+          <span id="knopf-text">Zum Lagerbereich</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M7 17 17 7M7 7h10v10"/>
@@ -1299,19 +1289,21 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
 
         <p class="p-status" id="login-meldung" aria-live="polite"><b></b><span id="login-text"></span></p>
       </form>
-    </div>
-  </div>
 
-  <footer class="p-footer">
-    <span>MEIN DÖNER / G.A.B GMBH</span>
-    <button class="p-light" type="button" id="licht" aria-pressed="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="4"/><path d="M12 3v1M12 20v1M3 12h1M20 12h1M5.6 5.6l.7.7M17.7 17.7l.7.7M18.4 5.6l-.7.7M6.3 17.7l-.7.7"/>
-      </svg>
-      <span id="licht-text">Licht dimmen</span>
-    </button>
-  </footer>
+      <div class="p-tool-jump">
+        <p class="p-tool-caption"><strong>Weiteres Tool öffnen</strong><span>ohne Anmeldung im Lager</span></p>
+        <a class="p-tool-link" href="https://bertn2351.github.io/aktion-app/" target="_blank" rel="noopener noreferrer">
+          <span>Zum Aktionstool</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 17 17 7M7 7h10v10"/>
+          </svg>
+        </a>
+      </div>
+
+      <p class="p-security">Sicherer Zugang zum mein DÖNER Lagertool</p>
+    </div>
+  </main>
 </div>
 
 <div class="scanleiste" id="i2-scanleiste" hidden>
@@ -5947,7 +5939,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     an.classList.remove("p-launch","p-email","p-password");
     $("anmeldeformular").inert = false;
     $("knopf-anmelden").disabled = false;
-    $("knopf-text").textContent = "Anmelden & Tor öffnen";
+    $("knopf-text").textContent = "Zum Lagerbereich";
   }
 
   /* Die Ringe richten sich nach dem Feld, in dem gerade gearbeitet wird.
@@ -6003,8 +5995,8 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
      wenn kein transitionend kommt. */
   function zugangOeffnen(){
     var an = $("anmelden"), app = $("app");
-    statusZeigen("Das Tor öffnet sich …", "gut");
-    $("knopf-text").textContent = "Das Tor öffnet sich …";
+    statusZeigen("Lagerbereich wird geöffnet …", "gut");
+    $("knopf-text").textContent = "Lagerbereich wird geöffnet …";
     an.classList.remove("p-email","p-password");
     $("anmeldeformular").inert = true;
 
@@ -6048,7 +6040,7 @@ textarea#zplfeld{font-family:"IBM Plex Mono",monospace; font-size:11px;
     function fertig(){
       meldetGerade = false;
       taste.disabled = false;
-      $("knopf-text").textContent = "Anmelden & Tor öffnen";
+      $("knopf-text").textContent = "Zum Lagerbereich";
       $("anmeldeformular").removeAttribute("aria-busy");
       $("anmeldeformular").inert = false;
     }
